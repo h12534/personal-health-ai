@@ -17,6 +17,7 @@ class DailyNutrition(BaseModel):
     date: date
     totals: NutritionTotals
     meals: dict[str, NutritionTotals]
+    meal_counts: dict[str, int]
     meal_count: int
 
 

@@ -12,6 +12,12 @@ class DashboardToday(BaseModel):
     calories_target: int | None = None
     protein_g: float = 0
     protein_target_g: float | None = None
+    carbs_g: float = 0
+    carbs_target_g: float | None = None
+    fat_g: float = 0
+    fat_target_g: float | None = None
+    fiber_g: float = 0
+    fiber_target_g: float | None = None
     steps: int = 0
     steps_target: int = 8000
     water_ml: int = 0
