@@ -29,6 +29,15 @@ class VisionProviderResponse:
     estimated_cost: float | None = None
 
 
+@dataclass(slots=True)
+class CoachProviderResponse:
+    payload: dict[str, Any]
+    provider: str
+    model: str
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+
+
 class LLMProvider(Protocol):
     async def generate(self, request: AIRequest) -> AIResponse: ...
 
@@ -48,3 +57,12 @@ class VisionProvider(Protocol):
         content_type: str,
         context: dict[str, Any],
     ) -> VisionProviderResponse: ...
+
+
+class CoachProvider(Protocol):
+    name: str
+    model: str
+
+    async def respond(
+        self, message: str, intent: str, context: dict[str, Any]
+    ) -> CoachProviderResponse: ...

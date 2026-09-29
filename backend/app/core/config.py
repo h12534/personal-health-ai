@@ -45,6 +45,14 @@ class Settings(BaseSettings):
     meal_analysis_draft_ttl_hours: int = Field(default=24, ge=1, le=168)
     meal_image_retention_days: int = Field(default=30, ge=0, le=365)
     ai_usage_retention_days: int = Field(default=365, ge=30, le=3650)
+    coach_provider: str = "mock"
+    coach_base_url: str | None = None
+    coach_api_key: str | None = None
+    coach_model: str = "mock-coach-v1"
+    coach_prompt_version: str = "diet_coach_v1"
+    coach_timeout_seconds: int = Field(default=45, ge=5, le=180)
+    coach_max_attempts: int = Field(default=2, ge=1, le=3)
+    coach_daily_limit: int = Field(default=100, ge=1, le=1000)
 
     @property
     def is_production(self) -> bool:
@@ -60,6 +68,11 @@ class Settings(BaseSettings):
             if not self.vision_base_url or not self.vision_api_key:
                 raise ValueError(
                     "VISION_BASE_URL and VISION_API_KEY are required for openai_compatible"
+                )
+        if self.coach_provider == "openai_compatible":
+            if not self.coach_base_url or not self.coach_api_key:
+                raise ValueError(
+                    "COACH_BASE_URL and COACH_API_KEY are required for openai_compatible"
                 )
         return self
 
