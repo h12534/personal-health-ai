@@ -7,10 +7,13 @@
 - `LLMProvider.generate(request) -> LLMResponse`
 - `VisionProvider.analyze_meal(image_bytes, content_type, context) -> VisionProviderResponse`
 - `EmbeddingProvider.embed(texts) -> vectors`
+- `CoachProvider.respond(message, intent, context) -> CoachProviderResponse`
 
 `AIGateway` 负责超时、重试、熔断、结构化输出校验、Token/成本记录和 Provider 路由。API Key、Base URL、模型名全部来自环境或加密后台配置，业务代码不出现 SDK 调用。
 
 Phase 3 已实现 `MockVisionProvider` 与 `OpenAICompatibleVisionProvider`。兼容 Provider 通过 `/chat/completions` 发送 data URL 并要求严格 JSON Schema；超时和尝试次数有硬上限。该实现细节封装在 Provider 内，可替换为其他远程或本地模型。
+
+Phase 4 已实现 `MockCoachProvider` 与 `OpenAICompatibleCoachProvider`。Coach Orchestrator 先执行意图分类、安全短路和最小上下文构建，再调用 Provider；输出必须通过 `CoachGeneratedReply`。模型不能写业务数据，`suggested_actions` 仅用于 UI 导航。
 
 参考官方文档：[Responses API](https://developers.openai.com/api/reference/cli/resources/responses/methods/create)、[图像输入](https://developers.openai.com/api/docs/guides/images-vision)、[Embeddings](https://developers.openai.com/api/docs/models/text-embedding-3-small)。
 

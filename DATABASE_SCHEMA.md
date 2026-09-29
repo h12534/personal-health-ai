@@ -21,7 +21,7 @@
 
 ### health_profiles
 
-`id, user_id(unique), birth_date, sex, height_cm, target_weight_kg, waist_cm, body_fat_percent, resting_heart_rate, activity_level, primary_goal, training_experience, daily_exercise_minutes, school_life, available_equipment, dietary_environment, food_preferences, disliked_foods, allergies, known_health_risks, medications, doctor_advice, timezone, allow_third_party_vision, retain_meal_images, created_at, updated_at`
+`id, user_id(unique), birth_date, sex, height_cm, target_weight_kg, waist_cm, body_fat_percent, resting_heart_rate, activity_level, primary_goal, current_goal_phase, allow_auto_diet_adjustment, adjustment_cooldown_days, training_experience, daily_exercise_minutes, school_life, available_equipment, dietary_environment, food_preferences, disliked_foods, allergies, known_health_risks, medications, doctor_advice, timezone, allow_third_party_vision, retain_meal_images, created_at, updated_at`
 
 高敏感字段不进入普通日志；数据库备份必须加密保存。
 
@@ -85,6 +85,18 @@
 保存用户、分析会话、Provider、模型、任务、Token、图片数、延迟、可选成本、状态和错误码。敏感 Provider 原文和 Key 不在此表。
 
 迁移 `0003_phase3_meal_vision` 在 PostgreSQL 对结构化数组/响应使用 JSONB，在 SQLite 测试使用 JSON variant。Flutter Drift schema v2 新增 `local_vision_tasks`，只保存应用私有图片路径和恢复状态。
+
+## Phase 4 实体
+
+- `diet_adjustments`：前后目标、状态、理由、证据快照、规则版本、输入哈希、审批人与冷却日期。
+- `hunger_logs`：时间、1–10 级、场景和备注。
+- `canteens / canteen_stalls / canteen_dishes`：用户食堂层级和单份营养快照。
+- `personal_dietary_memories`：偏好、厌恶、过敏、例行与场景记忆，可停用。
+- `personal_energy_models`：公式/观察/混合 TDEE、置信度、完整度和证据。
+- `saved_meals / saved_meal_items`：可重复使用的餐食与营养快照。
+- `coach_conversations / coach_messages`：会话、意图、Provider、模型和校验后的结构化响应。
+
+迁移 `0004_phase4_diet_coach` 的证据、标签与消息 payload 在 PostgreSQL 使用 JSONB。所有顶层个人资源直接带 `user_id`；子资源通过父级联表校验所有权。
 
 ## 完整演进清单
 

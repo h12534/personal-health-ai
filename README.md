@@ -2,7 +2,7 @@
 
 一个面向个人长期使用的私人健康操作系统。项目从稳健减脂、保留肌肉和建立力量训练习惯出发，逐步连接身体数据、现实饮食、训练、活动、睡眠、体检、知识库、提醒和 AI 教练。
 
-当前仓库已完成 Phase 0–3。除认证、健康档案、体重趋势和完整手工记餐外，现已具备单张餐食照片安全上传、结构化视觉识别、食物匹配、重量/营养区间、隐藏用油、可编辑草稿、原子确认、个人纠正记忆，以及 Flutter 拍照/相册与离线续传链路。
+当前仓库已完成 Phase 0–4。除认证、档案、体重、手工/照片记餐外，现已具备程序化目标、7/14/28 天趋势、依从性、个人 TDEE、下一餐、食堂/常用餐、调整审批，以及带独立安全层的 Flutter AI 饮食教练。
 
 ## 核心原则
 
@@ -46,6 +46,11 @@ storage/                 本地私有文件/备份挂载占位目录
 - [PHASE2_NOTES.md](PHASE2_NOTES.md)
 - [PHASE3_MEAL_VISION.md](PHASE3_MEAL_VISION.md)
 - [REAL_VISION_TEST.md](REAL_VISION_TEST.md)
+- [PHASE4_DIET_COACH.md](PHASE4_DIET_COACH.md)
+- [DIET_ALGORITHM.md](DIET_ALGORITHM.md)
+- [AI_COACH_CONTEXT.md](AI_COACH_CONTEXT.md)
+- [CANTEEN_SYSTEM.md](CANTEEN_SYSTEM.md)
+- [REAL_AI_COACH_TEST.md](REAL_AI_COACH_TEST.md)
 
 ## 本地后端
 
@@ -75,6 +80,8 @@ mypy --no-incremental app
 ```
 
 Phase 3 默认使用 `VISION_PROVIDER=mock`，不需要 API Key。上传后结果仍是草稿，必须调用确认接口才会创建正式餐食。要启用远程兼容 Provider，设置 `VISION_PROVIDER=openai_compatible`、`VISION_BASE_URL`、`VISION_API_KEY`、`VISION_MODEL`，并由用户在“我的”页明确同意第三方图片分析。
+
+Phase 4 默认使用 `COACH_PROVIDER=mock`。热量、蛋白质、趋势、TDEE、下一餐和调整建议始终由后端规则服务计算；远程模型只负责表达，且输出必须通过 strict schema。真实 Provider 配置见 `REAL_AI_COACH_TEST.md`。
 
 移动端平台目录通过 Flutter 生成：
 
@@ -137,7 +144,7 @@ Android 模拟器访问宿主机使用 `10.0.2.2`；真机请改为同一局域�
 
 ## AI 与知识库
 
-当前提供 `LLMProvider`、`VisionProvider`、`EmbeddingProvider` 协议和禁用态实现。Phase 2 的搜索、营养计算、聚合和 Dashboard 建议均不调用模型。Phase 3 才接入食物视觉识别，Phase 6 接入 pgvector RAG。
+当前提供 `LLMProvider`、`VisionProvider`、`CoachProvider`、`EmbeddingProvider` 协议。Phase 4 的 Coach Orchestrator 已接入意图、安全、最小上下文、Mock/远程 Provider；Phase 2–4 的数值算法均不调用模型。
 
 知识导入将在 Phase 6 提供命令；来源以 WHO、CDC、NIH/NIDDK、ACSM、正式临床指南与高质量系统综述为主，并保存版本、证据等级和 URL。
 
@@ -147,7 +154,7 @@ Android 模拟器访问宿主机使用 `10.0.2.2`；真机请改为同一局域�
 
 ## 当前限制
 
-- Phase 2 尚未实现食物图片识别、OCR、训练、提醒、RAG 和报告；这些仍按路线图后续交付。
+- 尚未实现训练、提醒、RAG、报告和体检 OCR；这些仍按路线图后续交付。
 - 移动端当前离线 Outbox 覆盖餐次和餐次条目的创建；服务端已支持餐次/条目的完整 CRUD。
 - 当前本地机器若没有 Docker/Flutter，只能运行 Python 后端验证；CI 会用正式 Flutter SDK 执行移动端 analyze/test。
 - HTTPS 证书、域名、Push 凭据和真实 AI Key 都属于部署阶段配置，不在仓库中提供默认秘密。

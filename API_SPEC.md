@@ -88,5 +88,33 @@ Base URL：`/api/v1`。所有时间为 ISO 8601，日期为 `YYYY-MM-DD`，数�
 
 ## 后续资源
 
-保留 `/diet-plan`, `/training`, `/workouts`, `/activity`, `/sleep`, `/water`, `/labs`, `/reports`, `/ai/chat`, `/knowledge`, `/reminders`。
+## Phase 4：饮食教练
+
+| Method | Path | 用途 |
+|---|---|---|
+| GET | `/diet/targets/daily` | 程序化每日目标与安全说明 |
+| GET | `/diet/weight-trend` | 7/14/28 天趋势与平台期资格 |
+| GET | `/diet/adherence?days=` | 记录、热量与蛋白依从性 |
+| GET | `/diet/energy-model` | 公式/观察/混合 TDEE |
+| GET | `/diet/next-meal` | 下一餐热量和蛋白范围 |
+| GET | `/diet/weekly-review` | 周回顾、趋势与待审批调整 |
+| GET | `/diet/adjustments/current` | 生成/读取当前建议 |
+| POST | `/diet/adjustments/{id}/accept` | 接受并建立次日目标版本 |
+| POST | `/diet/adjustments/{id}/decline` | 拒绝建议，保持当前目标 |
+| GET/POST | `/diet/hunger` | 饥饿记录 |
+| GET/POST/DELETE | `/diet/memories` | 可管理的个人饮食记忆 |
+| GET/POST/PATCH/DELETE | `/canteens` | 个人食堂；GET 返回活跃档口与可用菜品树 |
+| POST/PATCH/DELETE | `/canteens/{id}/stalls`、`/canteens/stalls/{id}` | 档口维护 |
+| POST/PATCH/DELETE | `/canteens/stalls/{id}/dishes`、`/canteens/dishes/{id}` | 菜品与收藏维护 |
+| POST | `/canteens/stalls/{stall_id}/learn-from-meal/{meal_id}` | 从已确认餐食学习菜品 |
+| GET | `/canteens/recommendations` | 对下一餐范围排序菜品 |
+| GET/POST/DELETE | `/saved-meals` | 常用餐营养快照 |
+| POST | `/saved-meals/{id}/log` | 幂等记录常用餐 |
+| POST | `/ai/coach/chat` | 结构化私人饮食教练；只返回建议动作 |
+
+调整的 accept/decline 与常用餐 log 都要求稳定幂等键。跨用户资源返回 404。Coach 不根据模型输出直接修改目标或记录餐食。
+
+## 后续资源
+
+保留 `/training`, `/workouts`, `/activity`, `/sleep`, `/water`, `/labs`, `/reports`, `/knowledge`, `/reminders`。
 

@@ -80,6 +80,17 @@ MealAnalysisSession → VisionProvider → strict VisionMealResult
 
 Flutter 的 `local_vision_tasks` 与 Phase 2 `sync_outbox` 分离：餐食照片可能较大、需要用户查看草稿，不能像普通小 payload 一样静默重放。离线时保存应用私有图片和任务；用户显式恢复后上传。
 
+## Phase 4 饮食教练边界
+
+```text
+Intent → Safety → Context → deterministic diet services → CoachProvider → schema validation
+                         ├─ target / adherence / trend / TDEE
+                         ├─ next meal / canteen / saved meal
+                         └─ pending adjustment → explicit user decision
+```
+
+规则服务拥有数值真相，Provider 只负责自然语言。高风险请求由安全层短路。聊天动作不执行领域写入；目标调整通过独立、幂等、按用户隔离的审批 API，在事务中创建次日目标版本。详见 `PHASE4_DIET_COACH.md`。
+
 ## 可观测性
 
 日志使用请求 ID 和结构化字段；禁止密码、完整 Token、API Key、体检全文与身体照片路径。后续接入指标：HTTP 延迟、任务失败率、通知命中率、AI Token/成本、检索质量。
