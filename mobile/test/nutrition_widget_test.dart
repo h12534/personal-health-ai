@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:personal_health_os/features/nutrition/data/nutrition_models.dart';
+import 'package:personal_health_os/features/coach/data/coach_models.dart';
 import 'package:personal_health_os/features/nutrition/presentation/nutrition_controller.dart';
 import 'package:personal_health_os/features/nutrition/presentation/nutrition_screen.dart';
 
@@ -41,6 +42,20 @@ void main() {
       ],
       goal: const NutritionGoalModel(calories: 2200, protein: 135, fiber: 25),
       offline: true,
+      nextMeal: const NextMealPlanModel(
+        mealType: 'lunch',
+        target: MealTargetRangeModel(
+          caloriesMin: 450,
+          caloriesMax: 650,
+          proteinMin: 30,
+          proteinMax: 45,
+        ),
+        remainingCalories: 1500,
+        remainingProtein: 110,
+        strategy: ['优先选择蛋白质主菜'],
+        overTarget: false,
+        message: '按范围选择',
+      ),
     );
 
     await tester.pumpWidget(
@@ -59,8 +74,14 @@ void main() {
     expect(find.text('今日营养'), findsOneWidget);
     expect(find.text('拍照识别一餐'), findsOneWidget);
     expect(find.textContaining('403 / 2200 kcal'), findsOneWidget);
+    expect(find.text('下一餐 · 午餐'), findsOneWidget);
+    expect(find.text('按食堂菜品推荐'), findsOneWidget);
+    expect(find.text('离线模式'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.textContaining('早餐 · 403 kcal'),
+      250,
+    );
     expect(find.textContaining('早餐 · 403 kcal'), findsOneWidget);
     expect(find.text('米饭和鸡蛋'), findsOneWidget);
-    expect(find.text('离线模式'), findsOneWidget);
   });
 }
