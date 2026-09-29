@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http_parser/http_parser.dart';
 
 import '../../features/dashboard/data/dashboard_model.dart';
+import '../../features/coach/data/coach_models.dart';
 import '../../features/nutrition/data/nutrition_models.dart';
 import '../../features/nutrition/data/meal_analysis_models.dart';
 import '../config/app_config.dart';
@@ -436,6 +437,283 @@ class ApiClient {
         options: await _authorizedOptions(idempotencyKey: idempotencyKey),
       );
       return MealModel.fromJson(response.data!['data'] as Map<String, dynamic>);
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<NextMealPlanModel> fetchNextMeal() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/diet/next-meal',
+        options: await _authorizedOptions(),
+      );
+      return NextMealPlanModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<CoachOverviewModel> fetchCoachOverview() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/diet/weekly-review',
+        options: await _authorizedOptions(),
+      );
+      return CoachOverviewModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<CoachReplyModel> sendCoachMessage(
+    String message, {
+    String? conversationId,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/ai/coach/chat',
+        data: {
+          'message': message,
+          if (conversationId != null) 'conversation_id': conversationId,
+        },
+        options: await _authorizedOptions(),
+      );
+      return CoachReplyModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<void> decideDietAdjustment(String id, bool accept) async {
+    try {
+      await _dio.post<void>(
+        '/diet/adjustments/$id/${accept ? 'accept' : 'decline'}',
+        data: {'idempotency_key': 'mobile-$id-${accept ? 'yes' : 'no'}'},
+        options: await _authorizedOptions(),
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<CanteenRecommendationModel>> fetchCanteenRecommendations() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/canteens/recommendations',
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (value) => CanteenRecommendationModel.fromJson(
+              value as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<WeightTrendModel> fetchWeightTrend() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/diet/weight-trend',
+        options: await _authorizedOptions(),
+      );
+      return WeightTrendModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<CanteenModel>> fetchCanteens() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/canteens',
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (value) => CanteenModel.fromJson(value as Map<String, dynamic>),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<void> saveCanteen({
+    String? id,
+    required String name,
+    String? campus,
+    String? location,
+    String? note,
+  }) async {
+    final data = {
+      'name': name,
+      'campus': campus,
+      'location': location,
+      'note': note,
+    };
+    try {
+      if (id == null) {
+        await _dio.post<void>(
+          '/canteens',
+          data: data,
+          options: await _authorizedOptions(),
+        );
+      } else {
+        await _dio.patch<void>(
+          '/canteens/$id',
+          data: data,
+          options: await _authorizedOptions(),
+        );
+      }
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<void> saveCanteenStall({
+    String? id,
+    required String canteenId,
+    required String name,
+    String? cuisine,
+    String? floor,
+    String? locationNote,
+  }) async {
+    final data = {
+      'name': name,
+      'cuisine': cuisine,
+      'floor': floor,
+      'location_note': locationNote,
+    };
+    try {
+      if (id == null) {
+        await _dio.post<void>(
+          '/canteens/$canteenId/stalls',
+          data: data,
+          options: await _authorizedOptions(),
+        );
+      } else {
+        await _dio.patch<void>(
+          '/canteens/stalls/$id',
+          data: data,
+          options: await _authorizedOptions(),
+        );
+      }
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<void> saveCanteenDish({
+    String? id,
+    required String stallId,
+    required String name,
+    required double calories,
+    required double protein,
+    required double carbs,
+    required double fat,
+    required double fiber,
+    String? portionDescription,
+    double? averageWeight,
+    double confidence = 0.5,
+    bool favorite = false,
+    String source = 'manual',
+  }) async {
+    final data = {
+      'name': name,
+      'calories': calories,
+      'protein_g': protein,
+      'carbs_g': carbs,
+      'fat_g': fat,
+      'fiber_g': fiber,
+      'portion_description': portionDescription,
+      'average_weight_g': averageWeight,
+      'confidence': confidence,
+      'favorite': favorite,
+      'source': source,
+      'tags': <String>[],
+    };
+    try {
+      if (id == null) {
+        await _dio.post<void>(
+          '/canteens/stalls/$stallId/dishes',
+          data: data,
+          options: await _authorizedOptions(),
+        );
+      } else {
+        await _dio.patch<void>(
+          '/canteens/dishes/$id',
+          data: data,
+          options: await _authorizedOptions(),
+        );
+      }
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<SavedMealModel>> fetchSavedMeals() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/saved-meals',
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (value) => SavedMealModel.fromJson(value as Map<String, dynamic>),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<void> logSavedMeal(SavedMealModel value) async {
+    try {
+      await _dio.post<void>(
+        '/saved-meals/${value.id}/log',
+        data: {
+          'eaten_at': DateTime.now().toIso8601String(),
+          'meal_type': value.mealType,
+          'idempotency_key':
+              'mobile-${value.id}-${DateTime.now().microsecondsSinceEpoch}',
+        },
+        options: await _authorizedOptions(),
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<void> logHunger({
+    required int hungerLevel,
+    required int cravingLevel,
+    required String context,
+    String? note,
+  }) async {
+    try {
+      await _dio.post<void>(
+        '/diet/hunger',
+        data: {
+          'hunger_level': hungerLevel,
+          'craving_level': cravingLevel,
+          'context': context,
+          'note': note,
+        },
+        options: await _authorizedOptions(),
+      );
     } on DioException catch (error) {
       throw _mapError(error);
     }

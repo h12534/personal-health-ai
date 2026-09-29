@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/database/local_database.dart';
+import '../../coach/presentation/canteen_screen.dart';
 import '../data/meal_photo_service.dart';
 import '../data/nutrition_models.dart';
 import '../data/sync_service.dart';
@@ -62,6 +63,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         onEditItem: (meal, item) => _editItem(context, ref, meal, item),
         onAnalyzePhoto: () => _openMealPhoto(context, ref),
         onResumeVision: (task) => _openVisionTask(context, ref, task),
+        onOpenCanteen: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const CanteenScreen()),
+        ),
       ),
     );
   }
@@ -235,6 +239,7 @@ class NutritionContent extends StatelessWidget {
     required this.onEditItem,
     this.onAnalyzePhoto,
     this.onResumeVision,
+    this.onOpenCanteen,
   });
 
   final NutritionViewState data;
@@ -243,6 +248,7 @@ class NutritionContent extends StatelessWidget {
   final void Function(MealModel meal, MealItemModel item) onEditItem;
   final VoidCallback? onAnalyzePhoto;
   final void Function(VisionTaskRecord task)? onResumeVision;
+  final VoidCallback? onOpenCanteen;
 
   @override
   Widget build(BuildContext context) {
@@ -313,6 +319,44 @@ class NutritionContent extends StatelessWidget {
                 onTap:
                     onResumeVision == null ? null : () => onResumeVision!(task),
               ),
+          ],
+          if (data.nextMeal case final plan?) ...[
+            const SizedBox(height: 14),
+            Card(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.next_plan_outlined),
+                        const SizedBox(width: 8),
+                        Text(
+                          '下一餐 · ${plan.mealLabel}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${plan.target.caloriesMin}–${plan.target.caloriesMax} kcal · '
+                      '蛋白质 ${plan.target.proteinMin.toStringAsFixed(0)}–'
+                      '${plan.target.proteinMax.toStringAsFixed(0)} g',
+                    ),
+                    const SizedBox(height: 6),
+                    Text(plan.strategy.first),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: onOpenCanteen,
+                      icon: const Icon(Icons.storefront_outlined),
+                      label: const Text('按食堂菜品推荐'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
           const SizedBox(height: 18),
           Card(

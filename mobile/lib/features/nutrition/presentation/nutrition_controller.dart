@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/database/local_database.dart';
 import '../../dashboard/presentation/dashboard_controller.dart';
+import '../../coach/data/coach_models.dart';
 import '../data/nutrition_models.dart';
 import '../data/offline_meal_repository.dart';
 import '../data/sync_service.dart';
@@ -19,6 +20,7 @@ class NutritionViewState {
     required this.goal,
     required this.offline,
     this.visionTasks = const [],
+    this.nextMeal,
   });
 
   final DailyNutritionModel daily;
@@ -26,6 +28,7 @@ class NutritionViewState {
   final NutritionGoalModel? goal;
   final bool offline;
   final List<VisionTaskRecord> visionTasks;
+  final NextMealPlanModel? nextMeal;
 }
 
 class NutritionController extends AsyncNotifier<NutritionViewState> {
@@ -44,12 +47,19 @@ class NutritionController extends AsyncNotifier<NutritionViewState> {
       final daily = await api.fetchDailyNutrition(date);
       final meals = await api.fetchMeals(date);
       final goal = await api.fetchNutritionGoal(date);
+      NextMealPlanModel? nextMeal;
+      try {
+        nextMeal = await api.fetchNextMeal();
+      } on Object {
+        nextMeal = null;
+      }
       return NutritionViewState(
         daily: _mergePending(daily, pending),
         meals: [...meals, ...pending],
         goal: goal,
         offline: false,
         visionTasks: visionTasks,
+        nextMeal: nextMeal,
       );
     } on Object {
       return NutritionViewState(

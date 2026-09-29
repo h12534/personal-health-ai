@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../profile/presentation/profile_screen.dart';
 import '../../nutrition/presentation/nutrition_screen.dart';
+import '../../coach/presentation/coach_screen.dart';
+import '../../coach/presentation/coach_controller.dart';
+import '../../coach/data/coach_models.dart';
 import '../data/dashboard_model.dart';
 import 'dashboard_controller.dart';
 
@@ -26,10 +29,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             _DashboardTab(onAddWeight: _showWeightDialog),
             const NutritionScreen(),
             const _ComingSoon(title: '训练', icon: Icons.fitness_center_outlined),
-            const _ComingSoon(
-              title: 'AI 教练',
-              icon: Icons.auto_awesome_outlined,
-            ),
+            const CoachScreen(),
             const ProfileScreen(),
           ],
         ),
@@ -125,7 +125,11 @@ class _DashboardTab extends ConsumerWidget {
           ),
         ),
       ),
-      data: (data) => DashboardContent(data: data, onAddWeight: onAddWeight),
+      data: (data) => DashboardContent(
+        data: data,
+        onAddWeight: onAddWeight,
+        trend: ref.watch(weightTrendProvider).valueOrNull,
+      ),
     );
   }
 }
@@ -135,10 +139,12 @@ class DashboardContent extends StatelessWidget {
     super.key,
     required this.data,
     required this.onAddWeight,
+    this.trend,
   });
 
   final DashboardModel data;
   final VoidCallback onAddWeight;
+  final WeightTrendModel? trend;
 
   @override
   Widget build(BuildContext context) {
@@ -186,6 +192,26 @@ class DashboardContent extends StatelessWidget {
               ),
             ),
           ),
+          if (trend case final value?) ...[
+            const SizedBox(height: 10),
+            Card(
+              child: ListTile(
+                leading: Icon(
+                  value.plateau
+                      ? Icons.pause_circle_outline
+                      : Icons.show_chart_outlined,
+                ),
+                title: Text(
+                  value.direction == 'insufficient_data'
+                      ? '体重趋势 · 数据不足'
+                      : value.plateau
+                          ? '体重趋势 · 暂时停滞'
+                          : '体重趋势 · ${_trendLabel(value.direction)}',
+                ),
+                subtitle: Text(value.note),
+              ),
+            ),
+          ],
           const SizedBox(height: 14),
           Card(
             child: Padding(
@@ -285,6 +311,12 @@ class DashboardContent extends StatelessWidget {
     final prefix = value > 0 ? '+' : '';
     return '$prefix${value.toStringAsFixed(1)} kg';
   }
+
+  static String _trendLabel(String value) => switch (value) {
+        'down' => '下降中',
+        'up' => '上升中',
+        _ => '相对稳定',
+      };
 }
 
 class _MetricCard extends StatelessWidget {
