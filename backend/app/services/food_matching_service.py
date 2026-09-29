@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.diet_coach import Canteen, CanteenDish, CanteenStall
 from app.models.food import FoodItem
 from app.models.meal_analysis import PersonalFoodMemory
 from app.repositories.food_repository import FoodRepository
@@ -58,6 +59,24 @@ class FoodMatchingService:
     ) -> FoodMatch:
         names = self._names(detected_name, aliases or [])
         location = location_context or "unspecified"
+        canteen_dishes = await self.session.scalars(
+            select(CanteenDish)
+            .join(CanteenStall, CanteenStall.id == CanteenDish.stall_id)
+            .join(Canteen, Canteen.id == CanteenStall.canteen_id)
+            .where(
+                Canteen.user_id == user_id,
+                Canteen.is_active.is_(True),
+                CanteenStall.is_active.is_(True),
+                CanteenDish.is_available.is_(True),
+                CanteenDish.food_item_id.is_not(None),
+            )
+            .order_by(CanteenDish.times_logged.desc(), CanteenDish.favorite.desc())
+        )
+        for dish in canteen_dishes.all():
+            if normalize_food_name(dish.name) in names and dish.food_item_id is not None:
+                food = await self.foods.by_id(user_id, dish.food_item_id)
+                if food is not None:
+                    return FoodMatch(food, "canteen_dish", float(dish.confidence))
         memory = await self.session.scalar(
             select(PersonalFoodMemory)
             .options(selectinload(PersonalFoodMemory.confirmed_food))
