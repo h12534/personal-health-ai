@@ -1,0 +1,6 @@
+{
+  "error": {
+    "type": "provider_unavailable",
+    "message": "Synthetic fixture only; never returned as a successful result."
+  }
+}

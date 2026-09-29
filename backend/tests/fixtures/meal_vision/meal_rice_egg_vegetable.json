@@ -1,0 +1,46 @@
+{
+  "no_food_detected": false,
+  "foods": [
+    {
+      "detected_name": "米饭",
+      "aliases": ["白米饭"],
+      "estimated_weight_g": 180,
+      "weight_range": {"min_g": 140, "max_g": 220},
+      "portion_description": "约一碗",
+      "cooking_method": "蒸",
+      "recognition_confidence": 0.97,
+      "portion_confidence": 0.75,
+      "visible_components": ["米饭"],
+      "possible_hidden_ingredients": [],
+      "possible_oil_weight": null
+    },
+    {
+      "detected_name": "鸡蛋",
+      "aliases": ["煮鸡蛋"],
+      "estimated_weight_g": 55,
+      "weight_range": {"min_g": 45, "max_g": 65},
+      "portion_description": "约一个",
+      "cooking_method": "煮",
+      "recognition_confidence": 0.95,
+      "portion_confidence": 0.88,
+      "visible_components": ["鸡蛋"],
+      "possible_hidden_ingredients": [],
+      "possible_oil_weight": null
+    },
+    {
+      "detected_name": "清炒西兰花",
+      "aliases": ["西兰花"],
+      "estimated_weight_g": 100,
+      "weight_range": {"min_g": 70, "max_g": 140},
+      "portion_description": "约半碗",
+      "cooking_method": "清炒",
+      "recognition_confidence": 0.91,
+      "portion_confidence": 0.67,
+      "visible_components": ["西兰花"],
+      "possible_hidden_ingredients": ["盐"],
+      "possible_oil_weight": {"min_g": 3, "max_g": 8}
+    }
+  ],
+  "overall_confidence": 0.86,
+  "warnings": ["份量需要用户确认"]
+}

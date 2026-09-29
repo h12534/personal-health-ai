@@ -1,0 +1,6 @@
+{
+  "no_food_detected": false,
+  "foods": [{"detected_name": "米饭", "unexpected": true}],
+  "overall_confidence": 2,
+  "warnings": []
+}

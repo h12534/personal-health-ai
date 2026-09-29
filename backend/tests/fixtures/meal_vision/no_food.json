@@ -1,0 +1,6 @@
+{
+  "no_food_detected": true,
+  "foods": [],
+  "overall_confidence": 0.98,
+  "warnings": ["画面中未发现食物"]
+}

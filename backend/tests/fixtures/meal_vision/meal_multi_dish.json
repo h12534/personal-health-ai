@@ -1,0 +1,33 @@
+{
+  "no_food_detected": false,
+  "foods": [
+    {
+      "detected_name": "米饭",
+      "aliases": [],
+      "estimated_weight_g": 150,
+      "weight_range": {"min_g": 110, "max_g": 200},
+      "portion_description": "一碗",
+      "cooking_method": "蒸",
+      "recognition_confidence": 0.9,
+      "portion_confidence": 0.65,
+      "visible_components": ["米饭"],
+      "possible_hidden_ingredients": [],
+      "possible_oil_weight": null
+    },
+    {
+      "detected_name": "鸡胸肉",
+      "aliases": ["鸡肉"],
+      "estimated_weight_g": 120,
+      "weight_range": {"min_g": 80, "max_g": 170},
+      "portion_description": "一份",
+      "cooking_method": "煎",
+      "recognition_confidence": 0.83,
+      "portion_confidence": 0.58,
+      "visible_components": ["鸡肉块"],
+      "possible_hidden_ingredients": ["酱油", "盐"],
+      "possible_oil_weight": {"min_g": 4, "max_g": 12}
+    }
+  ],
+  "overall_confidence": 0.74,
+  "warnings": []
+}
