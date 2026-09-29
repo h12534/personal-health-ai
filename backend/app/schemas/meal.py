@@ -44,6 +44,14 @@ class MealItemWrite(BaseModel):
     amount_unit: AmountUnit
 
 
+class MealItemUpdate(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
+
+    food_id: UUID | None = None
+    amount: Decimal | None = Field(default=None, gt=0, le=100000, decimal_places=3)
+    amount_unit: AmountUnit | None = None
+
+
 class MealItemRead(BaseModel):
     id: UUID
     food_id: UUID | None
