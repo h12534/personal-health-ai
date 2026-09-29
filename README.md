@@ -2,7 +2,7 @@
 
 一个面向个人长期使用的私人健康操作系统。项目从稳健减脂、保留肌肉和建立力量训练习惯出发，逐步连接身体数据、现实饮食、训练、活动、睡眠、体检、知识库、提醒和 AI 教练。
 
-当前仓库已完成 Phase 0–2。除认证、健康档案、体重趋势外，现已具备食物库、自定义食物、收藏/最近使用、餐次与条目、营养目标历史、每日/区间汇总、真实 Dashboard 营养数据，以及 Flutter 离线优先饮食记录链路。
+当前仓库已完成 Phase 0–3。除认证、健康档案、体重趋势和完整手工记餐外，现已具备单张餐食照片安全上传、结构化视觉识别、食物匹配、重量/营养区间、隐藏用油、可编辑草稿、原子确认、个人纠正记忆，以及 Flutter 拍照/相册与离线续传链路。
 
 ## 核心原则
 
@@ -44,6 +44,8 @@ storage/                 本地私有文件/备份挂载占位目录
 - [ROADMAP.md](ROADMAP.md)
 - [BACKUP_RESTORE.md](BACKUP_RESTORE.md)
 - [PHASE2_NOTES.md](PHASE2_NOTES.md)
+- [PHASE3_MEAL_VISION.md](PHASE3_MEAL_VISION.md)
+- [REAL_VISION_TEST.md](REAL_VISION_TEST.md)
 
 ## 本地后端
 
@@ -71,6 +73,20 @@ ruff check .
 ruff format --check .
 mypy --no-incremental app
 ```
+
+Phase 3 默认使用 `VISION_PROVIDER=mock`，不需要 API Key。上传后结果仍是草稿，必须调用确认接口才会创建正式餐食。要启用远程兼容 Provider，设置 `VISION_PROVIDER=openai_compatible`、`VISION_BASE_URL`、`VISION_API_KEY`、`VISION_MODEL`，并由用户在“我的”页明确同意第三方图片分析。
+
+移动端平台目录通过 Flutter 生成：
+
+```bash
+cd mobile
+flutter create --platforms=android,ios --org dev.personalhealthos .
+dart run tool/configure_platforms.dart
+flutter pub get
+flutter run
+```
+
+脚本会写入 iOS 相机/相册用途说明并设置 Android minSdk 24。客户端把图片限制到最长边 2048、JPEG 质量 86、移除 EXIF；离线任务和本地图片会保存在 Drift/应用文档目录，用户可联网后继续或改用手工记录。
 
 ## Docker Compose
 

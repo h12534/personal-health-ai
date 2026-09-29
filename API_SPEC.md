@@ -68,7 +68,25 @@ Base URL：`/api/v1`。所有时间为 ISO 8601，日期为 `YYYY-MM-DD`，数�
 
 `meal.eaten_at` 必须包含时区。服务端转为 UTC 保存，并按健康档案的时区（缺省 `Asia/Shanghai`）解释日期范围。目标热量接受范围为 1200–10000 kcal；1000 kcal 等低值直接返回 422。
 
+## Phase 3：餐食图片分析
+
+| Method | Path | 用途 |
+|---|---|---|
+| POST | `/meals/analyze-image` | multipart 单图上传，支持 `Idempotency-Key`，返回分析状态/草稿 |
+| GET | `/meals/analyses/{analysis_id}` | 轮询 pending/processing 或读取完整草稿 |
+| PATCH | `/meals/analyses/{analysis_id}/items/{item_id}` | 修改匹配、名称、中心/范围克重、份量或烹饪方式 |
+| POST | `/meals/analyses/{analysis_id}/items` | 从食物库补充遗漏食物 |
+| DELETE | `/meals/analyses/{analysis_id}/items/{item_id}` | 从草稿软删除错误条目 |
+| POST | `/meals/analyses/{analysis_id}/reanalyze` | 在次数上限内重新分析同一图片 |
+| POST | `/meals/analyses/{analysis_id}/confirm` | 原子创建 `vision_confirmed` 正式餐次，支持幂等重放 |
+| DELETE | `/meals/analyses/{analysis_id}` | 删除未确认草稿和私有图片 |
+| PATCH | `/profile/privacy/meal-vision` | 更新第三方视觉同意和图片长期保留选择 |
+
+上传字段：`image`（JPEG/PNG/WEBP，最大 10 MB），可选 `location_context`、`meal_type`、含时区的 `eaten_at` 与 `note`。同一用户和 `Idempotency-Key` 返回同一分析；无 Key 时以原始上传 SHA-256 生成幂等键。返回状态包括 `pending, processing, completed, failed, confirmed, expired`。
+
+分析响应包含匹配食物、中心/上下限克重、由食物库计算的中心营养和热量范围、识别/份量/匹配置信度、隐藏成分和警告。Provider 原始响应及图片路径不对客户端暴露。`confirm` 前任何分析都不会出现在 `/meals`、每日营养或 Dashboard。
+
 ## 后续资源
 
-保留 `/meals/analyze`, `/diet-plan`, `/training`, `/workouts`, `/activity`, `/sleep`, `/water`, `/labs`, `/reports`, `/ai/chat`, `/knowledge`, `/reminders`。图像识别属于 Phase 3：先返回候选与范围，只有用户确认后才写入正式餐次。
+保留 `/diet-plan`, `/training`, `/workouts`, `/activity`, `/sleep`, `/water`, `/labs`, `/reports`, `/ai/chat`, `/knowledge`, `/reminders`。
 

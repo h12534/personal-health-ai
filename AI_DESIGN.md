@@ -5,12 +5,12 @@
 业务层只依赖以下协议：
 
 - `LLMProvider.generate(request) -> LLMResponse`
-- `VisionProvider.analyze_food(image, context) -> FoodEstimate`
+- `VisionProvider.analyze_meal(image_bytes, content_type, context) -> VisionProviderResponse`
 - `EmbeddingProvider.embed(texts) -> vectors`
 
 `AIGateway` 负责超时、重试、熔断、结构化输出校验、Token/成本记录和 Provider 路由。API Key、Base URL、模型名全部来自环境或加密后台配置，业务代码不出现 SDK 调用。
 
-OpenAI 实现计划使用 Responses API；图像识别以 `input_image` 发送受控的临时 URL 或 data URL，并要求 JSON Schema 结构化结果。该实现细节封装在 Provider 内，可替换为 Gemini、Claude、OpenAI-compatible 或本地模型。
+Phase 3 已实现 `MockVisionProvider` 与 `OpenAICompatibleVisionProvider`。兼容 Provider 通过 `/chat/completions` 发送 data URL 并要求严格 JSON Schema；超时和尝试次数有硬上限。该实现细节封装在 Provider 内，可替换为其他远程或本地模型。
 
 参考官方文档：[Responses API](https://developers.openai.com/api/reference/cli/resources/responses/methods/create)、[图像输入](https://developers.openai.com/api/docs/guides/images-vision)、[Embeddings](https://developers.openai.com/api/docs/models/text-embedding-3-small)。
 
@@ -18,11 +18,20 @@ OpenAI 实现计划使用 Responses API；图像识别以 `input_image` 发送�
 
 1. 验证 MIME、大小和解码结果，私有存储原图。
 2. 构建最小上下文：餐次、食堂/商家、个人餐盘记忆。
-3. Vision 返回食物列表、克重范围、烹饪方式、隐藏油脂风险、营养区间和置信度。
-4. 标准食物库 + Personal Food Memory 校准。
-5. 用户确认/修改后写正式餐次，同时保留 AI 原始估计用于后续校准。
+3. Vision 只返回食物列表、克重范围、烹饪方式、隐藏油脂线索和置信度，不返回最终营养。
+4. Personal Food Memory、自定义食物、精确名称、别名和模糊匹配依次解析到 Phase 2 食物库。
+5. `NutritionCalculator` 按中心/上下限克重确定性计算营养；可能用油形成独立条目。
+6. 用户确认/修改后在单事务内写正式餐次，并保存聚合纠正记忆。
 
 绝不把照片估算包装成精确称量；UI 默认显示区间而非虚假精确值。
+
+## Phase 3 结构化契约与成本
+
+Prompt `meal_v1` 和 Pydantic `VisionMealResult` 共同约束无食物标记、最多 30 个食物、中心/范围克重、烹饪方式、可见与隐藏成分、可选用油范围以及两类视觉置信度。业务层再次验证额外字段、数值边界和范围顺序。Provider 文本永远不会作为 HTML、SQL 或路径使用。
+
+`ai_usage_logs` 记录 Provider、模型、Prompt 对应分析、Token、图片数、延迟、状态、错误码和 Provider 可得的成本。通用兼容层不硬编码可能过期的模型价格；缺少账单信息时成本为 NULL。每天限额、重分析限额、原始响应限长和 Retention 均由环境配置。
+
+远程视觉请求必须先获得 `allow_third_party_vision` 同意。Mock 在本机处理，不视为第三方。完整细节见 `PHASE3_MEAL_VISION.md`。
 
 ## RAG
 

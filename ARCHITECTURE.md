@@ -61,6 +61,25 @@ MealItem ──recalculate──► MealLog cached totals
 
 Dashboard 规则引擎只使用晨重完成度、当地时间、餐次状态、热量/蛋白质进度与体重趋势，不调用 LLM。
 
+## Phase 3 视觉识别边界
+
+```text
+UploadFile → ImageValidationService → StorageProvider
+                                      │
+                                      ▼
+MealAnalysisSession → VisionProvider → strict VisionMealResult
+        │                                  │
+        ├─ FoodMatchingService ◄───────────┘
+        ├─ NutritionRangeService → Phase 2 NutritionCalculator
+        └─ user confirm transaction → MealLog / MealItem / PersonalFoodMemory
+```
+
+图像、分析会话和草稿条目独立于正式餐食，因此 Provider 超时、无食物、草稿删除或过期都不会污染 Phase 2 数据。远程调用由 `VisionProvider` 协议隔离；默认 Mock 与真实 Provider 使用同一结构化契约。API 可同步内联处理 Mock，也可只排队给 Celery；客户端统一按状态轮询。
+
+确认阶段对分析行加锁，在同一数据库事务内创建餐次、营养快照、确认状态和个人纠正记忆。任何未匹配条目或营养换算错误都会回滚整个餐次。AI 不计算最终营养，业务层只把识别克重交给现有确定性计算器。
+
+Flutter 的 `local_vision_tasks` 与 Phase 2 `sync_outbox` 分离：餐食照片可能较大、需要用户查看草稿，不能像普通小 payload 一样静默重放。离线时保存应用私有图片和任务；用户显式恢复后上传。
+
 ## 可观测性
 
 日志使用请求 ID 和结构化字段；禁止密码、完整 Token、API Key、体检全文与身体照片路径。后续接入指标：HTTP 延迟、任务失败率、通知命中率、AI Token/成本、检索质量。
