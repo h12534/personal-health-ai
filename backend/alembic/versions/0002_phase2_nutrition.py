@@ -149,6 +149,7 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("user_id", "effective_from", name="uq_goal_user_effective_from"),
     )
     op.create_index("ix_goal_user_effective", "nutrition_goals", ["user_id", "effective_from"])
 

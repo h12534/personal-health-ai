@@ -157,7 +157,10 @@ class NutritionContent extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          const Text('按实际份量记录，营养值会自动换算。'),
+          Text(
+            '${data.daily.date.year}年${data.daily.date.month}月${data.daily.date.day}日 · '
+            '按实际份量记录，营养值会自动换算。',
+          ),
           const SizedBox(height: 18),
           Card(
             child: Padding(
@@ -315,8 +318,17 @@ class _MealSection extends StatelessWidget {
                     subtitle: Text(
                       '${item.amount.toStringAsFixed(1)} ${item.unit}',
                     ),
-                    trailing: Text(
-                      '${item.nutrition.calories.toStringAsFixed(0)} kcal',
+                    trailing: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                            '${item.nutrition.calories.toStringAsFixed(0)} kcal'),
+                        Text(
+                          '蛋白质 ${item.nutrition.protein.toStringAsFixed(1)} g',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ),
                     onTap: () => onEditItem(meal, item),
                   ),

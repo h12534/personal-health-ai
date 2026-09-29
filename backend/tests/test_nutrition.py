@@ -149,6 +149,27 @@ async def test_goal_history_validation_suggestion_and_ownership(
         },
     )
     assert second.status_code == 201
+    duplicate = await client.post(
+        "/api/v1/nutrition/goals",
+        headers=auth_headers,
+        json={
+            "effective_from": tomorrow.isoformat(),
+            "calorie_target": 2050,
+            "protein_target_g": 145,
+        },
+    )
+    assert duplicate.status_code == 409
+    yesterday = today - timedelta(days=1)
+    historical = await client.post(
+        "/api/v1/nutrition/goals",
+        headers=auth_headers,
+        json={
+            "effective_from": yesterday.isoformat(),
+            "calorie_target": 2300,
+            "protein_target_g": 130,
+        },
+    )
+    assert historical.status_code == 201
     today_goal = await client.get(
         f"/api/v1/nutrition/goals/current?date={today}", headers=auth_headers
     )
@@ -157,6 +178,10 @@ async def test_goal_history_validation_suggestion_and_ownership(
     )
     assert today_goal.json()["data"]["id"] == first.json()["data"]["id"]
     assert tomorrow_goal.json()["data"]["id"] == second.json()["data"]["id"]
+    historical_goal = await client.get(
+        f"/api/v1/nutrition/goals/current?date={yesterday}", headers=auth_headers
+    )
+    assert historical_goal.json()["data"]["id"] == historical.json()["data"]["id"]
 
     suggested = await client.get("/api/v1/nutrition/goals/suggested", headers=auth_headers)
     assert suggested.status_code == 200

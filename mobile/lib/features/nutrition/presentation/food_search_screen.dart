@@ -84,6 +84,12 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                     selected: _mode == 'favorites',
                     onSelected: (_) => _load(mode: 'favorites'),
                   ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('常见'),
+                    selected: _mode == 'common',
+                    onSelected: (_) => _load(mode: 'common'),
+                  ),
                 ],
               ),
             ),

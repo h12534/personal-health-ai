@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/local_database.dart';
@@ -43,6 +44,9 @@ class SyncService {
           await _database.markOutboxSynced(record.id);
         } on Object catch (error) {
           await _database.markOutboxFailed(record.id, error.toString());
+          debugPrint(
+            'outbox_sync_failed id=${record.id} operation=${record.operation}',
+          );
           break;
         }
       }

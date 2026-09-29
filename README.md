@@ -2,7 +2,7 @@
 
 一个面向个人长期使用的私人健康操作系统。项目从稳健减脂、保留肌肉和建立力量训练习惯出发，逐步连接身体数据、现实饮食、训练、活动、睡眠、体检、知识库、提醒和 AI 教练。
 
-当前仓库完成 Phase 0 与 Phase 1 的第一条可运行纵向链路：单用户认证、个人健康档案、每日体重、7 日移动平均、周同比、Dashboard API，以及 Flutter 登录/首页/晨重界面骨架。
+当前仓库已完成 Phase 0–2。除认证、健康档案、体重趋势外，现已具备食物库、自定义食物、收藏/最近使用、餐次与条目、营养目标历史、每日/区间汇总、真实 Dashboard 营养数据，以及 Flutter 离线优先饮食记录链路。
 
 ## 核心原则
 
@@ -43,6 +43,7 @@ storage/                 本地私有文件/备份挂载占位目录
 - [SECURITY.md](SECURITY.md)
 - [ROADMAP.md](ROADMAP.md)
 - [BACKUP_RESTORE.md](BACKUP_RESTORE.md)
+- [PHASE2_NOTES.md](PHASE2_NOTES.md)
 
 ## 本地后端
 
@@ -55,6 +56,7 @@ python -m pip install -e ".\backend[dev]"
 Set-Location backend
 $env:DATABASE_URL = "sqlite+aiosqlite:///./health_os.db"
 alembic upgrade head
+python -m app.scripts.seed_foods
 uvicorn app.main:app --reload
 ```
 
@@ -119,7 +121,7 @@ Android 模拟器访问宿主机使用 `10.0.2.2`；真机请改为同一局域�
 
 ## AI 与知识库
 
-当前提供 `LLMProvider`、`VisionProvider`、`EmbeddingProvider` 协议和禁用态实现。Phase 3 接入食物视觉识别，Phase 6 接入 pgvector RAG。Provider 内部可以使用 OpenAI Responses API，也可切换 Gemini、Claude、OpenAI-compatible 或本地模型；业务模块不直接调用厂商 SDK。
+当前提供 `LLMProvider`、`VisionProvider`、`EmbeddingProvider` 协议和禁用态实现。Phase 2 的搜索、营养计算、聚合和 Dashboard 建议均不调用模型。Phase 3 才接入食物视觉识别，Phase 6 接入 pgvector RAG。
 
 知识导入将在 Phase 6 提供命令；来源以 WHO、CDC、NIH/NIDDK、ACSM、正式临床指南与高质量系统综述为主，并保存版本、证据等级和 URL。
 
@@ -129,13 +131,14 @@ Android 模拟器访问宿主机使用 `10.0.2.2`；真机请改为同一局域�
 
 ## 当前限制
 
-- Phase 1 尚未实现餐食、训练、提醒、RAG 和报告的业务表/API。
+- Phase 2 尚未实现食物图片识别、OCR、训练、提醒、RAG 和报告；这些仍按路线图后续交付。
+- 移动端当前离线 Outbox 覆盖餐次和餐次条目的创建；服务端已支持餐次/条目的完整 CRUD。
 - 当前本地机器若没有 Docker/Flutter，只能运行 Python 后端验证；CI 会用正式 Flutter SDK 执行移动端 analyze/test。
 - HTTPS 证书、域名、Push 凭据和真实 AI Key 都属于部署阶段配置，不在仓库中提供默认秘密。
 
 ## 常见问题
 
-**为什么 Dashboard 的营养数字是 0？** Phase 1 只接入体重纵向链路；Phase 2 会由餐次记录聚合，不用 AI 做加法。
+**为什么 Dashboard 的营养数字是 0？** 只有当天尚未记录餐食时才为 0。Phase 2 从餐次快照聚合真实数据，不用 AI 做加法。
 
 **为什么一天体重上涨不触发减热量？** 水分、盐、碳水、排便、训练炎症和睡眠都会造成短期波动；系统至少看 7–14 天趋势。
 

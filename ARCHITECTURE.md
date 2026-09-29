@@ -3,7 +3,7 @@
 ## 总览
 
 ```text
-Flutter App (Drift 离线队列，后续接 HealthKit/Health Connect)
+Flutter App (Drift/SQLite + Outbox，后续接 HealthKit/Health Connect)
         │ HTTPS / JSON
         ▼
 Nginx ──► FastAPI 模块化单体 ──► PostgreSQL + pgvector
@@ -38,7 +38,28 @@ Nginx ──► FastAPI 模块化单体 ──► PostgreSQL + pgvector
 
 ## 离线同步
 
-移动端记录包含 `local_id`、`server_id`、`sync_status`、`updated_at`。客户端使用 UUID 作为幂等键；服务端写接口后续接收 `Idempotency-Key`。冲突默认 last-write-wins，但体重/训练等事实记录保留冲突副本供用户确认。
+Phase 2 的移动端餐次与条目先写入 Drift/SQLite：本地事务同时创建业务记录与 `sync_outbox`。记录包含 `local_id`、`server_id`、`sync_status`、`updated_at`、`deleted_at`；Outbox 保存操作、最小必要 payload、稳定幂等键、尝试次数与错误摘要。
+
+应用启动或网络恢复时按创建时间顺序补传。服务端的餐次创建与条目添加接受 `Idempotency-Key`，即使响应丢失后重试也不会重复写入。成功后回填 `server_id` 并标记 `synced`；失败标记 `failed`，稍后重试。当前不引入 CRDT；服务端条目更新/删除在线执行，离线创建条目在同步前可本地修改或取消。
+
+食物搜索结果写入本地 `food_cache`。无网络时可使用已缓存食物继续创建餐食；退出登录会清除本地健康记录、Outbox 和食物缓存，避免跨账户残留。
+
+## Phase 2 营养数据流
+
+```text
+FoodItem + amount/unit
+        │ PortionConversionService
+        ▼
+NutritionCalculator (Decimal, 0.001)
+        │ snapshot
+        ▼
+MealItem ──recalculate──► MealLog cached totals
+        │
+        ├──► DailyNutritionService ──► /nutrition/daily + /range
+        └──► DashboardRuleEngine ────► real metrics + deterministic next action
+```
+
+Dashboard 规则引擎只使用晨重完成度、当地时间、餐次状态、热量/蛋白质进度与体重趋势，不调用 LLM。
 
 ## 可观测性
 

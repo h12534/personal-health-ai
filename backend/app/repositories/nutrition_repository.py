@@ -35,3 +35,16 @@ class NutritionGoalRepository:
             )
         )
         return cast(NutritionGoal | None, result)
+
+    async def next_after(self, user_id: UUID, after: date) -> NutritionGoal | None:
+        result = await self.session.scalar(
+            select(NutritionGoal)
+            .where(
+                NutritionGoal.user_id == user_id,
+                NutritionGoal.effective_from > after,
+                NutritionGoal.deleted_at.is_(None),
+            )
+            .order_by(NutritionGoal.effective_from.asc())
+            .limit(1)
+        )
+        return cast(NutritionGoal | None, result)

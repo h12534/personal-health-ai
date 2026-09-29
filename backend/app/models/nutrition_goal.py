@@ -2,7 +2,17 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy import (
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -10,7 +20,10 @@ from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 class NutritionGoal(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "nutrition_goals"
-    __table_args__ = (Index("ix_goal_user_effective", "user_id", "effective_from"),)
+    __table_args__ = (
+        Index("ix_goal_user_effective", "user_id", "effective_from"),
+        UniqueConstraint("user_id", "effective_from", name="uq_goal_user_effective_from"),
+    )
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     effective_from: Mapped[date] = mapped_column(Date, nullable=False)

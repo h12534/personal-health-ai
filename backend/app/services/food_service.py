@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
@@ -8,6 +9,8 @@ from app.models.food import FoodAlias, FoodFavorite, FoodItem
 from app.repositories.food_repository import FoodRepository
 from app.schemas.food import FavoriteRead, FoodCreate, FoodRead, FoodUpdate
 from app.utils.text import normalize_food_name
+
+logger = structlog.get_logger()
 
 
 class FoodService:
@@ -44,6 +47,7 @@ class FoodService:
         self.session.add(food)
         await self.session.commit()
         await self.session.refresh(food, attribute_names=["aliases"])
+        logger.info("food_created", food_id=str(food.id), user_id=str(user_id))
         return self._read(food, False)
 
     async def update(self, user_id: UUID, food_id: UUID, payload: FoodUpdate) -> FoodRead:
@@ -59,6 +63,7 @@ class FoodService:
             await self._sync_aliases(food, payload.aliases or [])
         await self.session.commit()
         await self.session.refresh(food, attribute_names=["aliases"])
+        logger.info("food_updated", food_id=str(food.id), user_id=str(user_id))
         favorites = await self.repository.favorite_ids(user_id, [food.id])
         return self._read(food, food.id in favorites)
 
@@ -69,6 +74,7 @@ class FoodService:
         food.deleted_at = datetime.now(UTC)
         food.is_active = False
         await self.session.commit()
+        logger.info("food_deleted", food_id=str(food.id), user_id=str(user_id))
 
     async def add_favorite(self, user_id: UUID, food_id: UUID) -> FoodRead:
         food = await self.repository.by_id(user_id, food_id)

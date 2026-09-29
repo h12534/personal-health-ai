@@ -235,6 +235,30 @@ class DashboardContent extends StatelessWidget {
                 icon: Icons.egg_outlined,
               ),
               _MetricCard(
+                label: '碳水',
+                value: '${data.carbsG.toStringAsFixed(0)} g',
+                target: data.carbsTargetG == null
+                    ? '今日累计'
+                    : '/ ${data.carbsTargetG!.toStringAsFixed(0)} g',
+                icon: Icons.rice_bowl_outlined,
+              ),
+              _MetricCard(
+                label: '脂肪',
+                value: '${data.fatG.toStringAsFixed(0)} g',
+                target: data.fatTargetG == null
+                    ? '今日累计'
+                    : '/ ${data.fatTargetG!.toStringAsFixed(0)} g',
+                icon: Icons.opacity_outlined,
+              ),
+              _MetricCard(
+                label: '膳食纤维',
+                value: '${data.fiberG.toStringAsFixed(0)} g',
+                target: data.fiberTargetG == null
+                    ? '目标待设置'
+                    : '/ ${data.fiberTargetG!.toStringAsFixed(0)} g',
+                icon: Icons.eco_outlined,
+              ),
+              _MetricCard(
                 label: '步数',
                 value: '${data.steps}',
                 target: '/ ${data.stepsTarget}',
