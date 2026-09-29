@@ -89,9 +89,9 @@
 ## Phase 4 实体
 
 - `diet_adjustments`：前后目标、状态、理由、证据快照、规则版本、输入哈希、审批人与冷却日期。
-- `hunger_logs`：时间、1–10 级、场景和备注。
+- `hunger_logs`：时间、1–5 级饥饿/渴望程度、场景和备注。
 - `canteens / canteen_stalls / canteen_dishes`：用户食堂层级和单份营养快照。
-- `personal_dietary_memories`：偏好、厌恶、过敏、例行与场景记忆，可停用。
+- `personal_dietary_memories`：类型、键、值、来源、置信度、最后确认时间与可停用状态。
 - `personal_energy_models`：公式/观察/混合 TDEE、置信度、完整度和证据。
 - `saved_meals / saved_meal_items`：可重复使用的餐食与营养快照。
 - `coach_conversations / coach_messages`：会话、意图、Provider、模型和校验后的结构化响应。

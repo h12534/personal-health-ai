@@ -215,12 +215,21 @@ async def test_hunger_and_personal_memory_are_user_managed(
     memory = await client.post(
         "/api/v1/diet/memories",
         headers=auth_headers,
-        json={"kind": "preference", "value": "更喜欢米饭而不是面条"},
+        json={"kind": "preference", "key": "staple", "value": "更喜欢米饭而不是面条"},
     )
     assert memory.status_code == 201
     memory_id = memory.json()["data"]["id"]
+    assert memory.json()["data"]["source"] == "explicit_user_statement"
+    assert memory.json()["data"]["last_confirmed_at"] is not None
+    updated = await client.patch(
+        f"/api/v1/diet/memories/{memory_id}",
+        headers=auth_headers,
+        json={"kind": "preference", "key": "staple", "value": "更喜欢米饭，也可以吃面"},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["data"]["value"] == "更喜欢米饭，也可以吃面"
     listed = await client.get("/api/v1/diet/memories", headers=auth_headers)
     assert listed.status_code == 200
-    assert listed.json()["data"][0]["value"] == "更喜欢米饭而不是面条"
+    assert listed.json()["data"][0]["value"] == "更喜欢米饭，也可以吃面"
     deleted = await client.delete(f"/api/v1/diet/memories/{memory_id}", headers=auth_headers)
     assert deleted.status_code == 204

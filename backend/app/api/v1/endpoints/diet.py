@@ -189,10 +189,12 @@ async def create_memory(
     value = PersonalDietaryMemory(
         user_id=user.id,
         kind=payload.kind,
+        memory_key=payload.key,
         value=payload.value.strip(),
         normalized_value=normalize_food_name(payload.value),
         confidence=Decimal("1"),
-        source="user",
+        source="explicit_user_statement",
+        last_confirmed_at=datetime.now(UTC),
     )
     session.add(value)
     await session.commit()
@@ -207,6 +209,30 @@ async def list_memories(
 ) -> DataResponse[list[DietaryMemoryRead]]:
     values = await DietCoachRepository(session).memories(user.id)
     return DataResponse(data=[DietaryMemoryRead.model_validate(value) for value in values])
+
+
+@router.patch("/memories/{memory_id}", response_model=DataResponse[DietaryMemoryRead])
+async def update_memory(
+    memory_id: UUID,
+    payload: DietaryMemoryWrite,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
+) -> DataResponse[DietaryMemoryRead]:
+    value = await DietCoachRepository(session).memory(user.id, memory_id)
+    if value is None:
+        from app.core.errors import AppError
+
+        raise AppError("memory_not_found", "Dietary memory was not found.", 404)
+    value.kind = payload.kind
+    value.memory_key = payload.key
+    value.value = payload.value.strip()
+    value.normalized_value = normalize_food_name(payload.value)
+    value.confidence = Decimal("1")
+    value.source = "explicit_user_statement"
+    value.last_confirmed_at = datetime.now(UTC)
+    await session.commit()
+    await session.refresh(value)
+    return DataResponse(data=DietaryMemoryRead.model_validate(value))
 
 
 @router.delete("/memories/{memory_id}", status_code=status.HTTP_204_NO_CONTENT)

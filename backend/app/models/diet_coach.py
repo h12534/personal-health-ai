@@ -129,10 +129,14 @@ class PersonalDietaryMemory(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    memory_key: Mapped[str | None] = mapped_column(String(120), nullable=True)
     value: Mapped[str] = mapped_column(String(500), nullable=False)
     normalized_value: Mapped[str] = mapped_column(String(500), nullable=False)
     confidence: Mapped[Decimal] = mapped_column(Numeric(4, 3), default=1)
     source: Mapped[str] = mapped_column(String(32), default="user")
+    last_confirmed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 

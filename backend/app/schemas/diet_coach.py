@@ -226,6 +226,7 @@ class MealRecommendationRead(BaseModel):
 
 class DietaryMemoryWrite(BaseModel):
     kind: str = Field(pattern="^(preference|dislike|allergy|routine|context)$")
+    key: str | None = Field(default=None, min_length=1, max_length=120)
     value: str = Field(min_length=1, max_length=500)
 
 
@@ -233,9 +234,12 @@ class DietaryMemoryRead(BaseModel):
     id: UUID
     user_id: UUID
     kind: str
+    key: str | None = Field(validation_alias="memory_key")
     value: str
     confidence: Decimal
     source: str
+    created_at: datetime
+    last_confirmed_at: datetime | None
     is_active: bool
 
     model_config = {"from_attributes": True}

@@ -102,7 +102,7 @@ Base URL：`/api/v1`。所有时间为 ISO 8601，日期为 `YYYY-MM-DD`，数�
 | POST | `/diet/adjustments/{id}/accept` | 接受并建立次日目标版本 |
 | POST | `/diet/adjustments/{id}/decline` | 拒绝建议，保持当前目标 |
 | GET/POST | `/diet/hunger` | 饥饿记录 |
-| GET/POST/DELETE | `/diet/memories` | 可管理的个人饮食记忆 |
+| GET/POST/PATCH/DELETE | `/diet/memories` | 可查看、确认修改和删除的结构化个人饮食记忆 |
 | GET/POST/PATCH/DELETE | `/canteens` | 个人食堂；GET 返回活跃档口与可用菜品树 |
 | POST/PATCH/DELETE | `/canteens/{id}/stalls`、`/canteens/stalls/{id}` | 档口维护 |
 | POST/PATCH/DELETE | `/canteens/stalls/{id}/dishes`、`/canteens/dishes/{id}` | 菜品与收藏维护 |
