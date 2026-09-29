@@ -9,6 +9,10 @@ from app.core.errors import AppError
 from app.core.security import decode_token
 from app.db.session import get_db
 from app.models.user import User
+from app.providers.ai import build_vision_provider
+from app.providers.ai.base import VisionProvider
+from app.providers.storage import get_storage_provider
+from app.providers.storage.base import StorageProvider
 from app.repositories.user_repository import UserRepository
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -32,3 +36,11 @@ async def get_current_user(
 
 
 CurrentUser = User
+
+
+def get_vision_provider() -> VisionProvider:
+    return build_vision_provider()
+
+
+def get_private_storage() -> StorageProvider:
+    return get_storage_provider()

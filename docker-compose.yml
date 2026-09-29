@@ -72,6 +72,25 @@ services:
     restart: unless-stopped
     networks: [internal]
 
+  beat:
+    build:
+      context: ./backend
+    command: ["celery", "-A", "app.jobs.celery_app:celery_app", "beat", "--loglevel=INFO"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-health}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-health_os}
+      REDIS_URL: redis://redis:6379/0
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - private_uploads:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [internal]
+
   nginx:
     image: nginx:1.27-alpine
     ports:

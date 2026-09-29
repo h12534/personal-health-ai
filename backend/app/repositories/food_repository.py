@@ -51,6 +51,16 @@ class FoodRepository:
         )
         return cast(FoodItem | None, result)
 
+    async def all_for_matching(self, user_id: UUID, limit: int = 1000) -> list[FoodItem]:
+        foods = await self.session.scalars(
+            select(FoodItem)
+            .options(selectinload(FoodItem.aliases))
+            .where(*self._visible(user_id))
+            .order_by(FoodItem.is_custom.desc(), FoodItem.normalized_name)
+            .limit(limit)
+        )
+        return list(foods.all())
+
     async def search(
         self,
         user_id: UUID,
