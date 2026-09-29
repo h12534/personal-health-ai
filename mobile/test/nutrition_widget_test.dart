@@ -57,6 +57,7 @@ void main() {
     );
 
     expect(find.text('今日营养'), findsOneWidget);
+    expect(find.text('拍照识别一餐'), findsOneWidget);
     expect(find.textContaining('403 / 2200 kcal'), findsOneWidget);
     expect(find.textContaining('早餐 · 403 kcal'), findsOneWidget);
     expect(find.text('米饭和鸡蛋'), findsOneWidget);

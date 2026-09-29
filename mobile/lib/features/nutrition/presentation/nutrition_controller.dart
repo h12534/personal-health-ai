@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/database/local_database.dart';
 import '../../dashboard/presentation/dashboard_controller.dart';
 import '../data/nutrition_models.dart';
 import '../data/offline_meal_repository.dart';
@@ -17,12 +18,14 @@ class NutritionViewState {
     required this.meals,
     required this.goal,
     required this.offline,
+    this.visionTasks = const [],
   });
 
   final DailyNutritionModel daily;
   final List<MealModel> meals;
   final NutritionGoalModel? goal;
   final bool offline;
+  final List<VisionTaskRecord> visionTasks;
 }
 
 class NutritionController extends AsyncNotifier<NutritionViewState> {
@@ -32,6 +35,8 @@ class NutritionController extends AsyncNotifier<NutritionViewState> {
   Future<NutritionViewState> _load() async {
     final date = DateTime.now();
     final repository = ref.read(offlineMealRepositoryProvider);
+    final visionTasks =
+        await ref.read(localDatabaseProvider).pendingVisionTasks();
     await ref.read(syncServiceProvider).syncPending();
     final pending = await repository.pendingMeals(date);
     try {
@@ -44,6 +49,7 @@ class NutritionController extends AsyncNotifier<NutritionViewState> {
         meals: [...meals, ...pending],
         goal: goal,
         offline: false,
+        visionTasks: visionTasks,
       );
     } on Object {
       return NutritionViewState(
@@ -51,6 +57,7 @@ class NutritionController extends AsyncNotifier<NutritionViewState> {
         meals: pending,
         goal: null,
         offline: true,
+        visionTasks: visionTasks,
       );
     }
   }

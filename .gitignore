@@ -17,6 +17,8 @@ storage/backups/*
 mobile/.dart_tool/
 mobile/.flutter-plugins*
 mobile/build/
+.pub-cache/
+.flutter-tmp/
 mobile/android/local.properties
 mobile/ios/Pods/
 mobile/ios/.symlinks/

@@ -19,7 +19,7 @@ class LocalDatabase extends GeneratedDatabase {
   LocalDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
@@ -91,8 +91,112 @@ class LocalDatabase extends GeneratedDatabase {
           await customStatement(
             'CREATE INDEX ix_local_meal_day ON local_meals(local_date, meal_type)',
           );
+          await _createVisionTaskTable();
+        },
+        onUpgrade: (migrator, from, to) async {
+          if (from < 2) await _createVisionTaskTable();
         },
       );
+
+  Future<void> _createVisionTaskTable() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS local_vision_tasks (
+        local_id TEXT PRIMARY KEY,
+        image_path TEXT NOT NULL,
+        meal_type TEXT NOT NULL,
+        location_context TEXT NOT NULL,
+        analysis_id TEXT,
+        status TEXT NOT NULL,
+        upload_progress REAL NOT NULL DEFAULT 0,
+        last_error TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await customStatement('''
+      CREATE INDEX IF NOT EXISTS ix_vision_task_status
+      ON local_vision_tasks(status, created_at)
+    ''');
+  }
+
+  Future<void> saveVisionTask(VisionTaskRecord task) async {
+    await customInsert(
+      '''
+        INSERT OR REPLACE INTO local_vision_tasks
+          (local_id, image_path, meal_type, location_context, analysis_id,
+           status, upload_progress, last_error, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ''',
+      variables: [
+        Variable<String>(task.localId),
+        Variable<String>(task.imagePath),
+        Variable<String>(task.mealType),
+        Variable<String>(task.locationContext),
+        Variable<String>(task.analysisId),
+        Variable<String>(task.status),
+        Variable<double>(task.uploadProgress),
+        Variable<String>(task.lastError),
+        Variable<String>(task.createdAt.toUtc().toIso8601String()),
+        Variable<String>(task.updatedAt.toUtc().toIso8601String()),
+      ],
+    );
+  }
+
+  Future<void> updateVisionTask(
+    String localId, {
+    String? analysisId,
+    String? status,
+    double? uploadProgress,
+    String? lastError,
+  }) async {
+    final current = await visionTask(localId);
+    if (current == null) return;
+    await saveVisionTask(
+      current.copyWith(
+        analysisId: analysisId,
+        status: status,
+        uploadProgress: uploadProgress,
+        lastError: lastError,
+        clearError: lastError == null && status != null,
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  Future<VisionTaskRecord?> visionTask(String localId) async {
+    final row = await customSelect(
+      'SELECT * FROM local_vision_tasks WHERE local_id = ?',
+      variables: [Variable<String>(localId)],
+    ).getSingleOrNull();
+    return row == null ? null : VisionTaskRecord.fromRow(row);
+  }
+
+  Future<List<VisionTaskRecord>> pendingVisionTasks() async {
+    final rows = await customSelect('''
+      SELECT * FROM local_vision_tasks
+      WHERE status NOT IN ('confirmed', 'cancelled')
+      ORDER BY created_at DESC
+    ''').get();
+    return rows.map(VisionTaskRecord.fromRow).toList();
+  }
+
+  Future<void> deleteVisionTask(
+    String localId, {
+    bool deleteImage = true,
+  }) async {
+    final task = await visionTask(localId);
+    await customUpdate(
+      'DELETE FROM local_vision_tasks WHERE local_id = ?',
+      variables: [Variable<String>(localId)],
+    );
+    if (deleteImage && task != null) {
+      try {
+        await File(task.imagePath).delete();
+      } on FileSystemException {
+        // The picker cache or OS may already have removed the local image.
+      }
+    }
+  }
 
   Future<LocalMealRecord?> pendingMeal(
     String localDate,
@@ -331,12 +435,21 @@ class LocalDatabase extends GeneratedDatabase {
   }
 
   Future<void> clearPrivateData() async {
+    final visionTasks = await pendingVisionTasks();
     await transaction(() async {
+      await customStatement('DELETE FROM local_vision_tasks');
       await customStatement('DELETE FROM sync_outbox');
       await customStatement('DELETE FROM local_meal_items');
       await customStatement('DELETE FROM local_meals');
       await customStatement('DELETE FROM food_cache');
     });
+    for (final task in visionTasks) {
+      try {
+        await File(task.imagePath).delete();
+      } on FileSystemException {
+        // Private file was already removed.
+      }
+    }
   }
 
   Future<void> updatePendingItem(String localId, double amount) async {
@@ -519,6 +632,66 @@ class OutboxRecord {
   final Map<String, dynamic> payload;
   final String idempotencyKey;
   final DateTime createdAt;
+}
+
+class VisionTaskRecord {
+  const VisionTaskRecord({
+    required this.localId,
+    required this.imagePath,
+    required this.mealType,
+    required this.locationContext,
+    required this.status,
+    required this.uploadProgress,
+    required this.createdAt,
+    required this.updatedAt,
+    this.analysisId,
+    this.lastError,
+  });
+
+  factory VisionTaskRecord.fromRow(QueryRow row) => VisionTaskRecord(
+        localId: row.read<String>('local_id'),
+        imagePath: row.read<String>('image_path'),
+        mealType: row.read<String>('meal_type'),
+        locationContext: row.read<String>('location_context'),
+        analysisId: row.readNullable<String>('analysis_id'),
+        status: row.read<String>('status'),
+        uploadProgress: row.read<double>('upload_progress'),
+        lastError: row.readNullable<String>('last_error'),
+        createdAt: DateTime.parse(row.read<String>('created_at')).toLocal(),
+        updatedAt: DateTime.parse(row.read<String>('updated_at')).toLocal(),
+      );
+
+  VisionTaskRecord copyWith({
+    String? analysisId,
+    String? status,
+    double? uploadProgress,
+    String? lastError,
+    bool clearError = false,
+    DateTime? updatedAt,
+  }) =>
+      VisionTaskRecord(
+        localId: localId,
+        imagePath: imagePath,
+        mealType: mealType,
+        locationContext: locationContext,
+        analysisId: analysisId ?? this.analysisId,
+        status: status ?? this.status,
+        uploadProgress: uploadProgress ?? this.uploadProgress,
+        lastError: clearError ? null : lastError ?? this.lastError,
+        createdAt: createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+
+  final String localId;
+  final String imagePath;
+  final String mealType;
+  final String locationContext;
+  final String? analysisId;
+  final String status;
+  final double uploadProgress;
+  final String? lastError;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 }
 
 LazyDatabase _openConnection() => LazyDatabase(() async {

@@ -83,9 +83,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       autofillHints: const [AutofillHints.password],
                       decoration: const InputDecoration(labelText: '密码'),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return '请输入密码';
-                        if (_register && value.length < 12)
+                        if (value == null || value.isEmpty) {
+                          return '请输入密码';
+                        }
+                        if (_register && value.length < 12) {
                           return '首次设置至少 12 位';
+                        }
                         return null;
                       },
                     ),

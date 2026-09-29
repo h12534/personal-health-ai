@@ -58,7 +58,6 @@ class OfflineMealRepository {
       }
 
       final activeMeal = meal;
-      if (activeMeal == null) throw StateError('Unable to create a local meal');
       final itemId = _uuid.v4();
       final nutrition = food.calculate(amount, unit);
       await _database.insertItem(

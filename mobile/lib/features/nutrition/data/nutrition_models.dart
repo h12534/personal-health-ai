@@ -140,8 +140,9 @@ class FoodModel {
 
   double weightFor(double amount, String unit) {
     if (unit == 'g') return amount;
-    if (servingUnit == unit && servingWeightG != null)
+    if (servingUnit == unit && servingWeightG != null) {
       return amount * servingWeightG!;
+    }
     throw ArgumentError('该食物不支持 $unit 份量换算');
   }
 
