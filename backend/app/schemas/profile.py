@@ -32,6 +32,9 @@ class HealthProfileWrite(BaseModel):
     timezone: str = Field(default="Asia/Shanghai", max_length=64)
     allow_third_party_vision: bool = False
     retain_meal_images: bool = False
+    current_goal_phase: str = Field(default="fat_loss", max_length=32)
+    allow_auto_diet_adjustment: bool = False
+    adjustment_cooldown_days: int = Field(default=14, ge=7, le=90)
 
 
 class HealthProfileRead(HealthProfileWrite):

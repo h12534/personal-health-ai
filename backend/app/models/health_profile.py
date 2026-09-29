@@ -40,6 +40,9 @@ class HealthProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Shanghai")
     allow_third_party_vision: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     retain_meal_images: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    current_goal_phase: Mapped[str] = mapped_column(String(32), default="fat_loss", nullable=False)
+    allow_auto_diet_adjustment: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    adjustment_cooldown_days: Mapped[int] = mapped_column(Integer, default=14, nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="health_profile")
 

@@ -1,5 +1,4 @@
 from datetime import date, datetime, timedelta
-from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -87,46 +86,21 @@ class NutritionGoalService:
         return goal
 
     async def suggested(self, user_id: UUID, on_date: date | None = None) -> NutritionGoalWrite:
-        profile = await self.profiles.by_user(user_id)
-        reference = on_date or self._local_today(profile.timezone if profile else None)
-        weights = await self.weights.list_for_user(user_id, date_to=reference)
-        weight = float(weights[-1].weight_kg) if weights else 100.0
-        height = float(profile.height_cm) if profile and profile.height_cm else 176.0
-        age = 21
-        if profile and profile.birth_date:
-            age = (
-                reference.year
-                - profile.birth_date.year
-                - (
-                    (reference.month, reference.day)
-                    < (profile.birth_date.month, profile.birth_date.day)
-                )
-            )
-        sex = profile.sex if profile else None
-        sex_offset = 5 if sex == "male" else -161 if sex == "female" else -78
-        bmr = 10 * weight + 6.25 * height - 5 * age + sex_offset
-        activity_key = (profile.activity_level if profile else None) or "unknown"
-        activity_factor = {
-            "sedentary": 1.2,
-            "light": 1.35,
-            "moderate": 1.5,
-            "high": 1.7,
-        }.get(activity_key, 1.3)
-        minimum = 1600 if sex == "male" else 1400 if sex == "female" else 1500
-        calories = int(round(max(minimum, min(3500, bmr * activity_factor * 0.8)) / 50) * 50)
-        protein = Decimal(str(max(90, min(220, weight * 1.6)))).quantize(
-            Decimal("1"), rounding=ROUND_HALF_UP
+        from app.services.nutrition_target_service import NutritionTargetService
+
+        target = await NutritionTargetService(self.session).daily(
+            user_id, on_date, prefer_active_goal=False
         )
         return NutritionGoalWrite(
-            effective_from=reference,
-            calorie_target=calories,
-            protein_target_g=protein,
-            carbs_target_g=None,
-            fat_target_g=None,
-            fiber_target_g=Decimal("25"),
-            water_target_ml=2500,
+            effective_from=target.date,
+            calorie_target=target.energy_target_kcal,
+            protein_target_g=target.protein_target_g,
+            carbs_target_g=target.carbs_target_g,
+            fat_target_g=target.fat_target_g,
+            fiber_target_g=target.fiber_target_g,
+            water_target_ml=target.water_target_ml,
             source="program_suggestion",
-            reason="Conservative initial estimate; review against 7–14 day trends before changing.",
+            reason="Programmatic Mifflin-St Jeor target with phase and nutrition safety policies.",
         )
 
     @staticmethod

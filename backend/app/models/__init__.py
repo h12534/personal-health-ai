@@ -1,4 +1,17 @@
 from app.models.auth_session import AuthSession
+from app.models.diet_coach import (
+    Canteen,
+    CanteenDish,
+    CanteenStall,
+    CoachConversation,
+    CoachMessage,
+    DietAdjustment,
+    HungerLog,
+    PersonalDietaryMemory,
+    PersonalEnergyModel,
+    SavedMeal,
+    SavedMealItem,
+)
 from app.models.food import FoodAlias, FoodFavorite, FoodItem
 from app.models.health_profile import HealthProfile
 from app.models.meal import MealItem, MealLog
@@ -19,6 +32,17 @@ __all__ = [
     "FoodFavorite",
     "FoodItem",
     "HealthProfile",
+    "Canteen",
+    "CanteenDish",
+    "CanteenStall",
+    "CoachConversation",
+    "CoachMessage",
+    "DietAdjustment",
+    "HungerLog",
+    "PersonalDietaryMemory",
+    "PersonalEnergyModel",
+    "SavedMeal",
+    "SavedMealItem",
     "MealItem",
     "MealLog",
     "AIUsageLog",
