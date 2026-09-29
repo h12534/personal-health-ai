@@ -1,0 +1,9 @@
+from typing import BinaryIO, Protocol
+
+
+class StorageProvider(Protocol):
+    async def put_private(self, stream: BinaryIO, content_type: str, suffix: str) -> str: ...
+
+    async def delete(self, object_key: str) -> None: ...
+
+    async def signed_read_url(self, object_key: str, expires_seconds: int = 300) -> str: ...

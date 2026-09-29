@@ -1,0 +1,24 @@
+from datetime import date
+
+from pydantic import BaseModel
+
+
+class DashboardToday(BaseModel):
+    date: date
+    today_weight_kg: float | None
+    average_7d_kg: float | None
+    week_change_kg: float | None
+    calories_consumed: int = 0
+    calories_target: int | None = None
+    protein_g: float = 0
+    protein_target_g: float | None = None
+    steps: int = 0
+    steps_target: int = 8000
+    water_ml: int = 0
+    sleep_hours: float | None = None
+    training_completed: bool = False
+    morning_weight_completed: bool = False
+    breakfast_logged: bool = False
+    lunch_logged: bool = False
+    dinner_logged: bool = False
+    ai_next_action: str
