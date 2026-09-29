@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import AppError
 from app.models.health_profile import HealthProfile
 from app.repositories.profile_repository import ProfileRepository
-from app.schemas.profile import HealthProfileWrite
+from app.schemas.profile import HealthProfileWrite, VisionPrivacyWrite
 
 
 class ProfileService:
@@ -28,6 +28,24 @@ class ProfileService:
         else:
             for field, value in values.items():
                 setattr(profile, field, value)
+        await self.session.commit()
+        await self.session.refresh(profile)
+        return profile
+
+    async def update_vision_privacy(
+        self, user_id: UUID, payload: VisionPrivacyWrite
+    ) -> HealthProfile:
+        profile = await self.repository.by_user(user_id)
+        if profile is None:
+            profile = HealthProfile(
+                user_id=user_id,
+                allow_third_party_vision=payload.allow_third_party_vision,
+                retain_meal_images=payload.retain_meal_images,
+            )
+            await self.repository.add(profile)
+        else:
+            profile.allow_third_party_vision = payload.allow_third_party_vision
+            profile.retain_meal_images = payload.retain_meal_images
         await self.session.commit()
         await self.session.refresh(profile)
         return profile

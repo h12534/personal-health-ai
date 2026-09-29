@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import JSON, Date, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import JSON, Boolean, Date, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -38,6 +38,8 @@ class HealthProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     medications: Mapped[list[str]] = mapped_column(JSON, default=list)
     doctor_advice: Mapped[str | None] = mapped_column(Text, nullable=True)
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Shanghai")
+    allow_third_party_vision: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    retain_meal_images: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="health_profile")
 

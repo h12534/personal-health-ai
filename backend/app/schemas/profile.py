@@ -30,6 +30,8 @@ class HealthProfileWrite(BaseModel):
     medications: list[str] = Field(default_factory=list, max_length=100)
     doctor_advice: str | None = Field(default=None, max_length=4000)
     timezone: str = Field(default="Asia/Shanghai", max_length=64)
+    allow_third_party_vision: bool = False
+    retain_meal_images: bool = False
 
 
 class HealthProfileRead(HealthProfileWrite):
@@ -39,3 +41,12 @@ class HealthProfileRead(HealthProfileWrite):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class VisionPrivacyWrite(BaseModel):
+    allow_third_party_vision: bool
+    retain_meal_images: bool
+
+
+class VisionPrivacyRead(VisionPrivacyWrite):
+    pass
