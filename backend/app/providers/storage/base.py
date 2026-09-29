@@ -1,8 +1,12 @@
-from typing import BinaryIO, Protocol
+from typing import Protocol
 
 
 class StorageProvider(Protocol):
-    async def put_private(self, stream: BinaryIO, content_type: str, suffix: str) -> str: ...
+    async def put_private(
+        self, data: bytes, content_type: str, suffix: str, prefix: str = ""
+    ) -> str: ...
+
+    async def read_bytes(self, object_key: str) -> bytes: ...
 
     async def delete(self, object_key: str) -> None: ...
 

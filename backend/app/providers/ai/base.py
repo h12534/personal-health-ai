@@ -18,6 +18,17 @@ class AIResponse:
     output_tokens: int = 0
 
 
+@dataclass(slots=True)
+class VisionProviderResponse:
+    payload: dict[str, Any]
+    provider: str
+    model: str
+    raw_response: dict[str, Any] | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    estimated_cost: float | None = None
+
+
 class LLMProvider(Protocol):
     async def generate(self, request: AIRequest) -> AIResponse: ...
 
@@ -27,4 +38,13 @@ class EmbeddingProvider(Protocol):
 
 
 class VisionProvider(Protocol):
-    async def analyze_food(self, image_bytes: bytes, context: dict[str, Any]) -> dict[str, Any]: ...
+    name: str
+    model: str
+    is_remote: bool
+
+    async def analyze_meal(
+        self,
+        image_bytes: bytes,
+        content_type: str,
+        context: dict[str, Any],
+    ) -> VisionProviderResponse: ...
