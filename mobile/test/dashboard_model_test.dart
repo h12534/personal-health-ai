@@ -17,4 +17,3 @@ void main() {
     expect(model.stepsTarget, 8000);
   });
 }
-

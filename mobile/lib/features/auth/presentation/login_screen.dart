@@ -84,13 +84,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       decoration: const InputDecoration(labelText: '密码'),
                       validator: (value) {
                         if (value == null || value.isEmpty) return '请输入密码';
-                        if (_register && value.length < 12) return '首次设置至少 12 位';
+                        if (_register && value.length < 12)
+                          return '首次设置至少 12 位';
                         return null;
                       },
                     ),
                     if (error != null) ...[
                       const SizedBox(height: 12),
-                      Text(error, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                      Text(
+                        error,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                     ],
                     const SizedBox(height: 18),
                     FilledButton(
@@ -100,7 +106,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: auth.isLoading
                             ? const SizedBox.square(
                                 dimension: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : Text(_register ? '创建账户' : '登录'),
                       ),
@@ -121,4 +129,3 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
-

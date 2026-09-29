@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/database/local_database.dart';
 import '../../../core/network/api_client.dart';
 
 class AuthState {
@@ -8,8 +9,9 @@ class AuthState {
   final bool isAuthenticated;
 }
 
-final authControllerProvider =
-    AsyncNotifierProvider<AuthController, AuthState>(AuthController.new);
+final authControllerProvider = AsyncNotifierProvider<AuthController, AuthState>(
+  AuthController.new,
+);
 
 class AuthController extends AsyncNotifier<AuthState> {
   @override
@@ -25,18 +27,16 @@ class AuthController extends AsyncNotifier<AuthState> {
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref.read(apiClientProvider).authenticate(
-            email: email,
-            password: password,
-            register: register,
-          );
+      await ref
+          .read(apiClientProvider)
+          .authenticate(email: email, password: password, register: register);
       return const AuthState(isAuthenticated: true);
     });
   }
 
   Future<void> logout() async {
     await ref.read(apiClientProvider).clearSession();
+    await ref.read(localDatabaseProvider).clearPrivateData();
     state = const AsyncData(AuthState(isAuthenticated: false));
   }
 }
-

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../profile/presentation/profile_screen.dart';
+import '../../nutrition/presentation/nutrition_screen.dart';
 import '../data/dashboard_model.dart';
 import 'dashboard_controller.dart';
 
@@ -23,9 +24,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           index: _index,
           children: [
             _DashboardTab(onAddWeight: _showWeightDialog),
-            const _ComingSoon(title: '饮食', icon: Icons.restaurant_outlined),
+            const NutritionScreen(),
             const _ComingSoon(title: '训练', icon: Icons.fitness_center_outlined),
-            const _ComingSoon(title: 'AI 教练', icon: Icons.auto_awesome_outlined),
+            const _ComingSoon(
+              title: 'AI 教练',
+              icon: Icons.auto_awesome_outlined,
+            ),
             const ProfileScreen(),
           ],
         ),
@@ -35,9 +39,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         onDestinationSelected: (value) => setState(() => _index = value),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: '首页'),
-          NavigationDestination(icon: Icon(Icons.restaurant_outlined), label: '饮食'),
-          NavigationDestination(icon: Icon(Icons.fitness_center_outlined), label: '训练'),
-          NavigationDestination(icon: Icon(Icons.auto_awesome_outlined), label: 'AI'),
+          NavigationDestination(
+            icon: Icon(Icons.restaurant_outlined),
+            label: '饮食',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.fitness_center_outlined),
+            label: '训练',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.auto_awesome_outlined),
+            label: 'AI',
+          ),
           NavigationDestination(icon: Icon(Icons.person_outline), label: '我的'),
         ],
       ),
@@ -57,7 +70,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           decoration: const InputDecoration(labelText: '体重', suffixText: 'kg'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
           FilledButton(
             onPressed: () {
               final parsed = double.tryParse(controller.text.trim());
@@ -76,7 +92,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       await WeightController(ref).add(value);
     } on Object catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
       }
     }
   }
@@ -114,7 +131,11 @@ class _DashboardTab extends ConsumerWidget {
 }
 
 class DashboardContent extends StatelessWidget {
-  const DashboardContent({super.key, required this.data, required this.onAddWeight});
+  const DashboardContent({
+    super.key,
+    required this.data,
+    required this.onAddWeight,
+  });
 
   final DashboardModel data;
   final VoidCallback onAddWeight;
@@ -174,7 +195,10 @@ class DashboardContent extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary),
+                      Icon(
+                        Icons.auto_awesome,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       const SizedBox(width: 8),
                       Text('下一步', style: textTheme.titleMedium),
                     ],
@@ -197,7 +221,9 @@ class DashboardContent extends StatelessWidget {
               _MetricCard(
                 label: '热量',
                 value: '${data.caloriesConsumed}',
-                target: data.caloriesTarget == null ? '目标待设置' : '/ ${data.caloriesTarget} kcal',
+                target: data.caloriesTarget == null
+                    ? '目标待设置'
+                    : '/ ${data.caloriesTarget} kcal',
                 icon: Icons.local_fire_department_outlined,
               ),
               _MetricCard(
@@ -227,7 +253,8 @@ class DashboardContent extends StatelessWidget {
     );
   }
 
-  static String _kg(double? value) => value == null ? '--' : '${value.toStringAsFixed(1)} kg';
+  static String _kg(double? value) =>
+      value == null ? '--' : '${value.toStringAsFixed(1)} kg';
 
   static String _signedKg(double? value) {
     if (value == null) return '--';
@@ -257,7 +284,13 @@ class _MetricCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(children: [Icon(icon, size: 20), const SizedBox(width: 6), Text(label)]),
+              Row(
+                children: [
+                  Icon(icon, size: 20),
+                  const SizedBox(width: 6),
+                  Text(label),
+                ],
+              ),
               Text(value, style: Theme.of(context).textTheme.titleLarge),
               Text(target, style: Theme.of(context).textTheme.bodySmall),
             ],
@@ -279,9 +312,11 @@ class _ComingSoon extends StatelessWidget {
           children: [
             Icon(icon, size: 48, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 12),
-            Text('$title模块将在下一阶段接入', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              '$title模块将在下一阶段接入',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ],
         ),
       );
 }
-

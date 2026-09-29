@@ -4,7 +4,9 @@ import 'package:personal_health_os/features/dashboard/data/dashboard_model.dart'
 import 'package:personal_health_os/features/dashboard/presentation/dashboard_screen.dart';
 
 void main() {
-  testWidgets('dashboard emphasizes next action and core metrics', (tester) async {
+  testWidgets('dashboard emphasizes next action and core metrics', (
+    tester,
+  ) async {
     final data = DashboardModel(
       date: DateTime(2026, 9, 29),
       todayWeightKg: 100,
@@ -23,7 +25,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: Scaffold(body: DashboardContent(data: data, onAddWeight: () {}))),
+      MaterialApp(
+        home: Scaffold(
+          body: DashboardContent(data: data, onAddWeight: () {}),
+        ),
+      ),
     );
 
     expect(find.text('下一步'), findsOneWidget);
@@ -32,4 +38,3 @@ void main() {
     expect(find.text('92 g'), findsOneWidget);
   });
 }
-

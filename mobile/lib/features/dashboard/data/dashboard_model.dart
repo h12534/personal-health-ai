@@ -8,6 +8,12 @@ class DashboardModel {
     required this.caloriesTarget,
     required this.proteinG,
     required this.proteinTargetG,
+    this.carbsG = 0,
+    this.carbsTargetG,
+    this.fatG = 0,
+    this.fatTargetG,
+    this.fiberG = 0,
+    this.fiberTargetG,
     required this.steps,
     required this.stepsTarget,
     required this.waterMl,
@@ -25,11 +31,18 @@ class DashboardModel {
         caloriesTarget: json['calories_target'] as int?,
         proteinG: (json['protein_g'] as num?)?.toDouble() ?? 0,
         proteinTargetG: (json['protein_target_g'] as num?)?.toDouble(),
+        carbsG: (json['carbs_g'] as num?)?.toDouble() ?? 0,
+        carbsTargetG: (json['carbs_target_g'] as num?)?.toDouble(),
+        fatG: (json['fat_g'] as num?)?.toDouble() ?? 0,
+        fatTargetG: (json['fat_target_g'] as num?)?.toDouble(),
+        fiberG: (json['fiber_g'] as num?)?.toDouble() ?? 0,
+        fiberTargetG: (json['fiber_target_g'] as num?)?.toDouble(),
         steps: json['steps'] as int? ?? 0,
         stepsTarget: json['steps_target'] as int? ?? 8000,
         waterMl: json['water_ml'] as int? ?? 0,
         trainingCompleted: json['training_completed'] as bool? ?? false,
-        morningWeightCompleted: json['morning_weight_completed'] as bool? ?? false,
+        morningWeightCompleted:
+            json['morning_weight_completed'] as bool? ?? false,
         aiNextAction: json['ai_next_action'] as String,
       );
 
@@ -41,6 +54,12 @@ class DashboardModel {
   final int? caloriesTarget;
   final double proteinG;
   final double? proteinTargetG;
+  final double carbsG;
+  final double? carbsTargetG;
+  final double fatG;
+  final double? fatTargetG;
+  final double fiberG;
+  final double? fiberTargetG;
   final int steps;
   final int stepsTarget;
   final int waterMl;
@@ -48,4 +67,3 @@ class DashboardModel {
   final bool morningWeightCompleted;
   final String aiNextAction;
 }
-

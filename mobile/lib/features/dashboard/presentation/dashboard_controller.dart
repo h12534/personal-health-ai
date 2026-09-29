@@ -17,4 +17,3 @@ class WeightController {
     ref.invalidate(dashboardProvider);
   }
 }
-
