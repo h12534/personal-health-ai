@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../coach/data/coach_models.dart';
+import '../../coach/presentation/coach_controller.dart';
 import '../../profile/presentation/profile_screen.dart';
 import '../../nutrition/presentation/nutrition_screen.dart';
-import '../../coach/presentation/coach_screen.dart';
-import '../../coach/presentation/coach_controller.dart';
-import '../../coach/data/coach_models.dart';
+import '../../health/presentation/health_screen.dart';
 import '../../training/presentation/training_screen.dart';
 import '../data/dashboard_model.dart';
 import 'dashboard_controller.dart';
@@ -27,10 +27,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: IndexedStack(
           index: _index,
           children: [
-            _DashboardTab(onAddWeight: _showWeightDialog),
+            _DashboardTab(
+              onAddWeight: _showWeightDialog,
+              onOpenHealth: () => setState(() => _index = 3),
+            ),
             const NutritionScreen(),
             const TrainingScreen(),
-            const CoachScreen(),
+            const HealthScreen(),
             const ProfileScreen(),
           ],
         ),
@@ -49,8 +52,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             label: '训练',
           ),
           NavigationDestination(
-            icon: Icon(Icons.auto_awesome_outlined),
-            label: 'AI',
+            icon: Icon(Icons.health_and_safety_outlined),
+            label: '健康',
           ),
           NavigationDestination(icon: Icon(Icons.person_outline), label: '我的'),
         ],
@@ -101,9 +104,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 }
 
 class _DashboardTab extends ConsumerWidget {
-  const _DashboardTab({required this.onAddWeight});
+  const _DashboardTab({required this.onAddWeight, required this.onOpenHealth});
 
   final VoidCallback onAddWeight;
+  final VoidCallback onOpenHealth;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -129,6 +133,7 @@ class _DashboardTab extends ConsumerWidget {
       data: (data) => DashboardContent(
         data: data,
         onAddWeight: onAddWeight,
+        onOpenHealth: onOpenHealth,
         trend: ref.watch(weightTrendProvider).valueOrNull,
       ),
     );
@@ -140,11 +145,13 @@ class DashboardContent extends StatelessWidget {
     super.key,
     required this.data,
     required this.onAddWeight,
+    this.onOpenHealth,
     this.trend,
   });
 
   final DashboardModel data;
   final VoidCallback onAddWeight;
+  final VoidCallback? onOpenHealth;
   final WeightTrendModel? trend;
 
   @override
@@ -234,6 +241,16 @@ class DashboardContent extends StatelessWidget {
                   Text(data.aiNextAction),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.biotech_outlined),
+              title: const Text('健康档案与体检'),
+              subtitle: const Text('查看上次体检、指标趋势与证据问答'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: onOpenHealth,
             ),
           ),
           const SizedBox(height: 14),

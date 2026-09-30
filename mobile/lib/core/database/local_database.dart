@@ -19,7 +19,7 @@ class LocalDatabase extends GeneratedDatabase {
   LocalDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
@@ -93,10 +93,12 @@ class LocalDatabase extends GeneratedDatabase {
           );
           await _createVisionTaskTable();
           await _createWorkoutTables();
+          await _createLabCacheTables();
         },
         onUpgrade: (migrator, from, to) async {
           if (from < 2) await _createVisionTaskTable();
           if (from < 3) await _createWorkoutTables();
+          if (from < 4) await _createLabCacheTables();
         },
       );
 
@@ -160,6 +162,92 @@ class LocalDatabase extends GeneratedDatabase {
       CREATE INDEX IF NOT EXISTS ix_local_workout_set_session
       ON local_workout_sets(session_local_id, set_number)
     ''');
+  }
+
+  Future<void> _createLabCacheTables() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS local_lab_reports (
+        id TEXT PRIMARY KEY,
+        report_date TEXT NOT NULL,
+        review_status TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS local_lab_trends (
+        normalized_name TEXT PRIMARY KEY,
+        payload_json TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await customStatement('''
+      CREATE INDEX IF NOT EXISTS ix_local_lab_report_date
+      ON local_lab_reports(report_date DESC)
+    ''');
+  }
+
+  Future<void> cacheLabReports(List<Map<String, dynamic>> reports) async {
+    await transaction(() async {
+      await customUpdate('DELETE FROM local_lab_reports');
+      final updatedAt = DateTime.now().toUtc().toIso8601String();
+      for (final report in reports) {
+        await customInsert(
+          '''
+            INSERT INTO local_lab_reports
+              (id, report_date, review_status, payload_json, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+          ''',
+          variables: [
+            Variable<String>(report['id'] as String),
+            Variable<String>(report['report_date'] as String),
+            Variable<String>(report['review_status'] as String),
+            Variable<String>(jsonEncode(report)),
+            Variable<String>(updatedAt),
+          ],
+        );
+      }
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> cachedLabReports() async {
+    final rows = await customSelect('''
+      SELECT payload_json FROM local_lab_reports
+      ORDER BY report_date DESC, updated_at DESC
+    ''').get();
+    return rows
+        .map(
+          (row) => jsonDecode(row.read<String>('payload_json'))
+              as Map<String, dynamic>,
+        )
+        .toList();
+  }
+
+  Future<void> cacheLabTrend(
+    String normalizedName,
+    Map<String, dynamic> payload,
+  ) async {
+    await customInsert(
+      '''
+        INSERT OR REPLACE INTO local_lab_trends
+          (normalized_name, payload_json, updated_at)
+        VALUES (?, ?, ?)
+      ''',
+      variables: [
+        Variable<String>(normalizedName),
+        Variable<String>(jsonEncode(payload)),
+        Variable<String>(DateTime.now().toUtc().toIso8601String()),
+      ],
+    );
+  }
+
+  Future<Map<String, dynamic>?> cachedLabTrend(String normalizedName) async {
+    final row = await customSelect(
+      'SELECT payload_json FROM local_lab_trends WHERE normalized_name = ?',
+      variables: [Variable<String>(normalizedName)],
+    ).getSingleOrNull();
+    if (row == null) return null;
+    return jsonDecode(row.read<String>('payload_json')) as Map<String, dynamic>;
   }
 
   Future<void> insertWorkout(LocalWorkoutRecord workout) async {
@@ -605,6 +693,8 @@ class LocalDatabase extends GeneratedDatabase {
       await customStatement('DELETE FROM food_cache');
       await customStatement('DELETE FROM local_workout_sets');
       await customStatement('DELETE FROM local_workout_sessions');
+      await customStatement('DELETE FROM local_lab_trends');
+      await customStatement('DELETE FROM local_lab_reports');
     });
     for (final task in visionTasks) {
       try {

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -5,6 +7,7 @@ import 'package:http_parser/http_parser.dart';
 
 import '../../features/dashboard/data/dashboard_model.dart';
 import '../../features/coach/data/coach_models.dart';
+import '../../features/health/data/health_models.dart';
 import '../../features/nutrition/data/nutrition_models.dart';
 import '../../features/nutrition/data/meal_analysis_models.dart';
 import '../../features/training/data/training_models.dart';
@@ -930,6 +933,171 @@ class ApiClient {
           'evidence_snapshot': evidenceSnapshot,
         },
         options: await _authorizedOptions(idempotencyKey: idempotencyKey),
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<LabReportModel>> fetchLabReports() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/labs/reports',
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map((item) => LabReportModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<LabReportModel> uploadLabReport({
+    required Uint8List bytes,
+    required String filename,
+    required String contentType,
+    required DateTime reportDate,
+    required String sourceType,
+    String? hospitalName,
+    bool retainOriginal = true,
+    bool allowRemoteOcr = false,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/labs/reports',
+        data: FormData.fromMap({
+          'file': MultipartFile.fromBytes(
+            bytes,
+            filename: filename,
+            contentType: MediaType.parse(contentType),
+          ),
+          'report_date': _date(reportDate),
+          'hospital_name': hospitalName,
+          'source_type': sourceType,
+          'retain_original': retainOriginal,
+          'allow_remote_ocr': allowRemoteOcr,
+        }),
+        options: await _authorizedOptions(),
+      );
+      return LabReportModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<LabReportModel> updateLabDraftItem({
+    required String reportId,
+    required String itemId,
+    required String testName,
+    required String normalizedName,
+    double? value,
+    String? valueText,
+    String? unit,
+    double? referenceMin,
+    double? referenceMax,
+    String? referenceText,
+  }) async {
+    try {
+      final response = await _dio.patch<Map<String, dynamic>>(
+        '/labs/reports/$reportId/draft-items/$itemId',
+        data: {
+          'test_name': testName,
+          'normalized_name': normalizedName,
+          'value_numeric': value,
+          'value_text': valueText,
+          'unit': unit,
+          'reference_min': referenceMin,
+          'reference_max': referenceMax,
+          'reference_text': referenceText,
+        },
+        options: await _authorizedOptions(),
+      );
+      return LabReportModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<LabReportModel> confirmLabReport(
+    String reportId, {
+    List<String>? itemIds,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/labs/reports/$reportId/confirm',
+        data: {if (itemIds != null) 'item_ids': itemIds},
+        options: await _authorizedOptions(),
+      );
+      return LabReportModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<void> deleteLabReport(String reportId) async {
+    try {
+      await _dio.delete<void>(
+        '/labs/reports/$reportId',
+        options: await _authorizedOptions(),
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<LabTrendModel> fetchLabTrend(String normalizedName) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/labs/trends/$normalizedName',
+        options: await _authorizedOptions(),
+      );
+      return LabTrendModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<HealthEvidenceModel>> searchHealthKnowledge(String query) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/knowledge/search',
+        data: {'query': query, 'limit': 8},
+        options: await _authorizedOptions(),
+      );
+      final payload = response.data!['data'] as Map<String, dynamic>;
+      return (payload['evidence'] as List<dynamic>? ?? const [])
+          .map((item) =>
+              HealthEvidenceModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<HealthChatReplyModel> sendHealthMessage(
+    String message, {
+    String? conversationId,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/ai/health/chat',
+        data: {
+          'message': message,
+          if (conversationId != null) 'conversation_id': conversationId,
+        },
+        options: await _authorizedOptions(),
+      );
+      return HealthChatReplyModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
       );
     } on DioException catch (error) {
       throw _mapError(error);
