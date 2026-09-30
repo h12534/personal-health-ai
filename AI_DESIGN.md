@@ -50,3 +50,8 @@ Metadata：`source, title, author, year, category, evidence_level, url, language
 
 独立于普通 Prompt 的前后置规则：急症关键词与结构化信号优先中止普通建议并提示紧急就医；禁止催吐、危险脱水、极端节食、非法药物、类固醇滥用以及自行停药/改剂量。模型输出还需 schema 校验与安全后处理。
 
+## Phase 5 training coach
+
+Training advice uses a separate TrainingCoachOrchestrator with targeted context and safety rules. Program services own weight selection, progression, e1RM, PRs, rescheduling and recovery categories. The provider explains already-calculated results and returns suggested actions; it cannot silently edit plans or workout records.
+
+The safety layer blocks emergency symptoms and punitive exercise before any provider call. Missing a workout shifts the sequence without double sessions.

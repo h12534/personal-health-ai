@@ -123,3 +123,8 @@ Before TestFlight external testing, reconcile actual production behavior with:
 
 Any change to data collection, a native entitlement, a third-party processor, or
 retention must update this document in the same pull request.
+## Apple Health / HealthKit
+
+HealthKit data is sensitive. The App requests each type only after the user enables its switch. Phase 5 reads steps, walking/running distance, active energy, resting heart rate, sleep and workouts; it does not write to Apple Health.
+
+The server receives only daily summaries or sleep/training segments needed for activity and recovery features. Raw HealthKit sample streams, routes and continuous heart-rate samples are not uploaded. Provider record IDs prevent duplicate summaries. Users can disable each type independently and delete server-synced provider data without deleting manual records.

@@ -70,6 +70,7 @@ Set-Location backend
 $env:DATABASE_URL = "sqlite+aiosqlite:///./health_os.db"
 alembic upgrade head
 python -m app.scripts.seed_foods
+python -m app.scripts.seed_exercises
 uvicorn app.main:app --reload
 ```
 
@@ -187,3 +188,6 @@ flutter build apk --debug
 
 **AI 未配置能否使用？** 可以。认证、档案、体重、趋势和规则型 Dashboard 不依赖模型。
 
+## Phase 5：训练与 Apple Health
+
+训练 Tab 已提供今日训练、计划、历史、动作库、进度、离线组记录、本地休息计时和 AI 私教。Apple Health 按步数、睡眠、静息心率与训练分别授权；无数据不会被显示为 0。完整说明见 PHASE5_TRAINING.md、HEALTHKIT_DESIGN.md 与 HEALTHKIT_REAL_DEVICE_TEST.md。

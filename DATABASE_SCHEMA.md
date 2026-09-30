@@ -104,3 +104,14 @@
 
 知识库采用 `vector` 列并同时保留 `tsvector`，支持向量与关键词的混合检索；版本查询默认过滤 `active=true` 和最新 `document_version`。
 
+## Phase 5
+
+- exercise_library: curated reusable exercise metadata and safety cues.
+- training_plans → training_days → training_exercises: user program hierarchy, including an optional user-confirmed target weight.
+- workout_sessions → workout_sets: offline-safe UUID training logs.
+- exercise_prs, pain_logs, training_adjustments: progress, safety and user-applied changes.
+- activity_logs, step_logs, sleep_logs: minimal daily or segment summaries.
+- health_sync_state, health_permission_state: incremental provider state and per-type user controls.
+- recovery_snapshots: explainable categorical recovery output and evidence.
+
+Key uniqueness rules include normalized exercise name, workout/set idempotency keys, provider source_record_id, daily step source, per-type health sync/permission state, and one current PR per user/exercise/type.

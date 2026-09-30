@@ -118,3 +118,17 @@ Base URL：`/api/v1`。所有时间为 ISO 8601，日期为 `YYYY-MM-DD`，数�
 
 保留 `/training`, `/workouts`, `/activity`, `/sleep`, `/water`, `/labs`, `/reports`, `/knowledge`, `/reminders`。
 
+## Phase 5 endpoints
+
+- GET /api/v1/exercises and GET /api/v1/exercises/search
+- POST/GET/PATCH /api/v1/training/plans and POST /api/v1/training/plans/generate
+- GET /api/v1/training/progress/{exercise_id}, /training/prs, /training/weekly-review
+- POST /api/v1/training/adjustments/apply (user-confirmed, idempotent progression update)
+- POST/GET /api/v1/workouts, GET /workouts/{id}
+- POST /workouts/{id}/sets, PATCH /workouts/{id}/sets/{set_id}, POST /workouts/{id}/complete
+- GET /api/v1/activity/daily, GET /api/v1/sleep, GET/POST /api/v1/recovery/today
+- POST /api/v1/health/sync/summary, GET/PUT /api/v1/health/permissions
+- DELETE /api/v1/health/sync/{provider}
+- POST /api/v1/ai/training/chat
+
+Workout and set writes accept Idempotency-Key and stable client UUIDs. Training adjustments are suggestions until the user confirms them; applying one stores the audit record and updates the active plan target weight. Health summary writes require a provider source_record_id.

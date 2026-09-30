@@ -105,3 +105,8 @@ Intent → Safety → Context → deterministic diet services → CoachProvider 
 
 日志使用请求 ID 和结构化字段；禁止密码、完整 Token、API Key、体检全文与身体照片路径。后续接入指标：HTTP 延迟、任务失败率、通知命中率、AI Token/成本、检索质量。
 
+## Phase 5 training and health flow
+
+Flutter Training UI → Drift v3 / Outbox → FastAPI workout API → PostgreSQL training tables → deterministic progress/recovery services → AI explanation.
+
+Apple Health access is isolated behind HealthDataProvider. Only structured summaries pass through /health/sync/summary; health_sync_state records per-type incremental cursors. Diet context consumes today_training_status, activity and recovery without coupling Phase 4 to plugin code.

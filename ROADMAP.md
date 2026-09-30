@@ -20,3 +20,18 @@
 
 iOS Widget 与 Apple Watch companion 保留为 Phase 11 之后的独立路线项；不提前进入 Phase 5。iOS 原生构建成功只能由 macOS + Xcode 或对应 CI 证明。
 
+## Phase 5 — completed
+
+- Exercise library, rule-based plans, workouts, set tracking, RPE/RIR, PRs and progress
+- Activity, steps, sleep, resting heart rate and categorical recovery
+- Apple Health provider first phase with per-type permission UI and Mock provider
+- AI training coach plus nutrition/training context linkage
+- iPhone-first training UX, Drift v3 offline storage and Outbox sync
+
+## Phase 6 candidates
+
+- Real-device HealthKit QA and TestFlight acceptance
+- Local, context-aware training reminders
+- User-confirmed training adjustment application UI
+- Health Connect production setup for Android
+- Longer-term deload evaluation using multiple weeks of fatigue and performance evidence
