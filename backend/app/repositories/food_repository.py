@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import cast
 from uuid import UUID
 
 from sqlalchemy import case, func, or_, select
@@ -28,7 +27,7 @@ class FoodRepository:
             .options(selectinload(FoodItem.aliases))
             .where(FoodItem.id == food_id, *self._visible(user_id))
         )
-        return cast(FoodItem | None, result)
+        return result
 
     async def custom_by_id(self, user_id: UUID, food_id: UUID) -> FoodItem | None:
         result = await self.session.scalar(
@@ -41,7 +40,7 @@ class FoodRepository:
                 FoodItem.deleted_at.is_(None),
             )
         )
-        return cast(FoodItem | None, result)
+        return result
 
     async def by_source(self, source: str, source_id: str) -> FoodItem | None:
         result = await self.session.scalar(
@@ -49,7 +48,7 @@ class FoodRepository:
             .options(selectinload(FoodItem.aliases))
             .where(FoodItem.source == source, FoodItem.source_id == source_id)
         )
-        return cast(FoodItem | None, result)
+        return result
 
     async def all_for_matching(self, user_id: UUID, limit: int = 1000) -> list[FoodItem]:
         foods = await self.session.scalars(
@@ -177,4 +176,4 @@ class FoodRepository:
                 FoodFavorite.user_id == user_id, FoodFavorite.food_id == food_id
             )
         )
-        return cast(FoodFavorite | None, result)
+        return result

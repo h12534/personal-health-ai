@@ -1,4 +1,3 @@
-from typing import cast
 from uuid import UUID
 
 from sqlalchemy import select
@@ -15,7 +14,7 @@ class ProfileRepository:
         result = await self.session.scalar(
             select(HealthProfile).where(HealthProfile.user_id == user_id)
         )
-        return cast(HealthProfile | None, result)
+        return result
 
     async def add(self, profile: HealthProfile) -> HealthProfile:
         self.session.add(profile)

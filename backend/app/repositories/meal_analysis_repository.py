@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, cast
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -30,7 +30,7 @@ class MealAnalysisRepository:
                 MealAnalysisSession.deleted_at.is_(None),
             )
         )
-        return cast(MealAnalysisSession | None, value)
+        return value
 
     async def by_id_for_update(
         self, user_id: UUID, analysis_id: UUID
@@ -45,7 +45,7 @@ class MealAnalysisRepository:
             )
             .with_for_update()
         )
-        return cast(MealAnalysisSession | None, value)
+        return value
 
     async def for_worker(
         self, analysis_id: UUID, *, lock: bool = False
@@ -61,7 +61,7 @@ class MealAnalysisRepository:
         if lock:
             statement = statement.with_for_update(skip_locked=True)
         value = await self.session.scalar(statement)
-        return cast(MealAnalysisSession | None, value)
+        return value
 
     async def by_idempotency(self, user_id: UUID, key: str) -> MealAnalysisSession | None:
         value = await self.session.scalar(
@@ -73,7 +73,7 @@ class MealAnalysisRepository:
                 MealAnalysisSession.deleted_at.is_(None),
             )
         )
-        return cast(MealAnalysisSession | None, value)
+        return value
 
     async def item(self, analysis_id: UUID, item_id: UUID) -> MealAnalysisItem | None:
         value = await self.session.scalar(
@@ -85,7 +85,7 @@ class MealAnalysisRepository:
                 MealAnalysisItem.deleted_at.is_(None),
             )
         )
-        return cast(MealAnalysisItem | None, value)
+        return value
 
     async def count_created_since(self, user_id: UUID, since: datetime) -> int:
         value = await self.session.scalar(

@@ -65,7 +65,7 @@ class MealRecommendationService:
                 reasons.append("最近已多次吃过，可按意愿换一种；系统不会强制")
             ranked.append(
                 MealRecommendationRead(
-                    source=source,  # type: ignore[arg-type]
+                    source=source,
                     source_id=source_id,
                     name=name,
                     calories=calories.quantize(Decimal("0.1")),

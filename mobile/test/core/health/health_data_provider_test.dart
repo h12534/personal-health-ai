@@ -19,6 +19,7 @@ void main() {
     final result = await provider.read(
       from: DateTime(2026, 1, 1),
       to: DateTime(2026, 1, 2),
+      metrics: {HealthMetric.steps},
     );
 
     expect(result?.source, 'apple_health');
@@ -37,6 +38,7 @@ void main() {
     final result = await provider.read(
       from: DateTime(2026, 1, 1),
       to: DateTime(2026, 1, 2),
+      metrics: {HealthMetric.steps},
     );
 
     expect(result?.source, 'manual');
@@ -62,9 +64,17 @@ class _StubProvider implements HealthDataProvider {
   Future<bool> isAvailable() async => available;
 
   @override
+  bool supports(HealthMetric metric) => true;
+
+  @override
+  Future<HealthAuthorization> requestAuthorization(HealthMetric metric) async =>
+      HealthAuthorization.requested;
+
+  @override
   Future<HealthDataSnapshot?> read({
     required DateTime from,
     required DateTime to,
+    required Set<HealthMetric> metrics,
   }) async {
     readCount += 1;
     return snapshot;

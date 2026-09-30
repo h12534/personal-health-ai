@@ -44,7 +44,9 @@ async def _process(analysis_id: str) -> None:
         await engine.dispose()
 
 
-@celery_app.task(name="meal_analysis.process", autoretry_for=(), max_retries=0)
+@celery_app.task(  # type: ignore[untyped-decorator]
+    name="meal_analysis.process", autoretry_for=(), max_retries=0
+)
 def process_meal_analysis(analysis_id: str) -> None:
     asyncio.run(_process(analysis_id))
 
@@ -64,6 +66,6 @@ async def _cleanup() -> tuple[int, int]:
         await engine.dispose()
 
 
-@celery_app.task(name="meal_analysis.cleanup_expired")
+@celery_app.task(name="meal_analysis.cleanup_expired")  # type: ignore[untyped-decorator]
 def cleanup_expired_meal_analyses() -> tuple[int, int]:
     return asyncio.run(_cleanup())
