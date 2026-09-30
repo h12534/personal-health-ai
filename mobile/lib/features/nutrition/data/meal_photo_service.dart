@@ -42,7 +42,8 @@ class MealPhotoService {
   }
 
   Future<VisionTaskRecord> _persist(XFile source, String mealType) async {
-    final root = await getApplicationDocumentsDirectory();
+    // Pending uploads are durable app-private state, not user documents.
+    final root = await getApplicationSupportDirectory();
     final directory = Directory(path.join(root.path, 'meal-analysis-pending'));
     await directory.create(recursive: true);
     final localId = const Uuid().v4();

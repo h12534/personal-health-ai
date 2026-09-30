@@ -121,28 +121,30 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
           await showModalBottomSheet<void>(
             context: context,
             showDragHandle: true,
-            builder: (context) => Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${plan.mealLabel}建议',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '${plan.target.caloriesMin}–${plan.target.caloriesMax} kcal · '
-                    '蛋白质至少 ${plan.target.proteinMin.toStringAsFixed(0)} g',
-                  ),
-                  const SizedBox(height: 8),
-                  for (final line in plan.strategy)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text('• $line'),
+            builder: (context) => SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${plan.mealLabel}建议',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                ],
+                    const SizedBox(height: 10),
+                    Text(
+                      '${plan.target.caloriesMin}–${plan.target.caloriesMax} kcal · '
+                      '蛋白质至少 ${plan.target.proteinMin.toStringAsFixed(0)} g',
+                    ),
+                    const SizedBox(height: 8),
+                    for (final line in plan.strategy)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text('• $line'),
+                      ),
+                  ],
+                ),
               ),
             ),
           );

@@ -1,8 +1,50 @@
 class AppConfig {
   const AppConfig._();
 
-  static const apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8080/api/v1',
+  static const environment = String.fromEnvironment(
+    'APP_ENV',
+    defaultValue: 'development',
   );
+
+  static const _apiBaseUrlOverride = String.fromEnvironment('API_BASE_URL');
+
+  static String get apiBaseUrl => resolveApiBaseUrl(
+        environment: environment,
+        override: _apiBaseUrlOverride,
+      );
+
+  static String resolveApiBaseUrl({
+    required String environment,
+    String override = '',
+  }) {
+    final normalizedEnvironment = switch (environment.trim().toLowerCase()) {
+      'dev' || 'development' => 'development',
+      'staging' => 'staging',
+      'prod' || 'production' => 'production',
+      _ => throw StateError('APP_ENV must be dev, staging, or prod.'),
+    };
+    final candidate = override.trim().isNotEmpty
+        ? override.trim()
+        : switch (normalizedEnvironment) {
+            'development' => 'https://dev-api.personal-health.invalid/api/v1',
+            'staging' => 'https://staging-api.personal-health.invalid/api/v1',
+            _ => 'https://api.personal-health.invalid/api/v1',
+          };
+    final uri = Uri.tryParse(candidate);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+      throw StateError('API_BASE_URL must be an absolute URL.');
+    }
+    if ({'localhost', '127.0.0.1', '::1'}.contains(uri.host)) {
+      throw StateError(
+        'API_BASE_URL cannot use localhost; an iPhone resolves it to itself.',
+      );
+    }
+    if (normalizedEnvironment != 'development' && uri.scheme != 'https') {
+      throw StateError('Staging and production API_BASE_URL must use HTTPS.');
+    }
+    if (uri.scheme != 'https' && uri.scheme != 'http') {
+      throw StateError('API_BASE_URL must use HTTP or HTTPS.');
+    }
+    return candidate.replaceFirst(RegExp(r'/+$'), '');
+  }
 }

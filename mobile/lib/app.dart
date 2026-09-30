@@ -16,6 +16,8 @@ class HealthOsApp extends ConsumerWidget {
       title: '健康 OS',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       home: auth.when(
         loading: () => const _LaunchScreen(),
         error: (error, stack) => LoginScreen(initialError: error.toString()),
