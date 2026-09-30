@@ -4,6 +4,8 @@
 
 当前仓库已完成 Phase 0–4。除认证、档案、体重、手工/照片记餐外，现已具备程序化目标、7/14/28 天趋势、依从性、个人 TDEE、下一餐、食堂/常用餐、调整审批，以及带独立安全层的 Flutter AI 饮食教练。
 
+移动端以 Apple iPhone / iOS 16+ 为首要交付目标；Android 作为次要兼容平台保留。后端继续部署到 Linux，Windows 可进行后端与 Flutter 静态开发，但 iOS 原生构建必须在 macOS + Xcode 上完成。
+
 ## 核心原则
 
 - 计划服从现实生活：学校食堂、外卖与便利店都属于正常输入。
@@ -51,6 +53,10 @@ storage/                 本地私有文件/备份挂载占位目录
 - [AI_COACH_CONTEXT.md](AI_COACH_CONTEXT.md)
 - [CANTEEN_SYSTEM.md](CANTEEN_SYSTEM.md)
 - [REAL_AI_COACH_TEST.md](REAL_AI_COACH_TEST.md)
+- [IOS_READINESS_AUDIT.md](IOS_READINESS_AUDIT.md)
+- [IOS_PLUGIN_AUDIT.md](IOS_PLUGIN_AUDIT.md)
+- [IOS_BUILD_SETUP.md](IOS_BUILD_SETUP.md)
+- [PRIVACY.md](PRIVACY.md)
 
 ## 本地后端
 
@@ -83,17 +89,20 @@ Phase 3 默认使用 `VISION_PROVIDER=mock`，不需要 API Key。上传后结�
 
 Phase 4 默认使用 `COACH_PROVIDER=mock`。热量、蛋白质、趋势、TDEE、下一餐和调整建议始终由后端规则服务计算；远程模型只负责表达，且输出必须通过 strict schema。真实 Provider 配置见 `REAL_AI_COACH_TEST.md`。
 
-移动端平台目录通过 Flutter 生成：
+仓库已提交并维护 iOS Runner，不再在日常流程中重建：
 
-```bash
+~~~bash
 cd mobile
-flutter create --platforms=android,ios --org dev.personalhealthos .
-dart run tool/configure_platforms.dart
 flutter pub get
-flutter run
-```
+export IOS_BUNDLE_ID=com.personal.healthcoach
+export APP_DISPLAY_NAME='私人健康'
+dart run tool/configure_ios.dart
+flutter run \
+  --dart-define=APP_ENV=dev \
+  --dart-define=API_BASE_URL=https://dev-api.example.com/api/v1
+~~~
 
-脚本会写入 iOS 相机/相册用途说明并设置 Android minSdk 24。客户端把图片限制到最长边 2048、JPEG 质量 86、移除 EXIF；离线任务和本地图片会保存在 Drift/应用文档目录，用户可联网后继续或改用手工记录。
+iOS 相机/相册用途说明、iOS 16 最低版本和可配置 Bundle ID 已进入版本控制。客户端把图片限制到最长边 2048、JPEG 质量 86、移除 EXIF；离线任务和本地图片保存在 Drift/应用沙盒与 Application Support，用户可联网后继续或改用手工记录。
 
 ## Docker Compose
 
@@ -117,18 +126,27 @@ docker compose exec backend alembic upgrade head
 
 ## Flutter
 
-要求稳定版 Flutter。仓库保留应用源码而不提交生成式平台模板；首次拉取后生成 Android/iOS Runner：
+要求 Flutter 3.47.5 stable。iOS Runner 已提交且是主移动端构建目标：
 
-```bash
+~~~bash
 cd mobile
-flutter create --platforms=android,ios --org dev.personalhealthos .
 flutter pub get
 flutter analyze
 flutter test
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080/api/v1
-```
+flutter build ios --release --no-codesign \
+  --dart-define=APP_ENV=staging \
+  --dart-define=API_BASE_URL=https://staging-api.example.com/api/v1
+~~~
 
-Android 模拟器访问宿主机使用 `10.0.2.2`；真机请改为同一局域网内的服务器地址。生产包只允许 HTTPS。
+最后一条命令只能在 macOS + Xcode 执行。iPhone 不能通过 `localhost` 访问开发 Mac；应使用设备可达的 HTTPS 主机。开发环境可显式使用局域网 HTTP，但仓库不提交全局 ATS 放行；staging/prod 强制 HTTPS。完整签名、真机和 TestFlight 步骤见 `IOS_BUILD_SETUP.md`。
+
+Android 兼容 Runner 仍由 CI 临时生成：
+
+~~~bash
+flutter create --platforms=android --org com.personal .
+dart run tool/configure_platforms.dart
+flutter build apk --debug
+~~~
 
 ## 环境变量
 
@@ -139,6 +157,8 @@ Android 模拟器访问宿主机使用 `10.0.2.2`；真机请改为同一局域�
 - `CORS_ORIGINS`：精确白名单 JSON 数组。
 - `UPLOAD_DIR`、`MAX_UPLOAD_BYTES`：私有上传位置和大小上限。
 - `AI_PROVIDER`、`AI_BASE_URL`、`AI_API_KEY`、各模型名：AI Gateway 配置。默认 `disabled`，无 Key 也可运行 Phase 1。
+- Flutter 编译参数 `APP_ENV`（dev/staging/prod）与 `API_BASE_URL`：iPhone API 环境。
+- `IOS_BUNDLE_ID`、`APP_DISPLAY_NAME`：通过 `mobile/tool/configure_ios.dart` 生成本地、忽略的 Xcode 配置。
 
 禁止把 `.env`、API Key、真实 Token 或数据库密码提交 Git。
 
@@ -156,7 +176,7 @@ Android 模拟器访问宿主机使用 `10.0.2.2`；真机请改为同一局域�
 
 - 尚未实现训练、提醒、RAG、报告和体检 OCR；这些仍按路线图后续交付。
 - 移动端当前离线 Outbox 覆盖餐次和餐次条目的创建；服务端已支持餐次/条目的完整 CRUD。
-- 当前本地机器若没有 Docker/Flutter，只能运行 Python 后端验证；CI 会用正式 Flutter SDK 执行移动端 analyze/test。
+- Windows 可运行 Flutter analyze/test，但不能证明 iOS 原生构建；主移动 CI 使用 macOS 执行 `flutter build ios --no-codesign`，真机和签名仍需 Apple 环境。
 - HTTPS 证书、域名、Push 凭据和真实 AI Key 都属于部署阶段配置，不在仓库中提供默认秘密。
 
 ## 常见问题

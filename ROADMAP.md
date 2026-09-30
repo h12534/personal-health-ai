@@ -7,13 +7,16 @@
 | 2（已完成） | 食物、餐次、营养、基础离线同步 | 手动记录闭环、真实 Dashboard、Outbox 与后端质量门通过 |
 | 3（已完成） | 图像识别、确认、个人食物记忆 | 原始估计与确认值分离，可按历史校准；安全上传、Mock/远程 Provider、草稿 UI、Retention 和 PostgreSQL CI 已接通 |
 | 4（已完成） | 私人 AI 饮食教练 | 程序化目标/趋势/TDEE、食堂/下一餐、审批、安全层、Mock/远程 Provider 与 Flutter 闭环通过 |
+| iOS 就绪（已完成代码与文档） | iPhone 主目标、iOS Runner、权限/Keychain/CI/发布文档 | Windows analyze/test 已通过；macOS 无签名构建和真机验收作为外部平台门禁 |
 | 5 | 训练 | 计划、组次、RPE/RIR、历史 PR 与保守递进 |
 | 6 | 智能提醒 | 状态感知、勿扰和防轰炸测试通过 |
 | 7 | 知识库/RAG | 版本、混合检索、引用与评测集通过 |
 | 8 | 日/周/月报告 | 幂等生成且趋势策略可解释 |
 | 9 | 体检 OCR | 人工确认、单位标准化、异常提示通过 |
-| 10 | HealthKit/Health Connect | 权限、增量同步、去重与撤权通过 |
+| 10 | HealthKit（iPhone 优先）/Health Connect（兼容） | 权限、增量同步、去重与撤权通过 |
 | 11 | 发布加固 | 移动端构建、安全审查、备份恢复、部署演练通过 |
 
 每一阶段必须先通过迁移、测试、lint、类型检查和回归，再进入下一阶段。发布策略为 `main` + 短生命周期 `feature/*`；稳定阶段使用清晰、单一职责的提交。
+
+iOS Widget 与 Apple Watch companion 保留为 Phase 11 之后的独立路线项；不提前进入 Phase 5。iOS 原生构建成功只能由 macOS + Xcode 或对应 CI 证明。
 

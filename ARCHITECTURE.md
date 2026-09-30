@@ -3,7 +3,7 @@
 ## 总览
 
 ```text
-Flutter App (Drift/SQLite + Outbox，后续接 HealthKit/Health Connect)
+iPhone Flutter App (iOS 主目标；Drift/SQLite + Outbox，后续接 HealthKit)
         │ HTTPS / JSON
         ▼
 Nginx ──► FastAPI 模块化单体 ──► PostgreSQL + pgvector
@@ -90,6 +90,16 @@ Intent → Safety → Context → deterministic diet services → CoachProvider 
 ```
 
 规则服务拥有数值真相，Provider 只负责自然语言。高风险请求由安全层短路。聊天动作不执行领域写入；目标调整通过独立、幂等、按用户隔离的审批 API，在事务中创建次日目标版本。详见 `PHASE4_DIET_COACH.md`。
+
+## iOS 平台边界
+
+- iOS 16+ 是主移动目标，Android 保留兼容构建；Linux 后端协议不依赖移动平台。
+- iOS Runner 进入版本控制，Bundle ID 与显示名由非秘密 Xcode 配置覆盖。
+- Token 进入 iOS Keychain；Drift、Outbox 和待上传图片只在应用沙盒内。
+- `HealthDataProvider` 的 iPhone 优先级为 `AppleHealthProvider → ManualHealthProvider`。当前 Apple Provider 是未启用占位，不包含 HealthKit entitlement。
+- 提醒先采用本地通知，远程事件再接 APNs。服务器调度器只负责监督、去重和触发，不假定 iOS 应用常驻后台。
+- staging/prod 只允许 HTTPS；不提交全局 ATS 例外。设备端不能使用 localhost 访问开发 Mac。
+- Widget 与 Apple Watch 为未来扩展，不进入 Phase 5 交付范围。
 
 ## 可观测性
 
