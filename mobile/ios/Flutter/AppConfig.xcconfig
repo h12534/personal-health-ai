@@ -1,0 +1,6 @@
+// Committed defaults. Generate AppConfig.local.xcconfig from environment
+// variables with: dart run tool/configure_ios.dart
+IOS_BUNDLE_ID = com.personal.healthcoach
+APP_DISPLAY_NAME = 私人健康
+
+#include? "AppConfig.local.xcconfig"
