@@ -9,8 +9,18 @@ from app.core.errors import AppError
 from app.core.security import decode_token
 from app.db.session import get_db
 from app.models.user import User
-from app.providers.ai import build_vision_provider
-from app.providers.ai.base import VisionProvider
+from app.providers.ai import (
+    build_embedding_provider,
+    build_health_answer_provider,
+    build_lab_ocr_provider,
+    build_vision_provider,
+)
+from app.providers.ai.base import (
+    EmbeddingProvider,
+    HealthAnswerProvider,
+    LabOCRProvider,
+    VisionProvider,
+)
 from app.providers.storage import get_storage_provider
 from app.providers.storage.base import StorageProvider
 from app.repositories.user_repository import UserRepository
@@ -35,6 +45,12 @@ async def get_current_user(
     return user
 
 
+async def get_current_admin(user: User = Depends(get_current_user)) -> User:
+    if not user.is_superuser:
+        raise AppError("admin_required", "Administrator access is required.", 403)
+    return user
+
+
 CurrentUser = User
 
 
@@ -44,3 +60,15 @@ def get_vision_provider() -> VisionProvider:
 
 def get_private_storage() -> StorageProvider:
     return get_storage_provider()
+
+
+def get_embedding_provider() -> EmbeddingProvider:
+    return build_embedding_provider()
+
+
+def get_lab_ocr_provider() -> LabOCRProvider:
+    return build_lab_ocr_provider()
+
+
+def get_health_answer_provider() -> HealthAnswerProvider:
+    return build_health_answer_provider()

@@ -9,6 +9,9 @@ from app.api.v1.endpoints import (
     exercises,
     foods,
     health,
+    health_ai,
+    knowledge,
+    labs,
     meal_analyses,
     meals,
     nutrition,
@@ -40,4 +43,7 @@ api_router.include_router(health.activity_router, prefix="/activity", tags=["act
 api_router.include_router(health.sleep_router, prefix="/sleep", tags=["sleep"])
 api_router.include_router(health.recovery_router, prefix="/recovery", tags=["recovery"])
 api_router.include_router(health.health_router, prefix="/health", tags=["health-sync"])
+api_router.include_router(knowledge.router, prefix="/knowledge", tags=["knowledge"])
+api_router.include_router(labs.router, prefix="/labs", tags=["labs"])
 api_router.include_router(training_coach.router, prefix="/ai/training", tags=["ai-training-coach"])
+api_router.include_router(health_ai.router, prefix="/ai/health", tags=["ai-health"])
