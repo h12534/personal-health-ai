@@ -46,3 +46,13 @@
 - 食堂、菜品、饥饿记录、Saved Meal、对话和建议均按 `user_id` 隔离；删除、编辑、确认和快速记录仍走正式鉴权 API。
 - AI 使用量继续写入 `ai_usage_logs`，但普通日志不记录完整对话、完整 Coach Context、API Key 或可识别健康正文。
 
+## Phase 6 体检与 RAG
+
+- 体检上传交叉验证 MIME、魔数和实际解码；PDF 验证签名并逐页处理。原文件只进入私有 StorageProvider，API/日志不返回对象路径或正文。
+- 第三方 OCR 默认关闭；每次远程处理必须显式授权。`retain_original=false` 会在确认后删除原文件，删除报告也会删除原文件并软删除关联结果。
+- OCR 只写 Draft，用户确认前不进入正式结果、趋势或 AI context。简单范围不得自动产生 `critical`。
+- Knowledge PDF/HTML/Markdown/TXT 只由受信管理流程导入；文档正文仍视为 untrusted evidence，不能覆盖系统指令或触发工具。
+- 向量/全文 SQL 使用绑定参数；默认检索排除 archived、inactive 和 soft-deleted 版本。
+- Health AI 危急症状在网络模型前短路；诊断和停药请求强制医疗边界。普通日志不写完整问题、回答、OCR 或个人 context。
+- iOS Files picker 使用系统文档选择器和临时安全作用域访问，不持久化外部 URL/bookmark；本地只缓存结构化报告与趋势。
+

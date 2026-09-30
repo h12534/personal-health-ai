@@ -132,3 +132,27 @@ Base URL：`/api/v1`。所有时间为 ISO 8601，日期为 `YYYY-MM-DD`，数�
 - POST /api/v1/ai/training/chat
 
 Workout and set writes accept Idempotency-Key and stable client UUIDs. Training adjustments are suggestions until the user confirms them; applying one stores the audit record and updates the active plan target weight. Health summary writes require a provider source_record_id.
+
+## Phase 6 endpoints
+
+| Method | Path | 用途 |
+|---|---|---|
+| POST | `/api/v1/knowledge/documents/import` | multipart 导入 vetted 文档与明确 metadata |
+| GET | `/api/v1/knowledge/documents` | 列出版本、active/archive 状态 |
+| GET | `/api/v1/knowledge/documents/{id}/chunks` | 管理用途查看 chunks |
+| PATCH | `/api/v1/knowledge/documents/{id}` | 启用/停用/归档 |
+| POST | `/api/v1/knowledge/documents/{id}/reembed` | 用当前 Provider 重新 embedding |
+| DELETE | `/api/v1/knowledge/documents/{id}` | 软删除文档 |
+| POST | `/api/v1/knowledge/search` | Hybrid Search + Rerank + evidence threshold |
+| POST | `/api/v1/labs/reports` | 上传图片/PDF；远程 OCR 需 `allow_remote_ocr=true` |
+| GET | `/api/v1/labs/reports[/{id}]` | 当前用户报告与 Draft/正式结果 |
+| PATCH | `/api/v1/labs/reports/{id}/draft-items/{item_id}` | 修改 OCR 草稿 |
+| POST | `/api/v1/labs/reports/{id}/confirm` | 确认全部或指定条目 |
+| DELETE | `/api/v1/labs/reports/{id}` | 软删除报告/结果并删除原文件 |
+| DELETE | `/api/v1/labs/results/{id}` | 删除单项正式指标 |
+| GET | `/api/v1/labs/trends/{normalized_name}` | 规范单位后的历史趋势 |
+| POST | `/api/v1/labs/reports/{id}/follow-up-suggestions` | 用户触发生成复查建议 |
+| POST | `/api/v1/labs/follow-up-suggestions/{id}/accept` | 用户接受建议 |
+| POST | `/api/v1/ai/health/chat` | 安全筛查、个人上下文、RAG、引用式回答 |
+
+Lab 文件最大 30 MB，只接受 JPEG/PNG/WebP/PDF。上传响应永远先是 Draft；只有 confirm 后的值进入趋势和 Health AI context。所有 Lab/Health AI 资源按当前用户过滤，越权统一表现为 404。

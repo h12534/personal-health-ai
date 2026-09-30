@@ -2,7 +2,7 @@
 
 一个面向个人长期使用的私人健康操作系统。项目从稳健减脂、保留肌肉和建立力量训练习惯出发，逐步连接身体数据、现实饮食、训练、活动、睡眠、体检、知识库、提醒和 AI 教练。
 
-当前仓库已完成 Phase 0–4。除认证、档案、体重、手工/照片记餐外，现已具备程序化目标、7/14/28 天趋势、依从性、个人 TDEE、下一餐、食堂/常用餐、调整审批，以及带独立安全层的 Flutter AI 饮食教练。
+当前仓库已完成 Phase 0–6。除认证、档案、体重、饮食、训练、HealthKit 摘要和恢复外，现已具备 pgvector 健康知识库、体检 OCR 草稿确认、指标趋势、引用式健康问答和独立医疗安全层。
 
 移动端以 Apple iPhone / iOS 16+ 为首要交付目标；Android 作为次要兼容平台保留。后端继续部署到 Linux，Windows 可进行后端与 Flutter 静态开发，但 iOS 原生构建必须在 macOS + Xcode 上完成。
 
@@ -57,6 +57,12 @@ storage/                 本地私有文件/备份挂载占位目录
 - [IOS_PLUGIN_AUDIT.md](IOS_PLUGIN_AUDIT.md)
 - [IOS_BUILD_SETUP.md](IOS_BUILD_SETUP.md)
 - [PRIVACY.md](PRIVACY.md)
+- [PHASE6_HEALTH_KNOWLEDGE.md](PHASE6_HEALTH_KNOWLEDGE.md)
+- [RAG_DESIGN.md](RAG_DESIGN.md)
+- [KNOWLEDGE_INGESTION.md](KNOWLEDGE_INGESTION.md)
+- [LAB_REPORT_SYSTEM.md](LAB_REPORT_SYSTEM.md)
+- [HEALTH_AI_SAFETY.md](HEALTH_AI_SAFETY.md)
+- [HEALTH_AI_CONTEXT.md](HEALTH_AI_CONTEXT.md)
 
 ## 本地后端
 
@@ -71,6 +77,7 @@ $env:DATABASE_URL = "sqlite+aiosqlite:///./health_os.db"
 alembic upgrade head
 python -m app.scripts.seed_foods
 python -m app.scripts.seed_exercises
+python -m app.scripts.seed_lab_tests
 uvicorn app.main:app --reload
 ```
 
@@ -89,6 +96,8 @@ mypy --no-incremental app
 Phase 3 默认使用 `VISION_PROVIDER=mock`，不需要 API Key。上传后结果仍是草稿，必须调用确认接口才会创建正式餐食。要启用远程兼容 Provider，设置 `VISION_PROVIDER=openai_compatible`、`VISION_BASE_URL`、`VISION_API_KEY`、`VISION_MODEL`，并由用户在“我的”页明确同意第三方图片分析。
 
 Phase 4 默认使用 `COACH_PROVIDER=mock`。热量、蛋白质、趋势、TDEE、下一餐和调整建议始终由后端规则服务计算；远程模型只负责表达，且输出必须通过 strict schema。真实 Provider 配置见 `REAL_AI_COACH_TEST.md`。
+
+Phase 6 默认使用 `EMBEDDING_PROVIDER=mock`、`LAB_OCR_PROVIDER=mock` 和 `HEALTH_ANSWER_PROVIDER=mock`，无需付费 Key。体检 OCR 永远先产生 Draft，用户确认后才进入趋势。真实远程 OCR 需要该次上传显式授权。知识文档通过 `python -m app.scripts.ingest_knowledge` 手工导入；详见 `KNOWLEDGE_INGESTION.md`。
 
 仓库已提交并维护 iOS Runner，不再在日常流程中重建：
 
@@ -165,9 +174,9 @@ flutter build apk --debug
 
 ## AI 与知识库
 
-当前提供 `LLMProvider`、`VisionProvider`、`CoachProvider`、`EmbeddingProvider` 协议。Phase 4 的 Coach Orchestrator 已接入意图、安全、最小上下文、Mock/远程 Provider；Phase 2–4 的数值算法均不调用模型。
+当前提供 `VisionProvider`、`CoachProvider`、`EmbeddingProvider`、`LabOCRProvider` 和 `HealthAnswerProvider` 协议。Health AI 已接入意图、安全、最小上下文、Hybrid Retrieval、Rerank、Mock/远程 Provider 和结构化引用；所有数值算法均不调用模型。
 
-知识导入将在 Phase 6 提供命令；来源以 WHO、CDC、NIH/NIDDK、ACSM、正式临床指南与高质量系统综述为主，并保存版本、证据等级和 URL。
+知识导入命令已提供；来源以 WHO、CDC、NIH/NIDDK、ACSM、正式临床指南与高质量系统综述为主，并保存版本、证据等级和 URL。仓库只提交来源 metadata，不提交受版权限制全文。
 
 ## 备份与恢复
 
@@ -175,8 +184,9 @@ flutter build apk --debug
 
 ## 当前限制
 
-- 尚未实现训练、提醒、RAG、报告和体检 OCR；这些仍按路线图后续交付。
-- 移动端当前离线 Outbox 覆盖餐次和餐次条目的创建；服务端已支持餐次/条目的完整 CRUD。
+- 扫描版知识 PDF 尚未进入知识 OCR；会明确返回 OCR required。体检扫描 PDF 已支持逐页渲染和 OCR Provider。
+- 复查提醒目前只生成并接受 suggestion，不会擅自创建系统通知；真实远程 Embedding/OCR/Health Answer 需要用户自行配置 Key。
+- 移动端离线 Outbox 覆盖餐次和训练创建；已保存体检报告与趋势可离线查看，新的知识问答/OCR 仍需要服务器。
 - Windows 可运行 Flutter analyze/test，但不能证明 iOS 原生构建；主移动 CI 使用 macOS 执行 `flutter build ios --no-codesign`，真机和签名仍需 Apple 环境。
 - HTTPS 证书、域名、Push 凭据和真实 AI Key 都属于部署阶段配置，不在仓库中提供默认秘密。
 

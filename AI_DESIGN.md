@@ -55,3 +55,11 @@ Metadata：`source, title, author, year, category, evidence_level, url, language
 Training advice uses a separate TrainingCoachOrchestrator with targeted context and safety rules. Program services own weight selection, progression, e1RM, PRs, rescheduling and recovery categories. The provider explains already-calculated results and returns suggested actions; it cannot silently edit plans or workout records.
 
 The safety layer blocks emergency symptoms and punitive exercise before any provider call. Missing a workout shifts the sequence without double sessions.
+
+## Phase 6 health intelligence
+
+新增 `EmbeddingProvider`、`LabOCRProvider` 和 `HealthAnswerProvider` 的 Mock/OpenAI-compatible 实现。SDK/HTTP 调用只存在于 Provider；Ingestion、Labs 与 Orchestrator 不依赖具体厂商。
+
+Health AI 顺序固定为 Intent → deterministic Safety → minimal Context → Query Rewrite → Hybrid Retrieval → deterministic Rerank → evidence threshold → Answer Provider → structured citations。危急症状和补偿性伤害行为在 Provider 前短路。诊断/处方请求设置医疗边界；无 evidence 时响应必须显示知识库依据不足。
+
+`ai_usage_logs.task` 区分 `embedding`、`lab_ocr`、`rag_retrieval`、`rerank` 和 `health_chat`。相同 chunk 按 content hash/model 复用 embedding。BMR、TDEE、体重趋势、营养聚合、PR、单位转换和 reference-range flag 仍由确定性服务拥有。

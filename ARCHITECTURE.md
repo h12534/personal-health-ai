@@ -110,3 +110,17 @@ Intent → Safety → Context → deterministic diet services → CoachProvider 
 Flutter Training UI → Drift v3 / Outbox → FastAPI workout API → PostgreSQL training tables → deterministic progress/recovery services → AI explanation.
 
 Apple Health access is isolated behind HealthDataProvider. Only structured summaries pass through /health/sync/summary; health_sync_state records per-type incremental cursors. Diet context consumes today_training_status, activity and recovery without coupling Phase 4 to plugin code.
+
+## Phase 6 health knowledge and clinical context
+
+```text
+Vetted document → Extract/Chunk → EmbeddingProvider → pgvector + FTS
+                                                        │
+Lab image/PDF → private storage → per-page OCR → Draft → user confirm → LabResult
+                                                        │
+Question → Intent → Safety → minimal context → Hybrid/Rerank → Answer + Citation
+```
+
+Knowledge、Labs 与 Health AI 保持三个边界：知识导入不读取个人数据；OCR 只生成草稿；Health Context 只读取当前用户已确认的最少必要数据。`HealthSafetyService` 可在检索和 Provider 之前短路。Drift v4 只缓存已保存报告和趋势，不缓存原始体检文件或完整健康对话。
+
+iOS Files 选择通过 Runner 内的 `UIDocumentPickerViewController` 完成，只接受 PDF；读取时使用 security-scoped access 并立即释放，不保存外部 URL。Camera/Photos 继续使用已有 `image_picker` 权限流程。

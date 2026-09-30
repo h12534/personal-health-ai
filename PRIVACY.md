@@ -128,3 +128,11 @@ retention must update this document in the same pull request.
 HealthKit data is sensitive. The App requests each type only after the user enables its switch. Phase 5 reads steps, walking/running distance, active energy, resting heart rate, sleep and workouts; it does not write to Apple Health.
 
 The server receives only daily summaries or sleep/training segments needed for activity and recovery features. Raw HealthKit sample streams, routes and continuous heart-rate samples are not uploaded. Provider record IDs prevent duplicate summaries. Users can disable each type independently and delete server-synced provider data without deleting manual records.
+
+## Lab reports and health knowledge
+
+Lab reports are high-sensitivity health data. Camera, Photos, and Files access occurs only after an explicit upload action. PDF selection uses the iOS system picker; the app reads the selected temporary copy during upload and releases security-scoped access without saving an external path.
+
+OCR output remains an editable draft until the user confirms it. Only confirmed values may enter trends and Health AI context. Remote third-party OCR is separately opt-in for that upload; file retention is separately configurable. Deleting a report removes its private original and hides associated values from trends and context.
+
+Knowledge search uses the server's vetted, versioned corpus and does not automatically search the public internet. Health questions are sent with only intent-selected personal fields. Saved offline lab history contains structured values and trends in the app sandbox, not the original report. Provider keys remain server-side, and ordinary logs/analytics must not include report text, OCR payloads, complete conversations, or citations tied to a person.

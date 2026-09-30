@@ -98,6 +98,20 @@
 
 迁移 `0004_phase4_diet_coach` 的证据、标签与消息 payload 在 PostgreSQL 使用 JSONB。所有顶层个人资源直接带 `user_id`；子资源通过父级联表校验所有权。
 
+## Phase 6 实体
+
+- `knowledge_documents`：来源、publisher/authors、发布/更新日期、版本、语言、分类、证据等级、checksum/content hash、active/archive/soft delete。
+- `knowledge_chunks`：章节、正文、token count、64 维 vector、embedding model、JSONB metadata。PostgreSQL 额外生成 `search_vector`，使用 GIN/HNSW 索引。
+- `knowledge_ingestion_jobs`：文件、checksum、状态、统计、失败摘要和起止时间。
+- `lab_test_dictionary`：标准名、显示名、aliases、默认单位和分类。
+- `lab_reports / lab_report_pages`：当前用户、日期、私有对象键、OCR/复核状态和逐页提取状态。
+- `lab_ocr_sessions / lab_ocr_items`：Provider/模型/远程授权、页数、结构化草稿、置信度和用户修改标记。
+- `lab_results`：用户确认后的值、单位、报告原始参考范围、flag、分类和软删除。
+- `health_ai_conversations / health_ai_messages`：按用户隔离的会话和经过结构化校验的响应。
+- `health_check_suggestions`：复查/筛查建议、证据快照和用户接受状态。
+
+迁移 `0006_phase6_health_knowledge` 在 PostgreSQL 创建 `vector` extension、JSONB、generated tsvector、GIN 和 HNSW；SQLite 使用 JSON variant 供本地测试。Flutter Drift v4 新增 `local_lab_reports` 和 `local_lab_trends`，只保存离线展示 payload，不保存原文件。
+
 ## 完整演进清单
 
 后续迁移按领域增加：`body_metrics, waist_logs, canteens, canteen_foods, diet_plans, exercise_library, training_plans, training_days, training_exercises, workout_sessions, workout_sets, activity_logs, step_logs, water_logs, sleep_logs, lab_reports, lab_results, body_photos, reminders, notification_logs, daily_reports, weekly_reports, monthly_reports, knowledge_documents, knowledge_chunks, ai_conversations, ai_messages, ai_memories, ai_provider_configs, system_settings, audit_logs`。
