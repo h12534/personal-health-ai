@@ -19,7 +19,7 @@ class LocalDatabase extends GeneratedDatabase {
   LocalDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
@@ -92,9 +92,11 @@ class LocalDatabase extends GeneratedDatabase {
             'CREATE INDEX ix_local_meal_day ON local_meals(local_date, meal_type)',
           );
           await _createVisionTaskTable();
+          await _createWorkoutTables();
         },
         onUpgrade: (migrator, from, to) async {
           if (from < 2) await _createVisionTaskTable();
+          if (from < 3) await _createWorkoutTables();
         },
       );
 
@@ -117,6 +119,165 @@ class LocalDatabase extends GeneratedDatabase {
       CREATE INDEX IF NOT EXISTS ix_vision_task_status
       ON local_vision_tasks(status, created_at)
     ''');
+  }
+
+  Future<void> _createWorkoutTables() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS local_workout_sessions (
+        local_id TEXT PRIMARY KEY,
+        server_id TEXT,
+        training_day_id TEXT,
+        started_at TEXT NOT NULL,
+        ended_at TEXT,
+        status TEXT NOT NULL,
+        session_rpe REAL,
+        sync_status TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS local_workout_sets (
+        local_id TEXT PRIMARY KEY,
+        server_id TEXT,
+        session_local_id TEXT NOT NULL,
+        exercise_id TEXT NOT NULL,
+        set_number INTEGER NOT NULL,
+        set_type TEXT NOT NULL,
+        weight_kg REAL NOT NULL,
+        reps INTEGER NOT NULL,
+        rir REAL,
+        rest_seconds INTEGER NOT NULL,
+        sync_status TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY(session_local_id) REFERENCES local_workout_sessions(local_id)
+      )
+    ''');
+    await customStatement('''
+      CREATE INDEX IF NOT EXISTS ix_local_workout_status
+      ON local_workout_sessions(status, started_at)
+    ''');
+    await customStatement('''
+      CREATE INDEX IF NOT EXISTS ix_local_workout_set_session
+      ON local_workout_sets(session_local_id, set_number)
+    ''');
+  }
+
+  Future<void> insertWorkout(LocalWorkoutRecord workout) async {
+    await customInsert(
+      '''
+        INSERT OR IGNORE INTO local_workout_sessions
+          (local_id, server_id, training_day_id, started_at, ended_at, status,
+           session_rpe, sync_status, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ''',
+      variables: [
+        Variable<String>(workout.localId),
+        Variable<String>(workout.serverId),
+        Variable<String>(workout.trainingDayId),
+        Variable<String>(workout.startedAt.toUtc().toIso8601String()),
+        Variable<String>(workout.endedAt?.toUtc().toIso8601String()),
+        Variable<String>(workout.status),
+        Variable<double>(workout.sessionRpe),
+        Variable<String>(workout.syncStatus),
+        Variable<String>(workout.updatedAt.toUtc().toIso8601String()),
+      ],
+    );
+  }
+
+  Future<void> insertWorkoutSet(LocalWorkoutSetRecord workoutSet) async {
+    await customInsert(
+      '''
+        INSERT OR IGNORE INTO local_workout_sets
+          (local_id, server_id, session_local_id, exercise_id, set_number,
+           set_type, weight_kg, reps, rir, rest_seconds, sync_status, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ''',
+      variables: [
+        Variable<String>(workoutSet.localId),
+        Variable<String>(workoutSet.serverId),
+        Variable<String>(workoutSet.sessionLocalId),
+        Variable<String>(workoutSet.exerciseId),
+        Variable<int>(workoutSet.setNumber),
+        Variable<String>(workoutSet.setType),
+        Variable<double>(workoutSet.weightKg),
+        Variable<int>(workoutSet.reps),
+        Variable<double>(workoutSet.rir),
+        Variable<int>(workoutSet.restSeconds),
+        Variable<String>(workoutSet.syncStatus),
+        Variable<String>(workoutSet.updatedAt.toUtc().toIso8601String()),
+      ],
+    );
+  }
+
+  Future<LocalWorkoutRecord?> workoutByLocalId(String localId) async {
+    final row = await customSelect(
+      'SELECT * FROM local_workout_sessions WHERE local_id = ?',
+      variables: [Variable<String>(localId)],
+    ).getSingleOrNull();
+    return row == null ? null : LocalWorkoutRecord.fromRow(row);
+  }
+
+  Future<void> markWorkoutSynced(String localId, String serverId) async {
+    await customUpdate(
+      '''
+        UPDATE local_workout_sessions
+        SET server_id = ?, sync_status = 'synced', updated_at = ?
+        WHERE local_id = ?
+      ''',
+      variables: [
+        Variable<String>(serverId),
+        Variable<String>(DateTime.now().toUtc().toIso8601String()),
+        Variable<String>(localId),
+      ],
+    );
+  }
+
+  Future<void> markWorkoutSetSynced(String localId, String serverId) async {
+    await customUpdate(
+      '''
+        UPDATE local_workout_sets
+        SET server_id = ?, sync_status = 'synced', updated_at = ?
+        WHERE local_id = ?
+      ''',
+      variables: [
+        Variable<String>(serverId),
+        Variable<String>(DateTime.now().toUtc().toIso8601String()),
+        Variable<String>(localId),
+      ],
+    );
+  }
+
+  Future<void> completeLocalWorkout(
+    String localId,
+    DateTime endedAt, {
+    double? sessionRpe,
+  }) async {
+    await customUpdate(
+      '''
+        UPDATE local_workout_sessions
+        SET ended_at = ?, status = 'completed', session_rpe = ?,
+            sync_status = 'pending', updated_at = ?
+        WHERE local_id = ?
+      ''',
+      variables: [
+        Variable<String>(endedAt.toUtc().toIso8601String()),
+        Variable<double>(sessionRpe),
+        Variable<String>(DateTime.now().toUtc().toIso8601String()),
+        Variable<String>(localId),
+      ],
+    );
+  }
+
+  Future<List<LocalWorkoutSetRecord>> workoutSets(String sessionLocalId) async {
+    final rows = await customSelect(
+      '''
+        SELECT * FROM local_workout_sets
+        WHERE session_local_id = ?
+        ORDER BY set_number, updated_at
+      ''',
+      variables: [Variable<String>(sessionLocalId)],
+    ).get();
+    return rows.map(LocalWorkoutSetRecord.fromRow).toList();
   }
 
   Future<void> saveVisionTask(VisionTaskRecord task) async {
@@ -442,6 +603,8 @@ class LocalDatabase extends GeneratedDatabase {
       await customStatement('DELETE FROM local_meal_items');
       await customStatement('DELETE FROM local_meals');
       await customStatement('DELETE FROM food_cache');
+      await customStatement('DELETE FROM local_workout_sets');
+      await customStatement('DELETE FROM local_workout_sessions');
     });
     for (final task in visionTasks) {
       try {
@@ -691,6 +854,89 @@ class VisionTaskRecord {
   final double uploadProgress;
   final String? lastError;
   final DateTime createdAt;
+  final DateTime updatedAt;
+}
+
+class LocalWorkoutRecord {
+  const LocalWorkoutRecord({
+    required this.localId,
+    required this.startedAt,
+    required this.status,
+    required this.syncStatus,
+    required this.updatedAt,
+    this.serverId,
+    this.trainingDayId,
+    this.endedAt,
+    this.sessionRpe,
+  });
+
+  factory LocalWorkoutRecord.fromRow(QueryRow row) => LocalWorkoutRecord(
+        localId: row.read<String>('local_id'),
+        serverId: row.readNullable<String>('server_id'),
+        trainingDayId: row.readNullable<String>('training_day_id'),
+        startedAt: DateTime.parse(row.read<String>('started_at')).toLocal(),
+        endedAt: row.readNullable<String>('ended_at') == null
+            ? null
+            : DateTime.parse(row.read<String>('ended_at')).toLocal(),
+        status: row.read<String>('status'),
+        sessionRpe: row.readNullable<double>('session_rpe'),
+        syncStatus: row.read<String>('sync_status'),
+        updatedAt: DateTime.parse(row.read<String>('updated_at')).toLocal(),
+      );
+
+  final String localId;
+  final String? serverId;
+  final String? trainingDayId;
+  final DateTime startedAt;
+  final DateTime? endedAt;
+  final String status;
+  final double? sessionRpe;
+  final String syncStatus;
+  final DateTime updatedAt;
+}
+
+class LocalWorkoutSetRecord {
+  const LocalWorkoutSetRecord({
+    required this.localId,
+    required this.sessionLocalId,
+    required this.exerciseId,
+    required this.setNumber,
+    required this.setType,
+    required this.weightKg,
+    required this.reps,
+    required this.rir,
+    required this.restSeconds,
+    required this.syncStatus,
+    required this.updatedAt,
+    this.serverId,
+  });
+
+  factory LocalWorkoutSetRecord.fromRow(QueryRow row) => LocalWorkoutSetRecord(
+        localId: row.read<String>('local_id'),
+        serverId: row.readNullable<String>('server_id'),
+        sessionLocalId: row.read<String>('session_local_id'),
+        exerciseId: row.read<String>('exercise_id'),
+        setNumber: row.read<int>('set_number'),
+        setType: row.read<String>('set_type'),
+        weightKg: row.read<double>('weight_kg'),
+        reps: row.read<int>('reps'),
+        rir: row.readNullable<double>('rir'),
+        restSeconds: row.read<int>('rest_seconds'),
+        syncStatus: row.read<String>('sync_status'),
+        updatedAt: DateTime.parse(row.read<String>('updated_at')).toLocal(),
+      );
+
+  final String localId;
+  final String? serverId;
+  final String sessionLocalId;
+  final String exerciseId;
+  final int setNumber;
+  final String setType;
+  final double weightKg;
+  final int reps;
+  final double? rir;
+  final int restSeconds;
+  final String syncStatus;
   final DateTime updatedAt;
 }
 

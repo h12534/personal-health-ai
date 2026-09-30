@@ -6,6 +6,7 @@ import '../../nutrition/presentation/nutrition_screen.dart';
 import '../../coach/presentation/coach_screen.dart';
 import '../../coach/presentation/coach_controller.dart';
 import '../../coach/data/coach_models.dart';
+import '../../training/presentation/training_screen.dart';
 import '../data/dashboard_model.dart';
 import 'dashboard_controller.dart';
 
@@ -28,7 +29,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           children: [
             _DashboardTab(onAddWeight: _showWeightDialog),
             const NutritionScreen(),
-            const _ComingSoon(title: '训练', icon: Icons.fitness_center_outlined),
+            const TrainingScreen(),
             const CoachScreen(),
             const ProfileScreen(),
           ],
@@ -286,7 +287,7 @@ class DashboardContent extends StatelessWidget {
               ),
               _MetricCard(
                 label: '步数',
-                value: '${data.steps}',
+                value: data.steps?.toString() ?? '暂无数据',
                 target: '/ ${data.stepsTarget}',
                 icon: Icons.directions_walk_outlined,
               ),
@@ -351,28 +352,6 @@ class _MetricCard extends StatelessWidget {
               Text(target, style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
-        ),
-      );
-}
-
-class _ComingSoon extends StatelessWidget {
-  const _ComingSoon({required this.title, required this.icon});
-
-  final String title;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 48, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 12),
-            Text(
-              '$title模块将在下一阶段接入',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
         ),
       );
 }

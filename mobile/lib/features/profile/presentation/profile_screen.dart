@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/presentation/auth_controller.dart';
 import '../../../core/network/api_client.dart';
+import 'health_sync_screen.dart';
 
 final visionPrivacyProvider = FutureProvider<VisionPrivacySettings>((ref) {
   return ref.watch(apiClientProvider).fetchVisionPrivacy();
@@ -29,9 +30,16 @@ class ProfileScreen extends ConsumerWidget {
           title: Text('体重趋势'),
           subtitle: Text('7 日均值与连续趋势'),
         ),
-        const ListTile(
+        ListTile(
           leading: Icon(Icons.settings_outlined),
-          title: Text('提醒与隐私设置'),
+          title: const Text('健康同步'),
+          subtitle: const Text('Apple Health · 按数据类型分别控制'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const HealthSyncScreen(),
+            ),
+          ),
         ),
         Card(
           child: privacy.when(

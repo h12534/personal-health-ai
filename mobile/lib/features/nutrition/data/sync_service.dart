@@ -83,6 +83,52 @@ class SyncService {
       await _database.markItemSynced(record.aggregateLocalId, serverItem.id);
       return true;
     }
+    if (record.operation == 'workout_create') {
+      final workout = await _api.createWorkout(
+        id: record.payload['id'] as String,
+        trainingDayId: record.payload['training_day_id'] as String?,
+        startedAt: DateTime.parse(record.payload['started_at'] as String),
+        idempotencyKey: record.idempotencyKey,
+      );
+      await _database.markWorkoutSynced(
+        record.aggregateLocalId,
+        workout.id,
+      );
+      return true;
+    }
+    if (record.operation == 'workout_set_create') {
+      final sessionLocalId = record.payload['session_local_id'] as String;
+      final localWorkout = await _database.workoutByLocalId(sessionLocalId);
+      if (localWorkout?.serverId == null) return false;
+      final workoutSet = await _api.createWorkoutSet(
+        workoutId: localWorkout!.serverId!,
+        id: record.payload['id'] as String,
+        exerciseId: record.payload['exercise_id'] as String,
+        setNumber: record.payload['set_number'] as int,
+        setType: record.payload['set_type'] as String,
+        weightKg: (record.payload['weight_kg'] as num).toDouble(),
+        reps: record.payload['reps'] as int,
+        rir: (record.payload['rir'] as num).toDouble(),
+        restSeconds: record.payload['rest_seconds'] as int,
+        idempotencyKey: record.idempotencyKey,
+      );
+      await _database.markWorkoutSetSynced(
+        record.aggregateLocalId,
+        workoutSet.id,
+      );
+      return true;
+    }
+    if (record.operation == 'workout_complete') {
+      final sessionLocalId = record.payload['session_local_id'] as String;
+      final localWorkout = await _database.workoutByLocalId(sessionLocalId);
+      if (localWorkout?.serverId == null) return false;
+      await _api.completeWorkout(
+        workoutId: localWorkout!.serverId!,
+        endedAt: DateTime.parse(record.payload['ended_at'] as String),
+        sessionRpe: (record.payload['session_rpe'] as num?)?.toDouble(),
+      );
+      return true;
+    }
     throw StateError('Unsupported outbox operation: ${record.operation}');
   }
 }

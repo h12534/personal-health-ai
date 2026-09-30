@@ -7,6 +7,7 @@ import '../../features/dashboard/data/dashboard_model.dart';
 import '../../features/coach/data/coach_models.dart';
 import '../../features/nutrition/data/nutrition_models.dart';
 import '../../features/nutrition/data/meal_analysis_models.dart';
+import '../../features/training/data/training_models.dart';
 import '../config/app_config.dart';
 import 'api_exception.dart';
 
@@ -715,6 +716,272 @@ class ApiClient {
           'context': context,
           'note': note,
         },
+        options: await _authorizedOptions(),
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<ExerciseModel>> fetchExercises([String? query]) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        query == null || query.isEmpty ? '/exercises' : '/exercises/search',
+        queryParameters: query == null || query.isEmpty ? null : {'q': query},
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (value) => ExerciseModel.fromJson(value as Map<String, dynamic>),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<TrainingPlanModel>> fetchTrainingPlans() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/training/plans',
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (value) =>
+                TrainingPlanModel.fromJson(value as Map<String, dynamic>),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<TrainingPlanModel> generateDefaultTrainingPlan() async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/training/plans/generate',
+        data: {
+          'goal': 'fat_loss_muscle_retention',
+          'experience': 'beginner',
+          'days_per_week': 3,
+          'equipment': ['machine', 'dumbbell', 'cable', 'bodyweight'],
+          'session_duration_min': 60,
+          'limitations': <String>[],
+          'preferences': <String>[],
+          'weeks': 8,
+        },
+        options: await _authorizedOptions(),
+      );
+      return TrainingPlanModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<WorkoutModel>> fetchWorkouts() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/workouts',
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (value) => WorkoutModel.fromJson(value as Map<String, dynamic>),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<WorkoutModel> createWorkout({
+    required String id,
+    required String? trainingDayId,
+    required DateTime startedAt,
+    required String idempotencyKey,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/workouts',
+        data: {
+          'id': id,
+          'training_day_id': trainingDayId,
+          'started_at': startedAt.toUtc().toIso8601String(),
+          'source': 'mobile_offline',
+          'idempotency_key': idempotencyKey,
+        },
+        options: await _authorizedOptions(idempotencyKey: idempotencyKey),
+      );
+      return WorkoutModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<WorkoutSetModel> createWorkoutSet({
+    required String workoutId,
+    required String id,
+    required String exerciseId,
+    required int setNumber,
+    required String setType,
+    required double weightKg,
+    required int reps,
+    required double rir,
+    required int restSeconds,
+    required String idempotencyKey,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/workouts/$workoutId/sets',
+        data: {
+          'id': id,
+          'exercise_id': exerciseId,
+          'set_number': setNumber,
+          'set_type': setType,
+          'weight_kg': weightKg,
+          'reps': reps,
+          'rir': rir,
+          'completed': true,
+          'rest_seconds': restSeconds,
+          'idempotency_key': idempotencyKey,
+        },
+        options: await _authorizedOptions(idempotencyKey: idempotencyKey),
+      );
+      return WorkoutSetModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<void> completeWorkout({
+    required String workoutId,
+    required DateTime endedAt,
+    double? sessionRpe,
+  }) async {
+    try {
+      await _dio.post<void>(
+        '/workouts/$workoutId/complete',
+        data: {
+          'ended_at': endedAt.toUtc().toIso8601String(),
+          'session_rpe': sessionRpe,
+        },
+        options: await _authorizedOptions(),
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<PersonalRecordModel>> fetchPersonalRecords() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/training/prs',
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (value) => PersonalRecordModel.fromJson(
+              value as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<TrainingCoachReply> sendTrainingCoachMessage(String message) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/ai/training/chat',
+        data: {'message': message},
+        options: await _authorizedOptions(),
+      );
+      return TrainingCoachReply.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<void> applyTrainingProgression({
+    required String exerciseId,
+    required double suggestedWeightKg,
+    required String reason,
+    required String idempotencyKey,
+    required Map<String, dynamic> evidenceSnapshot,
+  }) async {
+    try {
+      await _dio.post<void>(
+        '/training/adjustments/apply',
+        data: {
+          'exercise_id': exerciseId,
+          'suggested_weight_kg': suggestedWeightKg,
+          'reason': reason,
+          'idempotency_key': idempotencyKey,
+          'evidence_snapshot': evidenceSnapshot,
+        },
+        options: await _authorizedOptions(idempotencyKey: idempotencyKey),
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<HealthPermissionModel>> fetchHealthPermissions() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/health/permissions',
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (value) => HealthPermissionModel.fromJson(
+              value as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<HealthPermissionModel> setHealthPermission({
+    required String dataType,
+    required bool enabled,
+    required String authorizationStatus,
+  }) async {
+    try {
+      final response = await _dio.put<Map<String, dynamic>>(
+        '/health/permissions',
+        data: {
+          'data_type': dataType,
+          'enabled': enabled,
+          'authorization_status': authorizationStatus,
+        },
+        options: await _authorizedOptions(),
+      );
+      return HealthPermissionModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<void> uploadHealthSummary(Map<String, dynamic> summary) async {
+    try {
+      await _dio.post<void>(
+        '/health/sync/summary',
+        data: summary,
         options: await _authorizedOptions(),
       );
     } on DioException catch (error) {

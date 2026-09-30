@@ -37,7 +37,7 @@ class DashboardModel {
         fatTargetG: (json['fat_target_g'] as num?)?.toDouble(),
         fiberG: (json['fiber_g'] as num?)?.toDouble() ?? 0,
         fiberTargetG: (json['fiber_target_g'] as num?)?.toDouble(),
-        steps: json['steps'] as int? ?? 0,
+        steps: json['steps'] as int?,
         stepsTarget: json['steps_target'] as int? ?? 8000,
         waterMl: json['water_ml'] as int? ?? 0,
         trainingCompleted: json['training_completed'] as bool? ?? false,
@@ -60,7 +60,7 @@ class DashboardModel {
   final double? fatTargetG;
   final double fiberG;
   final double? fiberTargetG;
-  final int steps;
+  final int? steps;
   final int stepsTarget;
   final int waterMl;
   final bool trainingCompleted;
