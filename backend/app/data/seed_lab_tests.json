@@ -1,0 +1,23 @@
+[
+  {"canonical_name":"FASTING_GLUCOSE","display_name":"空腹血糖","aliases":["空腹葡萄糖","FPG","Fasting Glucose","GLU"],"default_unit":"mmol/L","category":"blood_glucose"},
+  {"canonical_name":"HBA1C","display_name":"糖化血红蛋白","aliases":["HbA1c","Glycated Hemoglobin","糖化血红蛋白A1c"],"default_unit":"%","category":"blood_glucose"},
+  {"canonical_name":"TOTAL_CHOLESTEROL","display_name":"总胆固醇","aliases":["TC","Total Cholesterol","胆固醇"],"default_unit":"mmol/L","category":"blood_lipids"},
+  {"canonical_name":"LDL_C","display_name":"低密度脂蛋白胆固醇","aliases":["LDL-C","LDL","低密度脂蛋白"],"default_unit":"mmol/L","category":"blood_lipids"},
+  {"canonical_name":"HDL_C","display_name":"高密度脂蛋白胆固醇","aliases":["HDL-C","HDL","高密度脂蛋白"],"default_unit":"mmol/L","category":"blood_lipids"},
+  {"canonical_name":"TRIGLYCERIDES","display_name":"甘油三酯","aliases":["TG","Triglycerides"],"default_unit":"mmol/L","category":"blood_lipids"},
+  {"canonical_name":"ALT","display_name":"丙氨酸氨基转移酶","aliases":["谷丙转氨酶","丙氨酸转氨酶","GPT"],"default_unit":"U/L","category":"liver"},
+  {"canonical_name":"AST","display_name":"天门冬氨酸氨基转移酶","aliases":["谷草转氨酶","天冬氨酸转氨酶","GOT"],"default_unit":"U/L","category":"liver"},
+  {"canonical_name":"GGT","display_name":"γ-谷氨酰转移酶","aliases":["谷氨酰转肽酶","γ-GT","Gamma-GT"],"default_unit":"U/L","category":"liver"},
+  {"canonical_name":"URIC_ACID","display_name":"尿酸","aliases":["UA","Uric Acid"],"default_unit":"μmol/L","category":"uric_acid"},
+  {"canonical_name":"CREATININE","display_name":"肌酐","aliases":["Cr","CREA","Creatinine"],"default_unit":"μmol/L","category":"kidney"},
+  {"canonical_name":"EGFR","display_name":"估算肾小球滤过率","aliases":["eGFR","Estimated GFR"],"default_unit":"mL/min/1.73m²","category":"kidney"},
+  {"canonical_name":"UREA_NITROGEN","display_name":"尿素氮","aliases":["BUN","Blood Urea Nitrogen"],"default_unit":"mmol/L","category":"kidney"},
+  {"canonical_name":"SYSTOLIC_BP","display_name":"收缩压","aliases":["SBP","高压"],"default_unit":"mmHg","category":"blood_pressure"},
+  {"canonical_name":"DIASTOLIC_BP","display_name":"舒张压","aliases":["DBP","低压"],"default_unit":"mmHg","category":"blood_pressure"},
+  {"canonical_name":"BMI","display_name":"身体质量指数","aliases":["Body Mass Index"],"default_unit":"kg/m²","category":"body_measurement"},
+  {"canonical_name":"WAIST","display_name":"腰围","aliases":["Waist Circumference"],"default_unit":"cm","category":"body_measurement"},
+  {"canonical_name":"HEMOGLOBIN","display_name":"血红蛋白","aliases":["Hb","HGB","Hemoglobin"],"default_unit":"g/L","category":"blood_count"},
+  {"canonical_name":"WBC","display_name":"白细胞计数","aliases":["白细胞","White Blood Cell"],"default_unit":"10^9/L","category":"blood_count"},
+  {"canonical_name":"PLATELETS","display_name":"血小板计数","aliases":["血小板","PLT","Platelets"],"default_unit":"10^9/L","category":"blood_count"},
+  {"canonical_name":"TSH","display_name":"促甲状腺激素","aliases":["Thyroid Stimulating Hormone"],"default_unit":"mIU/L","category":"thyroid"}
+]
