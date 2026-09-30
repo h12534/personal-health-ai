@@ -13,6 +13,10 @@ void _configureIos() {
     'NSCameraUsageDescription': '用于拍摄餐食照片并生成可编辑的营养记录草稿。',
     'NSPhotoLibraryUsageDescription': '用于选择餐食照片并生成可编辑的营养记录草稿。',
     'NSPhotoLibraryAddUsageDescription': '仅在你主动选择保存餐食图片时写入照片图库。',
+    'NSHealthShareUsageDescription':
+        '在你分别开启同步后，读取步数、睡眠、静息心率和训练摘要，用于展示活动、恢复与训练建议。',
+    'NSHealthUpdateUsageDescription':
+        '当前版本不会向 Apple 健康写入数据；此说明用于 HealthKit 能力配置，未来写入仍会另行征得你的同意。',
   };
   for (final entry in entries.entries) {
     if (content.contains('<key>${entry.key}</key>')) continue;
@@ -44,7 +48,7 @@ void _configureAndroid() {
   if (kotlin.existsSync()) {
     final content = kotlin.readAsStringSync().replaceFirst(
           'minSdk = flutter.minSdkVersion',
-          'minSdk = 24',
+          'minSdk = 26',
         );
     kotlin.writeAsStringSync(content);
   }
@@ -52,7 +56,7 @@ void _configureAndroid() {
   if (groovy.existsSync()) {
     final content = groovy.readAsStringSync().replaceFirst(
           'minSdkVersion flutter.minSdkVersion',
-          'minSdkVersion 24',
+          'minSdkVersion 26',
         );
     groovy.writeAsStringSync(content);
   }

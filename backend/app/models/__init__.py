@@ -13,6 +13,14 @@ from app.models.diet_coach import (
     SavedMealItem,
 )
 from app.models.food import FoodAlias, FoodFavorite, FoodItem
+from app.models.health_activity import (
+    ActivityLog,
+    HealthPermissionState,
+    HealthSyncState,
+    RecoverySnapshot,
+    SleepLog,
+    StepLog,
+)
 from app.models.health_profile import HealthProfile
 from app.models.meal import MealItem, MealLog
 from app.models.meal_analysis import (
@@ -23,6 +31,17 @@ from app.models.meal_analysis import (
     PersonalFoodMemory,
 )
 from app.models.nutrition_goal import NutritionGoal
+from app.models.training import (
+    Exercise,
+    ExercisePR,
+    PainLog,
+    TrainingAdjustment,
+    TrainingDay,
+    TrainingExercise,
+    TrainingPlan,
+    WorkoutSession,
+    WorkoutSet,
+)
 from app.models.user import User
 from app.models.weight_log import WeightLog
 
@@ -32,6 +51,12 @@ __all__ = [
     "FoodFavorite",
     "FoodItem",
     "HealthProfile",
+    "ActivityLog",
+    "HealthPermissionState",
+    "HealthSyncState",
+    "RecoverySnapshot",
+    "SleepLog",
+    "StepLog",
     "Canteen",
     "CanteenDish",
     "CanteenStall",
@@ -50,6 +75,15 @@ __all__ = [
     "MealAnalysisSession",
     "MealImage",
     "NutritionGoal",
+    "Exercise",
+    "ExercisePR",
+    "PainLog",
+    "TrainingAdjustment",
+    "TrainingDay",
+    "TrainingExercise",
+    "TrainingPlan",
+    "WorkoutSession",
+    "WorkoutSet",
     "PersonalFoodMemory",
     "User",
     "WeightLog",
