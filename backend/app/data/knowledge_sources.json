@@ -1,0 +1,12 @@
+[
+  {"publisher":"World Health Organization","title":"Guidelines on physical activity and sedentary behaviour","category":["cardio","strength_training"],"evidence_level":"guideline","source_url":"https://www.who.int/publications/i/item/9789240015128","content_in_repository":false},
+  {"publisher":"World Health Organization","title":"Healthy diet fact sheet","category":["nutrition","fat","carbohydrate"],"evidence_level":"general_reference","source_url":"https://www.who.int/news-room/fact-sheets/detail/healthy-diet","content_in_repository":false},
+  {"publisher":"Centers for Disease Control and Prevention","title":"About Sleep","category":["sleep","recovery"],"evidence_level":"general_reference","source_url":"https://www.cdc.gov/sleep/about/index.html","content_in_repository":false},
+  {"publisher":"National Institute of Diabetes and Digestive and Kidney Diseases","title":"The A1C Test & Diabetes","category":["blood_glucose","prediabetes","type2_diabetes"],"evidence_level":"general_reference","source_url":"https://www.niddk.nih.gov/health-information/diagnostic-tests/a1c-test","content_in_repository":false},
+  {"publisher":"National Heart, Lung, and Blood Institute","title":"High Blood Pressure","category":["blood_pressure"],"evidence_level":"general_reference","source_url":"https://www.nhlbi.nih.gov/health/high-blood-pressure","content_in_repository":false},
+  {"publisher":"American College of Sports Medicine","title":"ACSM Guidelines for Exercise Testing and Prescription","category":["strength_training","cardio","injury_prevention"],"evidence_level":"guideline","source_url":"https://www.acsm.org/education-resources/books/guidelines-exercise-testing-prescription","content_in_repository":false},
+  {"publisher":"中国营养学会","title":"中国居民膳食指南（2022）","category":["nutrition","protein","fiber","micronutrients"],"evidence_level":"guideline","source_url":"https://dg.cnsoc.org/","content_in_repository":false},
+  {"publisher":"中华医学会糖尿病学分会","title":"中国2型糖尿病防治指南","category":["blood_glucose","prediabetes","type2_diabetes"],"evidence_level":"guideline","source_url":null,"content_in_repository":false},
+  {"publisher":"中国高血压联盟","title":"中国高血压防治指南","category":["blood_pressure"],"evidence_level":"guideline","source_url":null,"content_in_repository":false},
+  {"publisher":"中国血脂管理指南修订联合专家委员会","title":"中国血脂管理指南","category":["blood_lipids","metabolic_health"],"evidence_level":"guideline","source_url":null,"content_in_repository":false}
+]

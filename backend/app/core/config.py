@@ -53,6 +53,24 @@ class Settings(BaseSettings):
     coach_timeout_seconds: int = Field(default=45, ge=5, le=180)
     coach_max_attempts: int = Field(default=2, ge=1, le=3)
     coach_daily_limit: int = Field(default=100, ge=1, le=1000)
+    embedding_provider: str = "mock"
+    embedding_base_url: str | None = None
+    embedding_api_key: str | None = None
+    embedding_model: str = "mock-embedding-v1"
+    embedding_dimension: int = Field(default=64, ge=8, le=4096)
+    embedding_timeout_seconds: int = Field(default=45, ge=5, le=180)
+    lab_ocr_provider: str = "mock"
+    lab_ocr_base_url: str | None = None
+    lab_ocr_api_key: str | None = None
+    lab_ocr_model: str = "mock-lab-ocr-v1"
+    lab_ocr_timeout_seconds: int = Field(default=60, ge=5, le=180)
+    health_answer_provider: str = "mock"
+    health_answer_base_url: str | None = None
+    health_answer_api_key: str | None = None
+    health_answer_model: str = "mock-health-answer-v1"
+    health_answer_timeout_seconds: int = Field(default=60, ge=5, le=180)
+    lab_report_retention_days: int = Field(default=3650, ge=0, le=36500)
+    knowledge_max_upload_bytes: int = Field(default=30 * 1024 * 1024, ge=1024)
 
     @property
     def is_production(self) -> bool:
@@ -73,6 +91,22 @@ class Settings(BaseSettings):
             if not self.coach_base_url or not self.coach_api_key:
                 raise ValueError(
                     "COACH_BASE_URL and COACH_API_KEY are required for openai_compatible"
+                )
+        if self.embedding_provider == "openai_compatible":
+            if not self.embedding_base_url or not self.embedding_api_key:
+                raise ValueError(
+                    "EMBEDDING_BASE_URL and EMBEDDING_API_KEY are required for openai_compatible"
+                )
+        if self.lab_ocr_provider == "openai_compatible":
+            if not self.lab_ocr_base_url or not self.lab_ocr_api_key:
+                raise ValueError(
+                    "LAB_OCR_BASE_URL and LAB_OCR_API_KEY are required for openai_compatible"
+                )
+        if self.health_answer_provider == "openai_compatible":
+            if not self.health_answer_base_url or not self.health_answer_api_key:
+                raise ValueError(
+                    "HEALTH_ANSWER_BASE_URL and HEALTH_ANSWER_API_KEY are required "
+                    "for openai_compatible"
                 )
         return self
 

@@ -43,7 +43,47 @@ class LLMProvider(Protocol):
 
 
 class EmbeddingProvider(Protocol):
+    name: str
+    model: str
+    dimension: int
+    is_remote: bool
+
     async def embed(self, texts: list[str]) -> list[list[float]]: ...
+
+
+class LabOCRProvider(Protocol):
+    name: str
+    model: str
+    is_remote: bool
+
+    async def analyze_page(
+        self,
+        page_bytes: bytes,
+        content_type: str,
+        page_number: int,
+    ) -> list[dict[str, Any]]: ...
+
+
+@dataclass(slots=True)
+class HealthAnswerProviderResponse:
+    answer: str
+    provider: str
+    model: str
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+
+
+class HealthAnswerProvider(Protocol):
+    name: str
+    model: str
+
+    async def answer(
+        self,
+        message: str,
+        intent: str,
+        context: dict[str, Any],
+        evidence: list[dict[str, Any]],
+    ) -> HealthAnswerProviderResponse: ...
 
 
 class VisionProvider(Protocol):

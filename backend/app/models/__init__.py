@@ -21,6 +21,20 @@ from app.models.health_activity import (
     SleepLog,
     StepLog,
 )
+from app.models.health_knowledge import (
+    HealthAIConversation,
+    HealthAIMessage,
+    HealthCheckSuggestion,
+    KnowledgeChunk,
+    KnowledgeDocument,
+    KnowledgeIngestionJob,
+    LabOCRItem,
+    LabOCRSession,
+    LabReport,
+    LabReportPage,
+    LabResult,
+    LabTestDictionary,
+)
 from app.models.health_profile import HealthProfile
 from app.models.meal import MealItem, MealLog
 from app.models.meal_analysis import (
@@ -51,6 +65,18 @@ __all__ = [
     "FoodFavorite",
     "FoodItem",
     "HealthProfile",
+    "HealthAIConversation",
+    "HealthAIMessage",
+    "HealthCheckSuggestion",
+    "KnowledgeChunk",
+    "KnowledgeDocument",
+    "KnowledgeIngestionJob",
+    "LabOCRItem",
+    "LabOCRSession",
+    "LabReport",
+    "LabReportPage",
+    "LabResult",
+    "LabTestDictionary",
     "ActivityLog",
     "HealthPermissionState",
     "HealthSyncState",

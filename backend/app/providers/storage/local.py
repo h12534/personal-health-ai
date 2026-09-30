@@ -23,8 +23,8 @@ class LocalStorageProvider:
     ) -> str:
         del content_type
         clean_suffix = suffix.lower().lstrip(".")
-        if clean_suffix not in {"jpg", "jpeg", "png", "webp"}:
-            raise AppError("invalid_file_suffix", "Image suffix is not supported.", 422)
+        if clean_suffix not in {"jpg", "jpeg", "png", "webp", "pdf", "txt", "md", "html"}:
+            raise AppError("invalid_file_suffix", "Private file suffix is not supported.", 422)
         clean_prefix = "/".join(
             part for part in PurePosixPath(prefix).parts if part not in {"", "."}
         )
@@ -45,7 +45,9 @@ class LocalStorageProvider:
         try:
             return await asyncio.to_thread(target.read_bytes)
         except FileNotFoundError as exc:
-            raise AppError("image_not_found", "Stored meal image is unavailable.", 410) from exc
+            raise AppError(
+                "private_file_not_found", "Stored private file is unavailable.", 410
+            ) from exc
 
     async def delete(self, object_key: str) -> None:
         target = self._resolve(object_key)
