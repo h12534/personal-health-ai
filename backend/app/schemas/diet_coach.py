@@ -90,6 +90,7 @@ class NextMealPlanRead(BaseModel):
     vegetable_guidance: str
     notes: list[str]
     over_target: bool
+    today_training_status: Literal["completed", "in_progress", "planned", "rest_or_unplanned"]
     message: str
 
 

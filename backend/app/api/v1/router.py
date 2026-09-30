@@ -6,13 +6,18 @@ from app.api.v1.endpoints import (
     coach,
     dashboard,
     diet,
+    exercises,
     foods,
+    health,
     meal_analyses,
     meals,
     nutrition,
     profile,
     saved_meals,
+    training,
+    training_coach,
     weight,
+    workouts,
 )
 
 api_router = APIRouter()
@@ -28,3 +33,11 @@ api_router.include_router(diet.router, prefix="/diet", tags=["diet-coach"])
 api_router.include_router(canteens.router, prefix="/canteens", tags=["canteens"])
 api_router.include_router(saved_meals.router, prefix="/saved-meals", tags=["saved-meals"])
 api_router.include_router(coach.router, prefix="/ai/coach", tags=["ai-coach"])
+api_router.include_router(exercises.router, prefix="/exercises", tags=["exercises"])
+api_router.include_router(training.router, prefix="/training", tags=["training"])
+api_router.include_router(workouts.router, prefix="/workouts", tags=["workouts"])
+api_router.include_router(health.activity_router, prefix="/activity", tags=["activity"])
+api_router.include_router(health.sleep_router, prefix="/sleep", tags=["sleep"])
+api_router.include_router(health.recovery_router, prefix="/recovery", tags=["recovery"])
+api_router.include_router(health.health_router, prefix="/health", tags=["health-sync"])
+api_router.include_router(training_coach.router, prefix="/ai/training", tags=["ai-training-coach"])

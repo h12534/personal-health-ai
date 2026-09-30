@@ -18,8 +18,8 @@ class DashboardToday(BaseModel):
     fat_target_g: float | None = None
     fiber_g: float = 0
     fiber_target_g: float | None = None
-    steps: int = 0
-    steps_target: int = 8000
+    steps: int | None = None
+    steps_target: int = 5000
     water_ml: int = 0
     sleep_hours: float | None = None
     training_completed: bool = False

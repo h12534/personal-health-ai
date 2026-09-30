@@ -8,8 +8,10 @@ from app.repositories.diet_coach_repository import DietCoachRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.services.daily_nutrition_service import DailyNutritionService
 from app.services.diet_adherence_service import DietAdherenceService
+from app.services.health_activity_service import HealthActivityService
 from app.services.meal_service import MealService
 from app.services.next_meal_planner import NextMealPlanner
+from app.services.recovery_service import RecoveryService
 from app.services.weight_trend_service import WeightTrendService
 
 
@@ -61,6 +63,12 @@ class CoachContextBuilder:
                 context["next_meal"] = None
             meals = await MealService(self.session).list(user_id, date.today(), date.today())
             context["recent_meal"] = meals[-1].model_dump(mode="json") if meals else None
+            context["activity"] = (
+                await HealthActivityService(self.session).daily(user_id)
+            ).model_dump(mode="json")
+            context["recovery"] = (await RecoveryService(self.session).today(user_id)).model_dump(
+                mode="json"
+            )
             canteens = await self.coach_repo.canteens(user_id)
             context["canteens"] = [
                 {

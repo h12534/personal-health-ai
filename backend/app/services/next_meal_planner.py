@@ -1,10 +1,13 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Literal
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.models.training import TrainingPlan, WorkoutSession
 from app.repositories.nutrition_repository import NutritionGoalRepository
 from app.schemas.diet_coach import MealTargetRange, NextMealPlanRead
 from app.services.daily_nutrition_service import DailyNutritionService
@@ -12,6 +15,7 @@ from app.services.daily_nutrition_service import DailyNutritionService
 
 class NextMealPlanner:
     def __init__(self, session: AsyncSession) -> None:
+        self.session = session
         self.daily = DailyNutritionService(session)
         self.goals = NutritionGoalRepository(session)
 
@@ -24,6 +28,38 @@ class NextMealPlanner:
         if goal is None:
             raise AppError("nutrition_goal_not_found", "Set a nutrition goal first.", 404)
         current_hour = datetime.now().hour if hour is None else max(0, min(23, hour))
+        day_start = datetime.combine(reference, datetime.min.time(), UTC)
+        day_end = day_start + timedelta(days=1)
+        sessions = list(
+            (
+                await self.session.scalars(
+                    select(WorkoutSession).where(
+                        WorkoutSession.user_id == user_id,
+                        WorkoutSession.started_at >= day_start,
+                        WorkoutSession.started_at < day_end,
+                    )
+                )
+            ).all()
+        )
+        has_plan = (
+            await self.session.scalar(
+                select(TrainingPlan.id).where(
+                    TrainingPlan.user_id == user_id,
+                    TrainingPlan.active.is_(True),
+                    TrainingPlan.deleted_at.is_(None),
+                )
+            )
+            is not None
+        )
+        training_status: Literal["completed", "in_progress", "planned", "rest_or_unplanned"] = (
+            "completed"
+            if any(item.status == "completed" for item in sessions)
+            else "in_progress"
+            if any(item.status == "in_progress" for item in sessions)
+            else "planned"
+            if has_plan
+            else "rest_or_unplanned"
+        )
         if current_hour < 10 and daily.meal_counts.get("breakfast", 0) == 0:
             meal_type, share = "breakfast", Decimal("0.25")
         elif current_hour < 15 and daily.meal_counts.get("lunch", 0) == 0:
@@ -54,6 +90,10 @@ class NextMealPlanner:
             strategy.append("不跳餐、不惩罚性节食；正常吃一顿份量适中的餐，明天回到常规计划")
         if remaining_protein > Decimal("45"):
             strategy.append("今天蛋白质仍有较大缺口，可选瘦肉、鱼、蛋、豆制品或奶类")
+        if training_status == "completed":
+            strategy.append("今天已完成力量训练：下一餐优先蛋白质并正常安排碳水，不需要额外暴食")
+        elif training_status == "planned":
+            strategy.append("今天有训练计划：训练前选择易消化的适量碳水和蛋白质即可，不强制补剂")
         return NextMealPlanRead(
             meal_type=meal_type,
             target=MealTargetRange(
@@ -67,10 +107,15 @@ class NextMealPlanner:
             remaining_calories=remaining_calories,
             remaining_protein_g=remaining_protein.quantize(Decimal("0.1")),
             strategy=strategy,
-            carb_guidance="主食正常吃；训练前后可把当天一部分碳水放在这餐，不改变全天总热量。",
+            carb_guidance=(
+                "训练已完成，主食正常吃；不需要追逐所谓 30 分钟黄金窗口。"
+                if training_status == "completed"
+                else "主食正常吃；训练前后可把当天一部分碳水放在这餐，不改变全天总热量。"
+            ),
             fat_guidance="若今天脂肪偏高，优先蒸煮炖或少额外酱汁，不需要完全无脂。",
             vegetable_guidance="至少加入一份蔬菜；食堂可选两份不同蔬菜。",
             notes=["范围是执行参考，不要求精确命中。", "蛋白粉只按普通食物记录，不是必需品。"],
             over_target=over_target,
+            today_training_status=training_status,
             message="根据今天已记录的饮食，下一餐以可执行范围呈现，不要求精确命中单个数字。",
         )
