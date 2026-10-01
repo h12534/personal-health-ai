@@ -1,0 +1,6 @@
+sample_id,status,authorized_by,authorization_reference,report_private_path,page_count,ground_truth_private_path,notes
+lab-001,awaiting_authorized_sample,,,,,,
+lab-002,awaiting_authorized_sample,,,,,,
+lab-003,awaiting_authorized_sample,,,,,,
+lab-004,awaiting_authorized_sample,,,,,,
+lab-005,awaiting_authorized_sample,,,,,,
