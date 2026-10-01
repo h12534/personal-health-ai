@@ -12,6 +12,7 @@ from app.repositories.weight_repository import WeightRepository
 from app.schemas.dashboard import DashboardToday
 from app.schemas.nutrition import DailyNutrition
 from app.services.daily_nutrition_service import DailyNutritionService
+from app.services.daily_task_service import DailyTaskEngine
 from app.services.health_activity_service import HealthActivityService
 from app.services.weight_service import build_weight_trend
 
@@ -67,6 +68,12 @@ class DashboardService:
             week_change=trend.week_change_kg,
             local_time=now.time(),
         )
+        task_service = DailyTaskEngine(self.session)
+        tasks = await task_service.generate(user_id, reference)
+        key_tasks = sorted(
+            (item for item in tasks if item.status not in {"cancelled", "expired"}),
+            key=lambda item: (item.status == "completed", -item.priority),
+        )[:6]
         return DashboardToday(
             date=reference,
             today_weight_kg=float(today_log.weight_kg) if today_log else None,
@@ -91,6 +98,7 @@ class DashboardService:
             lunch_logged=daily.meal_counts.get("lunch", 0) > 0,
             dinner_logged=daily.meal_counts.get("dinner", 0) > 0,
             ai_next_action=action,
+            key_tasks=[task_service.read(item) for item in key_tasks],
         )
 
 

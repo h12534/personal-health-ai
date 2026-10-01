@@ -45,6 +45,15 @@ from app.models.meal_analysis import (
     PersonalFoodMemory,
 )
 from app.models.nutrition_goal import NutritionGoal
+from app.models.supervision import (
+    DailyTask,
+    HealthFollowup,
+    HealthReport,
+    NotificationLog,
+    ProactiveCoachEvent,
+    PushDevice,
+    ReminderPreference,
+)
 from app.models.training import (
     Exercise,
     ExercisePR,
@@ -113,4 +122,11 @@ __all__ = [
     "PersonalFoodMemory",
     "User",
     "WeightLog",
+    "DailyTask",
+    "HealthFollowup",
+    "HealthReport",
+    "NotificationLog",
+    "ProactiveCoachEvent",
+    "PushDevice",
+    "ReminderPreference",
 ]

@@ -1,6 +1,8 @@
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from app.schemas.supervision import DailyTaskRead
 
 
 class DashboardToday(BaseModel):
@@ -28,3 +30,4 @@ class DashboardToday(BaseModel):
     lunch_logged: bool = False
     dinner_logged: bool = False
     ai_next_action: str
+    key_tasks: list[DailyTaskRead] = Field(default_factory=list)
