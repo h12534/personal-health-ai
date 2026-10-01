@@ -17,6 +17,7 @@ from app.api.v1.endpoints import (
     nutrition,
     profile,
     saved_meals,
+    supervision,
     training,
     training_coach,
     weight,
@@ -47,3 +48,4 @@ api_router.include_router(knowledge.router, prefix="/knowledge", tags=["knowledg
 api_router.include_router(labs.router, prefix="/labs", tags=["labs"])
 api_router.include_router(training_coach.router, prefix="/ai/training", tags=["ai-training-coach"])
 api_router.include_router(health_ai.router, prefix="/ai/health", tags=["ai-health"])
+api_router.include_router(supervision.router, prefix="/supervision", tags=["supervision"])
