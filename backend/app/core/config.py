@@ -71,6 +71,19 @@ class Settings(BaseSettings):
     health_answer_timeout_seconds: int = Field(default=60, ge=5, le=180)
     lab_report_retention_days: int = Field(default=3650, ge=0, le=36500)
     knowledge_max_upload_bytes: int = Field(default=30 * 1024 * 1024, ge=1024)
+    push_provider: str = "mock"
+    apns_team_id: str | None = None
+    apns_key_id: str | None = None
+    apns_auth_key_path: str | None = None
+    apns_bundle_id: str | None = None
+    apns_use_sandbox: bool = True
+    proactive_ai_daily_limit: int = Field(default=2, ge=1, le=3)
+    report_regeneration_limit: int = Field(default=3, ge=0, le=10)
+    public_base_url: str = "https://localhost"
+    backup_retention_daily: int = Field(default=7, ge=1, le=90)
+    backup_retention_weekly: int = Field(default=4, ge=1, le=52)
+    backup_retention_monthly: int = Field(default=3, ge=1, le=24)
+    sentry_dsn: str | None = None
 
     @property
     def is_production(self) -> bool:
@@ -78,10 +91,19 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
-        if self.is_production and self.app_secret_key.startswith("development-secret"):
-            raise ValueError("APP_SECRET_KEY must be replaced in production")
-        if self.is_production and len(self.app_secret_key) < 32:
-            raise ValueError("APP_SECRET_KEY must contain at least 32 characters")
+        if self.is_production:
+            normalized_secret = self.app_secret_key.lower()
+            if any(
+                marker in normalized_secret
+                for marker in ("development-secret", "replace-with", "change-before")
+            ):
+                raise ValueError("APP_SECRET_KEY must be replaced in production")
+            if len(self.app_secret_key) < 32:
+                raise ValueError("APP_SECRET_KEY must contain at least 32 characters")
+            if not self.database_url.startswith("postgresql+asyncpg://"):
+                raise ValueError("DATABASE_URL must use PostgreSQL/asyncpg in production")
+            if any(marker in self.database_url.lower() for marker in ("replace-with", "change-me")):
+                raise ValueError("DATABASE_URL contains a production placeholder")
         if self.vision_provider == "openai_compatible":
             if not self.vision_base_url or not self.vision_api_key:
                 raise ValueError(
@@ -108,6 +130,18 @@ class Settings(BaseSettings):
                     "HEALTH_ANSWER_BASE_URL and HEALTH_ANSWER_API_KEY are required "
                     "for openai_compatible"
                 )
+        if self.push_provider == "apple" and not all(
+            (self.apns_team_id, self.apns_key_id, self.apns_auth_key_path, self.apns_bundle_id)
+        ):
+            raise ValueError("APNs credentials are required when PUSH_PROVIDER=apple")
+        if self.is_production:
+            if not self.public_base_url.startswith("https://"):
+                raise ValueError("PUBLIC_BASE_URL must use HTTPS in production")
+            if any(
+                marker in self.public_base_url.lower()
+                for marker in ("localhost", "example.com", ".invalid")
+            ):
+                raise ValueError("PUBLIC_BASE_URL must be the deployed production domain")
         return self
 
 

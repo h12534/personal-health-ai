@@ -19,6 +19,34 @@ class MockHealthAnswerProvider:
         evidence: list[dict[str, Any]],
     ) -> HealthAnswerProviderResponse:
         del message
+        if intent in {"daily_report", "weekly_report", "monthly_report"}:
+            calories = context.get("average_calories")
+            protein = context.get("average_protein_g")
+            steps = context.get("average_steps")
+            workouts = context.get("workouts_completed", 0)
+            task_rate = context.get("task_completion_rate")
+            parts = ["本期记录已完成汇总。"]
+            if calories is not None:
+                parts.append(f"平均热量约 {round(float(calories))} kcal。")
+            if protein is not None:
+                parts.append(f"平均蛋白质约 {round(float(protein))} g。")
+            if steps is not None:
+                parts.append(f"平均步数约 {round(float(steps))}。")
+            if workouts:
+                parts.append(f"共完成 {workouts} 次训练。")
+            if task_rate is not None:
+                parts.append(f"任务完成率约 {round(float(task_rate) * 100)}%。")
+            parts.append("建议只选择一项最容易执行的改进继续观察，不因单日波动惩罚自己。")
+            return HealthAnswerProviderResponse(
+                answer="".join(parts), provider=self.name, model=self.model
+            )
+        if intent == "proactive_summary":
+            trigger = str(context.get("trigger_type", "健康记录"))
+            return HealthAnswerProviderResponse(
+                answer=f"{trigger}出现了连续趋势，今天优先做一个温和、可执行的调整。",
+                provider=self.name,
+                model=self.model,
+            )
         source = evidence[0] if evidence else None
         basis = (
             f"知识库中“{source['title']}”（{source['publisher']}）提供了相关背景。"

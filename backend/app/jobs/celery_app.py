@@ -7,7 +7,7 @@ celery_app = Celery(
     "health_os",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.jobs.meal_analysis_tasks"],
+    include=["app.jobs.meal_analysis_tasks", "app.jobs.supervision_tasks"],
 )
 celery_app.conf.update(
     task_serializer="json",
@@ -21,6 +21,10 @@ celery_app.conf.update(
         "cleanup-expired-meal-analyses-daily": {
             "task": "meal_analysis.cleanup_expired",
             "schedule": 86400.0,
-        }
+        },
+        "supervision-sweep-15-minutes": {
+            "task": "supervision.sweep",
+            "schedule": 900.0,
+        },
     },
 )
