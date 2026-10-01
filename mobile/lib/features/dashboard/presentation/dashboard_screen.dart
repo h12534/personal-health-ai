@@ -7,6 +7,7 @@ import '../../profile/presentation/profile_screen.dart';
 import '../../nutrition/presentation/nutrition_screen.dart';
 import '../../health/presentation/health_screen.dart';
 import '../../training/presentation/training_screen.dart';
+import '../../supervision/presentation/supervision_screens.dart';
 import '../data/dashboard_model.dart';
 import 'dashboard_controller.dart';
 
@@ -30,6 +31,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             _DashboardTab(
               onAddWeight: _showWeightDialog,
               onOpenHealth: () => setState(() => _index = 3),
+              onOpenTasks: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const TodayTasksScreen(),
+                ),
+              ),
             ),
             const NutritionScreen(),
             const TrainingScreen(),
@@ -104,10 +110,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 }
 
 class _DashboardTab extends ConsumerWidget {
-  const _DashboardTab({required this.onAddWeight, required this.onOpenHealth});
+  const _DashboardTab({
+    required this.onAddWeight,
+    required this.onOpenHealth,
+    required this.onOpenTasks,
+  });
 
   final VoidCallback onAddWeight;
   final VoidCallback onOpenHealth;
+  final VoidCallback onOpenTasks;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -134,6 +145,7 @@ class _DashboardTab extends ConsumerWidget {
         data: data,
         onAddWeight: onAddWeight,
         onOpenHealth: onOpenHealth,
+        onOpenTasks: onOpenTasks,
         trend: ref.watch(weightTrendProvider).valueOrNull,
       ),
     );
@@ -146,12 +158,14 @@ class DashboardContent extends StatelessWidget {
     required this.data,
     required this.onAddWeight,
     this.onOpenHealth,
+    this.onOpenTasks,
     this.trend,
   });
 
   final DashboardModel data;
   final VoidCallback onAddWeight;
   final VoidCallback? onOpenHealth;
+  final VoidCallback? onOpenTasks;
   final WeightTrendModel? trend;
 
   @override
@@ -166,6 +180,57 @@ class DashboardContent extends StatelessWidget {
           const SizedBox(height: 4),
           const Text('先做好下一件事，不追逐单日波动。'),
           const SizedBox(height: 20),
+          if (data.keyTasks.isNotEmpty) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '今日任务',
+                            style: textTheme.titleMedium,
+                          ),
+                        ),
+                        TextButton(
+                          key: const Key('open-all-tasks'),
+                          onPressed: onOpenTasks,
+                          child: const Text('全部任务'),
+                        ),
+                      ],
+                    ),
+                    for (final task in data.keyTasks.take(6))
+                      Semantics(
+                        label:
+                            '${task.title}，${task.isCompleted ? '已完成' : '待完成'}',
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          child: Row(
+                            children: [
+                              Icon(
+                                task.isCompleted
+                                    ? Icons.check_circle
+                                    : Icons.radio_button_unchecked,
+                                size: 20,
+                                color: task.isCompleted
+                                    ? Theme.of(context).colorScheme.primary
+                                    : null,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(child: Text(task.title)),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           Card(
             color: Theme.of(context).colorScheme.primaryContainer,
             child: Padding(

@@ -1,3 +1,5 @@
+import '../../supervision/data/supervision_models.dart';
+
 class DashboardModel {
   const DashboardModel({
     required this.date,
@@ -20,6 +22,7 @@ class DashboardModel {
     required this.trainingCompleted,
     required this.morningWeightCompleted,
     required this.aiNextAction,
+    this.keyTasks = const [],
   });
 
   factory DashboardModel.fromJson(Map<String, dynamic> json) => DashboardModel(
@@ -44,6 +47,13 @@ class DashboardModel {
         morningWeightCompleted:
             json['morning_weight_completed'] as bool? ?? false,
         aiNextAction: json['ai_next_action'] as String,
+        keyTasks: (json['key_tasks'] as List<dynamic>? ?? const [])
+            .map(
+              (item) => DailyTaskModel.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .toList(),
       );
 
   final DateTime date;
@@ -66,4 +76,5 @@ class DashboardModel {
   final bool trainingCompleted;
   final bool morningWeightCompleted;
   final String aiNextAction;
+  final List<DailyTaskModel> keyTasks;
 }

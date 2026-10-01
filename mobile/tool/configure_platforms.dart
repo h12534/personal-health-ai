@@ -17,6 +17,7 @@ void _configureIos() {
         '在你分别开启同步后，读取步数、睡眠、静息心率和训练摘要，用于展示活动、恢复与训练建议。',
     'NSHealthUpdateUsageDescription':
         '当前版本不会向 Apple 健康写入数据；此说明用于 HealthKit 能力配置，未来写入仍会另行征得你的同意。',
+    'NSFaceIDUsageDescription': '用于在你开启隐私锁后保护体检、身体照片和健康数据。',
   };
   for (final entry in entries.entries) {
     if (content.contains('<key>${entry.key}</key>')) continue;
@@ -59,5 +60,76 @@ void _configureAndroid() {
           'minSdkVersion 26',
         );
     groovy.writeAsStringSync(content);
+  }
+
+  final manifest = File('android/app/src/main/AndroidManifest.xml');
+  if (manifest.existsSync()) {
+    var content = manifest.readAsStringSync();
+    const permissions = [
+      '<uses-permission android:name="android.permission.USE_BIOMETRIC" />',
+      '<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
+    ];
+    for (final permission in permissions) {
+      if (!content.contains(permission)) {
+        content = content.replaceFirst('>', '>\n    $permission');
+      }
+    }
+    if (!content.contains('ScheduledNotificationReceiver')) {
+      const receivers = '''
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"
+            android:exported="false" />
+''';
+      content = content.replaceFirst(
+          '</application>', '$receivers    </application>');
+    }
+    manifest.writeAsStringSync(content);
+  }
+
+  final kotlinRoot = Directory('android/app/src/main/kotlin');
+  if (kotlinRoot.existsSync()) {
+    for (final entity in kotlinRoot.listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('MainActivity.kt')) continue;
+      final content = entity
+          .readAsStringSync()
+          .replaceAll(
+            'import io.flutter.embedding.android.FlutterActivity',
+            'import io.flutter.embedding.android.FlutterFragmentActivity',
+          )
+          .replaceAll('FlutterActivity()', 'FlutterFragmentActivity()');
+      entity.writeAsStringSync(content);
+    }
+  }
+
+  for (final path in [
+    'android/app/src/main/res/values/styles.xml',
+    'android/app/src/main/res/values-night/styles.xml',
+  ]) {
+    final styles = File(path);
+    if (!styles.existsSync()) continue;
+    final content = styles
+        .readAsStringSync()
+        .replaceAll(
+          'parent="@android:style/Theme.Light.NoTitleBar"',
+          'parent="Theme.AppCompat.DayNight.NoActionBar"',
+        )
+        .replaceAll(
+          'parent="@android:style/Theme.Black.NoTitleBar"',
+          'parent="Theme.AppCompat.DayNight.NoActionBar"',
+        );
+    styles.writeAsStringSync(content);
   }
 }

@@ -17,6 +17,11 @@ final healthPermissionsProvider =
   return ref.watch(apiClientProvider).fetchHealthPermissions();
 });
 
+final healthSyncStatusProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) {
+  return ref.watch(apiClientProvider).fetchHealthSyncStatus();
+});
+
 class HealthSyncController {
   const HealthSyncController(this.ref);
 
@@ -54,6 +59,7 @@ class HealthSyncController {
       await _sync(metric);
     }
     ref.invalidate(healthPermissionsProvider);
+    ref.invalidate(healthSyncStatusProvider);
   }
 
   Future<void> _sync(HealthMetric metric) async {
@@ -130,6 +136,8 @@ class HealthSyncScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final permissions = ref.watch(healthPermissionsProvider);
+    final syncStatus =
+        ref.watch(healthSyncStatusProvider).valueOrNull ?? const [];
     return Scaffold(
       appBar: AppBar(title: const Text('健康同步')),
       body: permissions.when(
@@ -170,6 +178,27 @@ class HealthSyncScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              if (syncStatus.isNotEmpty)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '最近同步',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        for (final item in syncStatus)
+                          Text(
+                            '${item['data_type']} · ${item['status']} · ${_syncTime(item['last_sync_at'])}',
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               const SizedBox(height: 12),
               _HealthSwitch(
                 title: '步数',
@@ -275,6 +304,13 @@ class HealthSyncScreen extends ConsumerWidget {
       }
     }
   }
+}
+
+String _syncTime(Object? value) {
+  if (value is! String) return '尚未同步';
+  final parsed = DateTime.tryParse(value)?.toLocal();
+  if (parsed == null) return '尚未同步';
+  return '${parsed.month}/${parsed.day} ${parsed.hour.toString().padLeft(2, '0')}:${parsed.minute.toString().padLeft(2, '0')}';
 }
 
 class _HealthSwitch extends StatelessWidget {

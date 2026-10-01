@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -11,6 +12,7 @@ import '../../features/health/data/health_models.dart';
 import '../../features/nutrition/data/nutrition_models.dart';
 import '../../features/nutrition/data/meal_analysis_models.dart';
 import '../../features/training/data/training_models.dart';
+import '../../features/supervision/data/supervision_models.dart';
 import '../config/app_config.dart';
 import 'api_exception.dart';
 
@@ -1150,6 +1152,239 @@ class ApiClient {
       await _dio.post<void>(
         '/health/sync/summary',
         data: summary,
+        options: await _authorizedOptions(),
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchHealthSyncStatus() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/health/sync/status',
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (item) => Map<String, dynamic>.from(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<DailyTaskModel>> fetchDailyTasks([DateTime? date]) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/supervision/tasks',
+        queryParameters: date == null ? null : {'date': _date(date)},
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (item) => DailyTaskModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<DailyTaskModel> updateDailyTask(
+    String taskId,
+    String status,
+  ) async {
+    try {
+      final response = await _dio.patch<Map<String, dynamic>>(
+        '/supervision/tasks/$taskId',
+        data: {'status': status},
+        options: await _authorizedOptions(),
+      );
+      return DailyTaskModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<ReminderPreferencesModel> fetchReminderPreferences() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/supervision/preferences',
+        options: await _authorizedOptions(),
+      );
+      return ReminderPreferencesModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<ReminderPreferencesModel> updateReminderPreferences(
+    ReminderPreferencesModel preferences,
+  ) async {
+    try {
+      final response = await _dio.put<Map<String, dynamic>>(
+        '/supervision/preferences',
+        data: preferences.toJson(),
+        options: await _authorizedOptions(),
+      );
+      return ReminderPreferencesModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<HealthReportModel>> fetchHealthReports(String reportType) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/supervision/reports',
+        queryParameters: {'report_type': reportType},
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (item) => HealthReportModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<HealthReportModel> generateHealthReport(
+    String reportType, {
+    bool force = false,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/supervision/reports/generate',
+        data: {'report_type': reportType, 'force': force},
+        options: await _authorizedOptions(),
+      );
+      return HealthReportModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<TimelineEventModel>> fetchHealthTimeline(
+    DateTime from,
+    DateTime to,
+    String category,
+  ) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/supervision/timeline',
+        queryParameters: {
+          'from': _date(from),
+          'to': _date(to),
+          'category': category,
+        },
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (item) => TimelineEventModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<CrossDomainModel> fetchCrossDomainTrends(
+    DateTime from,
+    DateTime to,
+    List<String> metrics,
+  ) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/supervision/cross-domain',
+        queryParameters: {
+          'from': _date(from),
+          'to': _date(to),
+          'metrics': metrics,
+        },
+        options: await _authorizedOptions(),
+      );
+      return CrossDomainModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<List<HealthFollowupModel>> fetchHealthFollowups() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/supervision/followups',
+        options: await _authorizedOptions(),
+      );
+      return (response.data!['data'] as List<dynamic>)
+          .map(
+            (item) => HealthFollowupModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<HealthFollowupModel> confirmHealthFollowup(String id) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/supervision/followups/$id/confirm',
+        options: await _authorizedOptions(),
+      );
+      return HealthFollowupModel.fromJson(
+        response.data!['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<String> exportPersonalData(String format) async {
+    try {
+      final response = await _dio.get<dynamic>(
+        '/supervision/export/$format',
+        options: (await _authorizedOptions()).copyWith(
+          responseType:
+              format == 'csv' ? ResponseType.plain : ResponseType.json,
+        ),
+      );
+      if (response.data is String) return response.data as String;
+      return jsonEncode(response.data);
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  Future<void> deleteMyData(String confirmation) async {
+    try {
+      await _dio.delete<void>(
+        '/supervision/data',
+        data: {'confirmation': confirmation},
         options: await _authorizedOptions(),
       );
     } on DioException catch (error) {

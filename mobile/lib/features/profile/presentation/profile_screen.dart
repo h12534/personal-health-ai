@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../../core/network/api_client.dart';
 import 'health_sync_screen.dart';
+import '../../supervision/presentation/supervision_screens.dart';
 
 final visionPrivacyProvider = FutureProvider<VisionPrivacySettings>((ref) {
   return ref.watch(apiClientProvider).fetchVisionPrivacy();
@@ -40,6 +41,41 @@ class ProfileScreen extends ConsumerWidget {
               builder: (_) => const HealthSyncScreen(),
             ),
           ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.notifications_outlined),
+          title: const Text('通知设置'),
+          subtitle: const Text('提醒强度、时间、勿扰与本地通知'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _open(context, const NotificationSettingsScreen()),
+        ),
+        ListTile(
+          leading: const Icon(Icons.summarize_outlined),
+          title: const Text('日报 / 周报 / 月报'),
+          subtitle: const Text('结构化趋势与温和的下一步建议'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _open(context, const ReportsScreen()),
+        ),
+        ListTile(
+          leading: const Icon(Icons.timeline_outlined),
+          title: const Text('健康时间线'),
+          subtitle: const Text('身体、饮食、训练和体检的统一记录'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _open(context, const HealthTimelineScreen()),
+        ),
+        ListTile(
+          leading: const Icon(Icons.event_repeat_outlined),
+          title: const Text('健康复查'),
+          subtitle: const Text('只有你确认后才创建复查任务'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _open(context, const FollowupsScreen()),
+        ),
+        ListTile(
+          leading: const Icon(Icons.privacy_tip_outlined),
+          title: const Text('隐私锁与数据'),
+          subtitle: const Text('Face ID / Touch ID、导出和删除'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _open(context, const PrivacyDataScreen()),
         ),
         Card(
           child: privacy.when(
@@ -91,6 +127,12 @@ class ProfileScreen extends ConsumerWidget {
           label: const Text('退出登录'),
         ),
       ],
+    );
+  }
+
+  void _open(BuildContext context, Widget screen) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => screen),
     );
   }
 
