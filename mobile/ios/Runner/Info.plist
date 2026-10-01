@@ -36,6 +36,8 @@
 	<string>在你分别开启同步后，读取步数、睡眠、静息心率和训练摘要，用于展示活动、恢复与训练建议。</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>当前版本不会向 Apple 健康写入数据；此说明用于 HealthKit 能力配置，未来写入仍会另行征得你的同意。</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>用于在你开启隐私锁后保护体检、身体照片和健康数据。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

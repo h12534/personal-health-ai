@@ -5,12 +5,42 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/auth_controller.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
+import 'core/privacy/privacy_lock.dart';
 
-class HealthOsApp extends ConsumerWidget {
+class HealthOsApp extends ConsumerStatefulWidget {
   const HealthOsApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HealthOsApp> createState() => _HealthOsAppState();
+}
+
+class _HealthOsAppState extends ConsumerState<HealthOsApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final controller = ref.read(privacyLockControllerProvider.notifier);
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      controller.onPaused();
+    } else if (state == AppLifecycleState.resumed) {
+      controller.onResumed();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
     return MaterialApp(
       title: '健康 OS',
@@ -22,7 +52,7 @@ class HealthOsApp extends ConsumerWidget {
         loading: () => const _LaunchScreen(),
         error: (error, stack) => LoginScreen(initialError: error.toString()),
         data: (state) => state.isAuthenticated
-            ? const DashboardScreen()
+            ? const PrivacyGate(child: DashboardScreen())
             : const LoginScreen(),
       ),
     );
