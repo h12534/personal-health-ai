@@ -1,0 +1,159 @@
+name: personal-health-os-production
+
+x-app-environment: &app-environment
+  APP_ENV: production
+  DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.production}
+  REDIS_URL: ${REDIS_URL:?Set REDIS_URL in .env.production}
+  UPLOAD_DIR: /data/private/uploads
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env.production}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env.production}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks: [internal]
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks: [internal]
+
+  storage:
+    build:
+      context: ./backend
+    user: root
+    command: ["sh", "-c", "install -d -o app -g app -m 0700 /data/private/uploads"]
+    volumes:
+      - ${STORAGE_HOST_PATH:?Set STORAGE_HOST_PATH in .env.production}:/data/private
+    restart: "no"
+    networks: [internal]
+
+  backend:
+    build:
+      context: ./backend
+    env_file: .env.production
+    environment: *app-environment
+    volumes:
+      - ${STORAGE_HOST_PATH:?Set STORAGE_HOST_PATH in .env.production}:/data/private
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      storage:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks: [internal]
+
+  celery_worker:
+    build:
+      context: ./backend
+    command: ["celery", "-A", "app.jobs.celery_app:celery_app", "worker", "--loglevel=INFO"]
+    env_file: .env.production
+    environment: *app-environment
+    volumes:
+      - ${STORAGE_HOST_PATH:?Set STORAGE_HOST_PATH in .env.production}:/data/private
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      storage:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks: [internal]
+
+  celery_beat:
+    build:
+      context: ./backend
+    command: ["celery", "-A", "app.jobs.celery_app:celery_app", "beat", "--loglevel=INFO"]
+    env_file: .env.production
+    environment: *app-environment
+    volumes:
+      - ${STORAGE_HOST_PATH:?Set STORAGE_HOST_PATH in .env.production}:/data/private
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      storage:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks: [internal]
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/nginx.production.conf:/etc/nginx/nginx.conf:ro
+      - ${TLS_CERT_HOST_PATH:?Set TLS_CERT_HOST_PATH in .env.production}:/etc/nginx/certs:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks: [internal]
+
+  backup:
+    image: pgvector/pgvector:pg16
+    profiles: ["backup"]
+    user: "0:0"
+    entrypoint: ["/bin/sh", "/scripts/backup.sh"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_DIR: /backups
+      PRIVATE_DATA_DIR: /data/private
+      BACKUP_RETENTION_DAILY: ${BACKUP_RETENTION_DAILY:-7}
+      BACKUP_RETENTION_WEEKLY: ${BACKUP_RETENTION_WEEKLY:-4}
+      BACKUP_RETENTION_MONTHLY: ${BACKUP_RETENTION_MONTHLY:-3}
+    volumes:
+      - ./scripts:/scripts:ro
+      - ${STORAGE_HOST_PATH:?Set STORAGE_HOST_PATH in .env.production}:/data/private:ro
+      - ${BACKUP_HOST_PATH:?Set BACKUP_HOST_PATH in .env.production}:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks: [internal]
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  internal:
+    driver: bridge
+

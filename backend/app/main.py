@@ -1,12 +1,16 @@
+import asyncio
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
+from time import perf_counter
 
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from redis.asyncio import Redis
 from sqlalchemy import text
 
 from app.api.v1.router import api_router
@@ -46,10 +50,19 @@ app.include_router(api_router, prefix="/api/v1")
 async def request_context(request: Request, call_next):  # type: ignore[no-untyped-def]
     request_id = request.headers.get("x-request-id", str(uuid.uuid4()))[:128]
     request.state.request_id = request_id
+    started = perf_counter()
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
+    logger.info(
+        "request_completed",
+        request_id=request_id,
+        method=request.method,
+        path=request.url.path,
+        status_code=response.status_code,
+        duration_ms=round((perf_counter() - started) * 1000, 2),
+    )
     return response
 
 
@@ -87,12 +100,51 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/health/live", tags=["system"])
+async def health_live() -> dict[str, str]:
+    return {"status": "live"}
+
+
 @app.get("/ready", tags=["system"])
 async def ready() -> JSONResponse:
+    return await _readiness()
+
+
+@app.get("/health/ready", tags=["system"])
+async def health_ready() -> JSONResponse:
+    return await _readiness()
+
+
+async def _readiness() -> JSONResponse:
+    checks: dict[str, str] = {}
     try:
         async with SessionLocal() as session:
             await session.execute(text("SELECT 1"))
-        return JSONResponse({"status": "ready"})
+        checks["database"] = "ok"
     except Exception:
-        logger.exception("readiness_check_failed")
-        return JSONResponse({"status": "not_ready"}, status_code=503)
+        logger.exception("readiness_database_failed")
+        checks["database"] = "failed"
+    redis: Redis | None = None
+    try:
+        redis = Redis.from_url(
+            settings.redis_url,
+            socket_connect_timeout=1,
+            socket_timeout=1,
+            decode_responses=True,
+        )
+        await redis.ping()
+        checks["redis"] = "ok"
+    except Exception:
+        logger.exception("readiness_redis_failed")
+        checks["redis"] = "failed"
+    finally:
+        if redis is not None:
+            await redis.aclose()
+    storage_path = Path(settings.upload_dir)
+    storage_ready = await asyncio.to_thread(lambda: storage_path.exists() and storage_path.is_dir())
+    checks["storage"] = "ok" if storage_ready else "failed"
+    is_ready = all(value == "ok" for value in checks.values())
+    return JSONResponse(
+        {"status": "ready" if is_ready else "not_ready", "checks": checks},
+        status_code=200 if is_ready else 503,
+    )

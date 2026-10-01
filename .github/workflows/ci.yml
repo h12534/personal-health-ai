@@ -64,6 +64,18 @@ jobs:
       - run: pip install -e '.[dev]'
       - run: alembic upgrade head
       - run: pytest -q tests_postgres -m integration
+      - name: Install PostgreSQL client tools
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Run isolated PostgreSQL restore drill
+        working-directory: .
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: health
+          PGPASSWORD: health-test-password
+          SOURCE_DATABASE: health_os_test
+          RESTORE_DATABASE: health_os_restore_drill
+        run: sh scripts/restore_test.sh
 
   mobile-ios-primary:
     runs-on: macos-latest
@@ -83,7 +95,7 @@ jobs:
       - run: pod --version
       - run: flutter pub get
       - run: dart run tool/configure_ios.dart
-      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: dart format --output=none --set-exit-if-changed lib test tool
       - run: flutter analyze
       - run: flutter test
       - run: >-
