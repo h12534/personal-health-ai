@@ -96,7 +96,7 @@ Intent → Safety → Context → deterministic diet services → CoachProvider 
 - iOS 16+ 是主移动目标，Android 保留兼容构建；Linux 后端协议不依赖移动平台。
 - iOS Runner 进入版本控制，Bundle ID 与显示名由非秘密 Xcode 配置覆盖。
 - Token 进入 iOS Keychain；Drift、Outbox 和待上传图片只在应用沙盒内。
-- `HealthDataProvider` 的 iPhone 优先级为 `AppleHealthProvider → ManualHealthProvider`。当前 Apple Provider 是未启用占位，不包含 HealthKit entitlement。
+- `HealthDataProvider` 的 iPhone 优先级为 `AppleHealthProvider → ManualHealthProvider`。HealthKit entitlement 与分类只读授权已接入，拒绝、部分授权或无数据时保留手工路径。
 - 提醒先采用本地通知，远程事件再接 APNs。服务器调度器只负责监督、去重和触发，不假定 iOS 应用常驻后台。
 - staging/prod 只允许 HTTPS；不提交全局 ATS 例外。设备端不能使用 localhost 访问开发 Mac。
 - Widget 与 Apple Watch 为未来扩展，不进入 Phase 5 交付范围。
@@ -124,3 +124,29 @@ Question → Intent → Safety → minimal context → Hybrid/Rerank → Answer 
 Knowledge、Labs 与 Health AI 保持三个边界：知识导入不读取个人数据；OCR 只生成草稿；Health Context 只读取当前用户已确认的最少必要数据。`HealthSafetyService` 可在检索和 Provider 之前短路。Drift v4 只缓存已保存报告和趋势，不缓存原始体检文件或完整健康对话。
 
 iOS Files 选择通过 Runner 内的 `UIDocumentPickerViewController` 完成，只接受 PDF；读取时使用 security-scoped access 并立即释放，不保存外部 URL。Camera/Photos 继续使用已有 `image_picker` 权限流程。
+
+## Phase 7 supervision and reporting
+
+```text
+Domain facts ─► DailyTaskEngine ─► ReminderEngine ─► NotificationService
+     │              │                 │                    └─ PushProvider
+     │              └─ dashboard/today  └─ DND/cooldown/limits
+     ├─► HealthReportService ─► cached structured snapshot ─► AI summary
+     └─► HealthTimelineService (query projection, no duplicated event store)
+```
+
+Daily task and notification writes have database unique keys, so the 15-minute
+Celery sweep is safe to retry. The scheduler computes in each user's timezone,
+while persisted timestamps stay UTC. Reports use program-calculated metrics;
+AI cannot replace or recalculate them. Proactive AI is rule-gated and daily
+limited.
+
+iOS fixed reminders are scheduled locally only after contextual permission.
+Server-side reminders use a provider boundary and do not assume that iOS can be
+woken to execute business logic. `MockPushProvider` is the default; Apple
+credentials and the production HTTP/2 transport are external release gates.
+
+The privacy lock wraps the authenticated app surface after a two-minute
+background grace period. Export and deletion execute through authenticated
+backend services; foreign-key cascades are enforced in PostgreSQL and explicitly
+enabled for SQLite tests.

@@ -10,9 +10,8 @@
 | iOS 就绪（已完成代码与文档） | iPhone 主目标、iOS Runner、权限/Keychain/CI/发布文档 | Windows analyze/test 已通过；macOS 无签名构建和真机验收作为外部平台门禁 |
 | 5（已完成） | 训练 + Apple Health 第一阶段 | 计划、组次、RPE/RIR、历史 PR、保守递进、步数/睡眠/恢复通过 |
 | 6（已完成） | 健康知识 RAG + 体检 + Health AI | 文档版本、pgvector/FTS、引用、OCR Draft、单位/趋势、安全与 iPhone 健康页通过 |
-| 7（建议） | 提醒与健康时间线 | 用户确认的复查提醒、勿扰、防轰炸、跨域时间线与非因果表达通过 |
-| 8 | 日/周/月报告 | 幂等生成且趋势策略可解释 |
-| 9 | 真实 Provider 评测与本地模型选项 | 受控数据集、成本/延迟/召回质量和隐私门禁通过 |
+| 7（已完成代码） | 主动监督、通知、报告、时间线和 Beta 准备 | 幂等任务、勿扰/冷却、本地通知、日周月报、复查确认、非因果时间线、导出/删除和发布文档通过；外部凭据/真机门禁单列 |
+| 8 | 真实 Provider 评测与本地模型选项 | 授权数据集、成本/延迟/召回质量和隐私门禁通过 |
 | 10 | Health Connect（Android 兼容） | 权限、增量同步、去重与撤权通过 |
 | 11 | 发布加固 | 移动端构建、安全审查、备份恢复、部署演练通过 |
 
@@ -28,11 +27,10 @@ iOS Widget 与 Apple Watch companion 保留为 Phase 11 之后的独立路线项
 - AI training coach plus nutrition/training context linkage
 - iPhone-first training UX, Drift v3 offline storage and Outbox sync
 
-## Phase 7 candidates
+## Phase 7 external gates
 
-- Real-device HealthKit QA and TestFlight acceptance
-- User-confirmed lab follow-up reminders and context-aware training reminders
-- Unified weight/waist/training/nutrition/sleep/lab timeline without causal claims
-- User-confirmed training adjustment application UI
-- Health Connect production setup for Android
-- Longer-term deload evaluation using multiple weeks of fatigue and performance evidence
+- macOS CI 的 iOS no-codesign build 和 Android 兼容 build（需添加 Git remote 启用 Actions）。
+- Apple Team/Signing、真机 HealthKit/Face ID/通知和 TestFlight 验收。
+- APNs 凭据与真实 HTTP/2 传输；当前默认 Mock。
+- 生产域名/TLS/服务器和 PostgreSQL 恢复演练实跑。
+- 25 张授权餐食图、授权体检样本和真实 Provider Key。

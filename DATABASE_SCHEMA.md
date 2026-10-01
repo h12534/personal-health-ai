@@ -114,7 +114,19 @@
 
 ## 完整演进清单
 
-后续迁移按领域增加：`body_metrics, waist_logs, canteens, canteen_foods, diet_plans, exercise_library, training_plans, training_days, training_exercises, workout_sessions, workout_sets, activity_logs, step_logs, water_logs, sleep_logs, lab_reports, lab_results, body_photos, reminders, notification_logs, daily_reports, weekly_reports, monthly_reports, knowledge_documents, knowledge_chunks, ai_conversations, ai_messages, ai_memories, ai_provider_configs, system_settings, audit_logs`。
+后续迁移按领域增加：`body_metrics, waist_logs, body_photos, reminders, ai_provider_configs, system_settings, audit_logs`。Phase 2–7 已实现饮食、训练、活动、睡眠、体检、知识库、监督和报告所需主要表。
+
+## Phase 7 监督、推送与报告
+
+- `daily_tasks`：用户、当地日期、类型、标题/描述、状态、优先级、时间、来源、策略和非空 `dedup_key`。`(user_id, task_date, dedup_key)` 唯一。
+- `reminder_preferences`：每用户唯一的总开关、强度、餐次窗口、各提醒时间、勿扰、报告日和本地/服务器渠道开关。
+- `health_followups`：可选指标代码、理由、建议日期、状态、来源和确认时间。建议只有确认后才生成 task。
+- `notification_logs`：任务、类型、渠道、计划/发送时间、状态、非敏感原因、Provider、互动和完成延迟。只存元数据，`dedup_key` 全局唯一。
+- `push_devices`：每用户/设备唯一，保存平台、服务器推送 token、活跃状态和最后出现时间。
+- `health_reports`：日/周/月周期唯一，指标快照、摘要、下一步、规则/Prompt 版本、输入 Hash、Provider/Model 和重生成计数。
+- `proactive_coach_events`：每用户/日期/触发类型唯一，保存非诊断建议、规则证据快照和 Provider 信息。
+
+Timeline 不建重复事件表，从上述表和 Phase 1–6 事实表查询投影。迁移 `0007_phase7_supervision` 在 PostgreSQL 使用 JSONB，SQLite 测试使用 JSON variant。
 
 知识库采用 `vector` 列并同时保留 `tsvector`，支持向量与关键词的混合检索；版本查询默认过滤 `active=true` 和最新 `document_version`。
 

@@ -9,9 +9,10 @@ and App Store Connect privacy answers.
 ## Data categories
 
 The system may process account credentials, profile and goal settings, body
-measurements, nutrition and meal records, activity summaries, user-entered
-notes, coach conversations, and optional meal photos. Later phases may add
-training, sleep, report, examination, notification, and Apple Health data.
+measurements, nutrition and meal records, training, activity and sleep
+summaries, user-entered notes, coach conversations, optional meal photos,
+confirmed examination results, notification delivery metadata, reports and
+Apple Health summaries explicitly enabled by the user.
 
 Collect only fields needed for an enabled feature. Medical diagnosis, medication
 changes, ad-network tracking, contacts, location, microphone, and advertising
@@ -52,21 +53,18 @@ turning it off does not delete the confirmed nutrition facts.
 
 ## Apple Health
 
-HealthKit is not enabled in the current build. The code contains a provider seam
-only. A later HealthKit change must:
+HealthKit is enabled behind `AppleHealthProvider`, with manual fallback. The app
+requests steps, walking/running distance, active energy, resting heart rate,
+sleep and workout read access only after the user enables the corresponding
+switch. It does not write to Apple Health. Partial authorization and denial do
+not disable manual entry.
 
-- add only the read/write types required by the feature;
-- show an in-app explanation immediately before Apple's authorization sheet;
-- keep manual entry available when access is denied;
-- support partial authorization, revocation, source attribution, deduplication,
-  and incremental sync;
-- never use HealthKit data for advertising, data brokerage, or unrelated
-  profiling;
-- update this file, App Store privacy disclosures, entitlements, and device
-  tests before release.
-
-The intended source order on iPhone is
-`AppleHealthProvider → ManualHealthProvider`.
+The server receives only daily summaries or sleep/training segments needed for
+activity and recovery. Raw sample streams, routes and continuous heart-rate
+samples are not uploaded. Source record IDs and incremental cursors prevent
+duplicate summaries. A user can disable each type independently and delete
+server-synced provider data without deleting manual records. HealthKit data is
+never used for advertising, data brokerage or unrelated profiling.
 
 ## Notifications
 
@@ -82,8 +80,15 @@ The Linux scheduler supervises due events and idempotency. The iOS app must not
 be designed as a permanently resident background process. Notification payloads
 must avoid sensitive health details on the lock screen by default.
 
-No notification plugin, APNs entitlement, or background mode is included in
-this readiness change.
+The iOS implementation uses `flutter_local_notifications` for user-enabled
+fixed reminders and deliberately requests no background-resident execution.
+Remote delivery remains behind `PushProvider`; without Apple credentials the
+server uses `MockPushProvider`. Notification logs store delivery metadata and
+interaction timing, not the sensitive body text.
+
+Lab follow-up lock-screen text is reduced to a generic health reminder. It must
+not include a condition, lab value, document title, full question or image
+path.
 
 ## Network and transport
 
@@ -98,7 +103,7 @@ this readiness change.
 
 Users must be able to:
 
-- decline camera, photo, future HealthKit, and notification permissions without
+- decline camera, photo, HealthKit, and notification permissions without
   losing unrelated features;
 - use manual meal and health entry;
 - enable/disable third-party image analysis and image retention separately;
@@ -106,9 +111,19 @@ Users must be able to:
 - understand whether a value came from manual entry, Apple Health, deterministic
   rules, or an AI-generated draft.
 
-Backend deletion/export workflows and final retention periods must be defined
-and tested before App Store release. Backups require encryption, access
-controls, an expiry policy, and restoration testing.
+The authenticated user can export a JSON or flattened CSV copy of profile,
+weight, nutrition, training, sleep, steps, labs, tasks, follow-ups and settings.
+`Delete My Data` requires the exact second-confirmation phrase and removes the
+account, cascade-owned database rows and private meal/lab objects. Existing
+encrypted backups expire under the documented 7 daily / 4 weekly / 3 monthly
+policy instead of being silently rewritten in place. Production backups still
+require encryption, access control, off-host replication and restore drills.
+
+The optional Face ID / Touch ID lock is off by default. Enabling it stores only
+the preference in secure storage; authentication remains on-device, and the
+session token remains in Keychain. After a two-minute background grace period,
+the app gates the authenticated surface without prompting on every sensitive
+screen tap.
 
 ## App Store privacy preparation
 

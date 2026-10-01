@@ -56,3 +56,12 @@
 - Health AI 危急症状在网络模型前短路；诊断和停药请求强制医疗边界。普通日志不写完整问题、回答、OCR 或个人 context。
 - iOS Files picker 使用系统文档选择器和临时安全作用域访问，不持久化外部 URL/bookmark；本地只缓存结构化报告与趋势。
 
+## Phase 7 监督与发布
+
+- 任务、报告和通知服务全部按 `user_id` 查询；幂等键与数据库唯一约束阻止 Celery 重试导致的重复推送和报告。
+- `notification_logs` 不保存锁屏全文。复查类 payload 强制改写为不含指标、数值和疾病名的通用文案。
+- 生物识别默认关闭，验证在设备安全硬件/系统层完成。Token 仍使用 Keychain，不把面容/指纹模板或验证秘密传到服务器。
+- 删除全部数据要求精确确认语，并删除私有餐食/体检文件。已有加密备份依保留策略到期，权限和删除语义需写入公开隐私政策。
+- 生产启动校验长随机 Secret 和 HTTPS `PUBLIC_BASE_URL`。PostgreSQL/Redis 仅内网，TLS 在 Nginx/托管代理终止，iOS 不提交全局 ATS 例外。
+- APNs `.p8`、AI Key、生产 `.env`、数据库 dump 和真实 Provider 评测样本都不得进入 Git。
+

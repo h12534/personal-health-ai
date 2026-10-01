@@ -64,4 +64,3 @@ psql --host="$POSTGRES_HOST" --port="$POSTGRES_PORT" \
   --command="SELECT version_num FROM alembic_version;" >/dev/null
 
 echo "Restore drill passed: $SOURCE_DATABASE -> $RESTORE_DATABASE"
-

@@ -2,7 +2,7 @@
 
 一个面向个人长期使用的私人健康操作系统。项目从稳健减脂、保留肌肉和建立力量训练习惯出发，逐步连接身体数据、现实饮食、训练、活动、睡眠、体检、知识库、提醒和 AI 教练。
 
-当前仓库已完成 Phase 0–6。除认证、档案、体重、饮食、训练、HealthKit 摘要和恢复外，现已具备 pgvector 健康知识库、体检 OCR 草稿确认、指标趋势、引用式健康问答和独立医疗安全层。
+当前仓库已完成 Phase 0–7。在认证、档案、体重、饮食、训练、HealthKit、体检和健康知识之上，现已具备每日任务、防轰炸提醒、iOS 本地通知、日/周/月报、统一健康时间线、复查任务、可选生物识别锁和个人数据导出/删除。
 
 移动端以 Apple iPhone / iOS 16+ 为首要交付目标；Android 作为次要兼容平台保留。后端继续部署到 Linux，Windows 可进行后端与 Flutter 静态开发，但 iOS 原生构建必须在 macOS + Xcode 上完成。
 
@@ -63,6 +63,13 @@ storage/                 本地私有文件/备份挂载占位目录
 - [LAB_REPORT_SYSTEM.md](LAB_REPORT_SYSTEM.md)
 - [HEALTH_AI_SAFETY.md](HEALTH_AI_SAFETY.md)
 - [HEALTH_AI_CONTEXT.md](HEALTH_AI_CONTEXT.md)
+- [PHASE7_SUPERVISION.md](PHASE7_SUPERVISION.md)
+- [IOS_NOTIFICATION_AUDIT.md](IOS_NOTIFICATION_AUDIT.md)
+- [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md)
+- [RESTORE_TEST.md](RESTORE_TEST.md)
+- [PROVIDER_ACCEPTANCE.md](PROVIDER_ACCEPTANCE.md)
+- [BETA_READINESS.md](BETA_READINESS.md)
+- [GIT_REMOTE_SETUP.md](GIT_REMOTE_SETUP.md)
 
 ## 本地后端
 
@@ -126,7 +133,7 @@ docker compose ps
 curl http://localhost:8080/health
 ```
 
-Compose 包含 `backend`、`postgres`（pgvector）、`redis`、`worker` 和 `nginx`。数据库与 Redis 不映射公网端口。当前 Nginx 监听本地 HTTP 8080；生产环境必须在域名确定后配置 TLS 证书和 443。
+Compose 包含 `backend`、`postgres`（pgvector）、`redis`、`worker` 和 `nginx`。数据库与 Redis 不映射公网端口。开发配置监听本地 HTTP 8080；生产使用 `.env.production.example` + `docker-compose.production.yml`，包含 TLS 443、私有存储初始化、Worker/Beat 和可选备份任务，详见 [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md)。
 
 迁移：
 
@@ -169,6 +176,9 @@ flutter build apk --debug
 - `AI_PROVIDER`、`AI_BASE_URL`、`AI_API_KEY`、各模型名：AI Gateway 配置。默认 `disabled`，无 Key 也可运行 Phase 1。
 - Flutter 编译参数 `APP_ENV`（dev/staging/prod）与 `API_BASE_URL`：iPhone API 环境。
 - `IOS_BUNDLE_ID`、`APP_DISPLAY_NAME`：通过 `mobile/tool/configure_ios.dart` 生成本地、忽略的 Xcode 配置。
+- `PUSH_PROVIDER` 与 `APNS_*`：无 Apple 凭据时保持 Mock；真实 Auth Key 只作为服务器 Secret 挂载。
+- `PROACTIVE_AI_DAILY_LIMIT`、`REPORT_REGENERATION_LIMIT`：限制主动 AI 和报告手工重生成。
+- `PUBLIC_BASE_URL`、`BACKUP_RETENTION_*`、`SENTRY_DSN`：生产 HTTPS、备份保留和可选错误追踪配置。
 
 禁止把 `.env`、API Key、真实 Token 或数据库密码提交 Git。
 
@@ -180,15 +190,26 @@ flutter build apk --debug
 
 ## 备份与恢复
 
-生产环境需要执行 `scripts/backup.sh`，并把加密备份复制到另一故障域。默认策略为 7 个日备份、4 个周备份和关键月备份。恢复前停止写入/Worker，在隔离环境验证后再切换，详见 [BACKUP_RESTORE.md](BACKUP_RESTORE.md)。
+生产环境需要执行 `scripts/backup.sh`，并把加密备份复制到另一故障域。默认策略为 7 个日备份、4 个周备份和 3 个月备份。恢复前停止写入/Worker，在隔离环境验证后再切换，详见 [BACKUP_RESTORE.md](BACKUP_RESTORE.md) 和 [RESTORE_TEST.md](RESTORE_TEST.md)。
+
+## CI 状态说明
+
+仓库尚无 Git remote，因此不展示虚假 passing badge。`.github/workflows/ci.yml` 已定义以下门禁：
+
+| 检查 | 执行环境 | 当前可证明状态 |
+|---|---|---|
+| Backend | Ubuntu / Python 3.12 | 本地 Ruff、strict mypy、pytest 已通过；Actions 待 remote |
+| PostgreSQL + pgvector + Redis | Ubuntu services | 测试与 restore drill 已配置；Actions 待 remote |
+| iOS primary | macOS / Flutter 3.47.5 | analyze/test 本地已通过；no-codesign build 待 macOS Actions |
+| Android secondary | Ubuntu / generated Runner | 兼容构建已配置；Actions 待 remote |
 
 ## 当前限制
 
 - 扫描版知识 PDF 尚未进入知识 OCR；会明确返回 OCR required。体检扫描 PDF 已支持逐页渲染和 OCR Provider。
-- 复查提醒目前只生成并接受 suggestion，不会擅自创建系统通知；真实远程 Embedding/OCR/Health Answer 需要用户自行配置 Key。
+- 复查建议只有用户确认后才转为日期任务；真实远程 Vision/Embedding/OCR/Health Answer 仍需用户自行配置 Key 并通过验收数据集。
 - 移动端离线 Outbox 覆盖餐次和训练创建；已保存体检报告与趋势可离线查看，新的知识问答/OCR 仍需要服务器。
 - Windows 可运行 Flutter analyze/test，但不能证明 iOS 原生构建；主移动 CI 使用 macOS 执行 `flutter build ios --no-codesign`，真机和签名仍需 Apple 环境。
-- HTTPS 证书、域名、Push 凭据和真实 AI Key 都属于部署阶段配置，不在仓库中提供默认秘密。
+- HTTPS 证书、域名、APNs 凭据、Apple 签名和真实 AI Key 都属于外部部署门禁，不在仓库中提供默认秘密。
 
 ## 常见问题
 

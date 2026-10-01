@@ -156,3 +156,27 @@ Workout and set writes accept Idempotency-Key and stable client UUIDs. Training 
 | POST | `/api/v1/ai/health/chat` | 安全筛查、个人上下文、RAG、引用式回答 |
 
 Lab 文件最大 30 MB，只接受 JPEG/PNG/WebP/PDF。上传响应永远先是 Draft；只有 confirm 后的值进入趋势和 Health AI context。所有 Lab/Health AI 资源按当前用户过滤，越权统一表现为 404。
+
+## Phase 7 endpoints
+
+Phase 7 路由前缀为 `/api/v1/supervision`：
+
+| Method | Path | 用途 |
+|---|---|---|
+| GET/POST | `/tasks`, `/tasks/generate` | 幂等生成当日任务并执行自动完成检测 |
+| PATCH | `/tasks/{id}` | 手动 `completed/skipped/cancelled` |
+| GET/PUT | `/preferences` | 提醒总开关、强度、时间、勿扰与报告日 |
+| POST | `/reminders/evaluate?send=false` | 返回提醒决策；`send=true` 仅用于鉴权调试/运维 |
+| GET | `/notifications` | 最近 100 条非敏感投递元数据 |
+| PUT | `/push-device` | 幂等注册/更新当前用户推送设备 |
+| GET/POST | `/reports`, `/reports/generate` | 查询或生成 daily/weekly/monthly 缓存报告 |
+| GET | `/timeline?from=&to=&category=` | 时间线 Query Projection，类别为 all/body/nutrition/training/lab/report |
+| GET | `/cross-domain?from=&to=&metrics=` | 体重/步数/睡眠/HbA1c 同期数列与非因果声明 |
+| POST | `/correlation-guard` | 对因果问题返回限制说明 |
+| GET/POST | `/followups` | 查询/建立复查建议 |
+| POST/PATCH | `/followups/{id}/confirm`, `/followups/{id}` | 用户确认或改期 |
+| POST | `/followups/{id}/cancel` | 取消复查 |
+| GET | `/export/json`, `/export/csv` | 导出当前用户数据 |
+| DELETE | `/data` | 精确确认字符串后删除当前账号和私有数据 |
+
+HealthKit 同步状态使用 `GET /api/v1/health/sync/status`。系统健康检查为 `GET /health/live` 和 `GET /health/ready`。
