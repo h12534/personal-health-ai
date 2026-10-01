@@ -21,6 +21,8 @@ from app.providers.ai.base import (
     LabOCRProvider,
     VisionProvider,
 )
+from app.providers.push import build_push_provider
+from app.providers.push.base import PushProvider
 from app.providers.storage import get_storage_provider
 from app.providers.storage.base import StorageProvider
 from app.repositories.user_repository import UserRepository
@@ -72,3 +74,7 @@ def get_lab_ocr_provider() -> LabOCRProvider:
 
 def get_health_answer_provider() -> HealthAnswerProvider:
     return build_health_answer_provider()
+
+
+def get_push_provider() -> PushProvider:
+    return build_push_provider()
