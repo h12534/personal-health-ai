@@ -1,16 +1,19 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Response, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
 from app.db.session import get_db
+from app.models.health_activity import HealthSyncState
 from app.models.user import User
 from app.schemas.common import DataResponse
 from app.schemas.health_activity import (
     DailyActivityRead,
     HealthSummaryWrite,
     HealthSyncResult,
+    HealthSyncStatusRead,
     PermissionRead,
     PermissionWrite,
     RecoveryInput,
@@ -81,6 +84,36 @@ async def health_permissions(
     session: AsyncSession = Depends(get_db),
 ) -> DataResponse[list[PermissionRead]]:
     return DataResponse(data=await HealthActivityService(session).permissions(user.id))
+
+
+@health_router.get("/sync/status", response_model=DataResponse[list[HealthSyncStatusRead]])
+async def health_sync_status(
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
+) -> DataResponse[list[HealthSyncStatusRead]]:
+    values = list(
+        (
+            await session.scalars(
+                select(HealthSyncState)
+                .where(
+                    HealthSyncState.user_id == user.id,
+                    HealthSyncState.provider == "healthkit",
+                )
+                .order_by(HealthSyncState.data_type)
+            )
+        ).all()
+    )
+    return DataResponse(
+        data=[
+            HealthSyncStatusRead(
+                data_type=item.data_type,
+                last_sync_at=item.last_sync_at,
+                status=item.status,
+                error_summary=item.error_summary,
+            )
+            for item in values
+        ]
+    )
 
 
 @health_router.put("/permissions", response_model=DataResponse[PermissionRead])

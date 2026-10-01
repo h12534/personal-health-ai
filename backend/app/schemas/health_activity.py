@@ -64,6 +64,13 @@ class HealthSyncResult(BaseModel):
     source_record_id: str
 
 
+class HealthSyncStatusRead(BaseModel):
+    data_type: str
+    last_sync_at: datetime | None
+    status: str
+    error_summary: str | None
+
+
 class SleepRead(BaseModel):
     id: UUID
     sleep_start: datetime

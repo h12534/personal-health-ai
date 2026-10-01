@@ -1,11 +1,12 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
-from app.models.health_knowledge import HealthCheckSuggestion, LabReport
+from app.models.health_knowledge import HealthCheckSuggestion, LabReport, LabResult
+from app.models.supervision import HealthFollowup
 
 
 class HealthCheckRecommendationService:
@@ -85,5 +86,34 @@ class HealthCheckRecommendationService:
             raise AppError("health_check_suggestion_not_found", "Suggestion was not found.", 404)
         value.status = "accepted"
         value.accepted_at = datetime.now(UTC)
+        existing_followup = await self.session.scalar(
+            select(HealthFollowup).where(
+                HealthFollowup.user_id == user_id,
+                HealthFollowup.source == "health_check_suggestion",
+                HealthFollowup.source_entity_id == str(value.id),
+            )
+        )
+        if existing_followup is None:
+            report = await self.session.get(LabReport, value.report_id) if value.report_id else None
+            result_id = value.evidence_snapshot.get("lab_result_id")
+            result: LabResult | None = None
+            if isinstance(result_id, str):
+                try:
+                    result = await self.session.get(LabResult, UUID(result_id))
+                except ValueError:
+                    result = None
+            base_date = report.report_date if report else datetime.now(UTC).date()
+            self.session.add(
+                HealthFollowup(
+                    user_id=user_id,
+                    lab_test_code=result.normalized_name if result else None,
+                    reason=value.description,
+                    recommended_date=base_date + timedelta(days=value.suggested_after_days or 90),
+                    status="confirmed",
+                    source="health_check_suggestion",
+                    source_entity_id=str(value.id),
+                    confirmed_at=datetime.now(UTC),
+                )
+            )
         await self.session.commit()
         return value
