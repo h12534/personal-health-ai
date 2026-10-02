@@ -21,6 +21,19 @@ def test_production_accepts_strong_secret() -> None:
     assert settings.is_production
 
 
+def test_staging_has_the_same_secret_database_and_https_guards() -> None:
+    with pytest.raises(ValidationError):
+        Settings(app_env="staging")
+    settings = Settings(
+        app_env="staging",
+        app_secret_key="s" * 48,
+        database_url="postgresql+asyncpg://health:secret@postgres:5432/health_staging",
+        public_base_url="https://staging-api.personal-health.test",
+    )
+    assert settings.is_deployed is True
+    assert settings.is_production is False
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [

@@ -1,7 +1,7 @@
 name: personal-health-os-production
 
 x-app-environment: &app-environment
-  APP_ENV: production
+  APP_ENV: ${APP_ENV:?Set APP_ENV in the environment file}
   DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.production}
   REDIS_URL: ${REDIS_URL:?Set REDIS_URL in .env.production}
   UPLOAD_DIR: /data/private/uploads

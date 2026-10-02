@@ -1,7 +1,7 @@
 name: personal_health_os
 description: Private AI health, nutrition, and training coach.
 publish_to: none
-version: 0.1.0+1
+version: 0.1.0-beta.1+2
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

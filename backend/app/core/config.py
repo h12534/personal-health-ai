@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "Personal Health OS"
+    app_version: str = "0.1.0-beta.1"
     app_env: str = "development"
     app_secret_key: str = "development-secret-change-before-production-32"
     database_url: str = "sqlite+aiosqlite:///./health_os.db"
@@ -87,23 +88,27 @@ class Settings(BaseSettings):
 
     @property
     def is_production(self) -> bool:
-        return self.app_env.lower() == "production"
+        return self.app_env.lower() in {"prod", "production"}
+
+    @property
+    def is_deployed(self) -> bool:
+        return self.app_env.lower() in {"staging", "prod", "production"}
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
-        if self.is_production:
+        if self.is_deployed:
             normalized_secret = self.app_secret_key.lower()
             if any(
                 marker in normalized_secret
                 for marker in ("development-secret", "replace-with", "change-before")
             ):
-                raise ValueError("APP_SECRET_KEY must be replaced in production")
+                raise ValueError("APP_SECRET_KEY must be replaced in deployed environments")
             if len(self.app_secret_key) < 32:
                 raise ValueError("APP_SECRET_KEY must contain at least 32 characters")
             if not self.database_url.startswith("postgresql+asyncpg://"):
-                raise ValueError("DATABASE_URL must use PostgreSQL/asyncpg in production")
+                raise ValueError("DATABASE_URL must use PostgreSQL/asyncpg when deployed")
             if any(marker in self.database_url.lower() for marker in ("replace-with", "change-me")):
-                raise ValueError("DATABASE_URL contains a production placeholder")
+                raise ValueError("DATABASE_URL contains a deployment placeholder")
         if self.vision_provider == "openai_compatible":
             if not self.vision_base_url or not self.vision_api_key:
                 raise ValueError(
@@ -134,14 +139,14 @@ class Settings(BaseSettings):
             (self.apns_team_id, self.apns_key_id, self.apns_auth_key_path, self.apns_bundle_id)
         ):
             raise ValueError("APNs credentials are required when PUSH_PROVIDER=apple")
-        if self.is_production:
+        if self.is_deployed:
             if not self.public_base_url.startswith("https://"):
-                raise ValueError("PUBLIC_BASE_URL must use HTTPS in production")
+                raise ValueError("PUBLIC_BASE_URL must use HTTPS when deployed")
             if any(
                 marker in self.public_base_url.lower()
                 for marker in ("localhost", "example.com", ".invalid")
             ):
-                raise ValueError("PUBLIC_BASE_URL must be the deployed production domain")
+                raise ValueError("PUBLIC_BASE_URL must be the deployed domain")
         return self
 
 

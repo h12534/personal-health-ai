@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
@@ -94,15 +94,17 @@ async def import_document(
 
 @router.get("/documents", response_model=DataResponse[list[KnowledgeDocumentRead]])
 async def list_documents(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     user: User = Depends(get_current_admin),
     session: AsyncSession = Depends(get_db),
     embedding: EmbeddingProvider = Depends(get_embedding_provider),
 ) -> DataResponse[list[KnowledgeDocumentRead]]:
     del user
-    values = await _service(session, embedding).list_documents()
+    values = await _service(session, embedding).list_documents(limit=limit, offset=offset)
     return DataResponse(
         data=[KnowledgeDocumentRead.model_validate(value) for value in values],
-        meta={"count": len(values)},
+        meta={"count": len(values), "limit": limit, "offset": offset},
     )
 
 

@@ -174,6 +174,7 @@ async def upsert_push_device(
             user_id=user.id,
             device_id=payload.device_id,
             platform=payload.platform,
+            environment=payload.environment,
             token=payload.token,
             active=True,
             last_seen_at=datetime.now(UTC),
@@ -181,24 +182,32 @@ async def upsert_push_device(
         session.add(value)
     else:
         value.platform = payload.platform
+        value.environment = payload.environment
         value.token = payload.token
         value.active = True
         value.last_seen_at = datetime.now(UTC)
     await session.commit()
-    return DataResponse(data={"id": str(value.id), "status": "active"})
+    return DataResponse(
+        data={"id": str(value.id), "status": "active", "environment": value.environment}
+    )
 
 
 @router.get("/reports", response_model=DataResponse[list[HealthReportRead]])
 async def health_reports(
     report_type: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
     provider: HealthAnswerProvider = Depends(get_health_answer_provider),
     settings: Settings = Depends(get_settings),
 ) -> DataResponse[list[HealthReportRead]]:
     service = HealthReportService(session, provider, settings)
-    values = await service.list_reports(user.id, report_type)
-    return DataResponse(data=[service.read(item) for item in values])
+    values = await service.list_reports(user.id, report_type, limit=limit, offset=offset)
+    return DataResponse(
+        data=[service.read(item) for item in values],
+        meta={"count": len(values), "limit": limit, "offset": offset},
+    )
 
 
 @router.post("/reports/generate", response_model=DataResponse[HealthReportRead])
@@ -221,11 +230,18 @@ async def health_timeline(
     date_from: date = Query(alias="from"),
     date_to: date = Query(alias="to"),
     category: str = Query(default="all"),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ) -> DataResponse[list[TimelineEventRead]]:
-    values = await HealthTimelineService(session).list_events(user.id, date_from, date_to, category)
-    return DataResponse(data=values)
+    values = await HealthTimelineService(session).list_events(
+        user.id, date_from, date_to, category, limit=limit, offset=offset
+    )
+    return DataResponse(
+        data=values,
+        meta={"count": len(values), "limit": limit, "offset": offset},
+    )
 
 
 @router.get("/cross-domain", response_model=DataResponse[CrossDomainRead])

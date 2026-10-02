@@ -392,13 +392,15 @@ class KnowledgeIngestionService:
             await self.session.commit()
             raise
 
-    async def list_documents(self) -> list[KnowledgeDocument]:
+    async def list_documents(self, *, limit: int = 50, offset: int = 0) -> list[KnowledgeDocument]:
         return list(
             (
                 await self.session.scalars(
                     select(KnowledgeDocument)
                     .where(KnowledgeDocument.deleted_at.is_(None))
                     .order_by(KnowledgeDocument.created_at.desc())
+                    .limit(limit)
+                    .offset(offset)
                 )
             )
             .unique()

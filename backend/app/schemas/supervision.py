@@ -145,6 +145,7 @@ class CrossDomainRead(BaseModel):
 class PushDeviceUpsert(BaseModel):
     device_id: str = Field(min_length=4, max_length=160)
     platform: Literal["ios", "android"] = "ios"
+    environment: Literal["dev", "staging", "prod"] = "dev"
     token: str = Field(min_length=8, max_length=512)
 
 

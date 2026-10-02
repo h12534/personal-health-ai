@@ -22,3 +22,29 @@
 ## OCR 集
 
 `backend/tests/provider_eval/ocr_manifest.csv` 只记录授权、去标识和标注状态。评测必须分别计算字段名、数值、单位、参考下限/上限的准确率，并将“无法识别、留给用户确认”与错误填值分开计数。真实 OCR 的结果仍只是 Draft。
+
+## RC Harness
+
+工具通过已部署应用 API 调用 Provider，因此同时覆盖隐私授权、安全层、业务 Schema 和持久化边界；它不读取或输出 Provider Key。短期 Beta access token 只从环境变量读取，结果目录已被 Git 忽略。
+
+```bash
+cd backend
+python -m app.scripts.provider_acceptance inventory \
+  --output ../artifacts/provider-inventory.json
+
+export BETA_ACCESS_TOKEN='<short-lived token>'
+python -m app.scripts.provider_acceptance vision \
+  --api-base-url https://staging-api.example.com/api/v1 \
+  --output ../artifacts/vision-acceptance.json
+python -m app.scripts.provider_acceptance coach \
+  --api-base-url https://staging-api.example.com/api/v1 \
+  --output ../artifacts/coach-acceptance.json
+python -m app.scripts.provider_acceptance rag \
+  --api-base-url https://staging-api.example.com/api/v1 \
+  --output ../artifacts/rag-acceptance.json
+python -m app.scripts.provider_acceptance ocr \
+  --api-base-url https://staging-api.example.com/api/v1 \
+  --output ../artifacts/ocr-acceptance.json
+```
+
+Harness 会拒绝未标记 `ready`、无授权引用或本地私有文件不存在的 Vision/OCR 样本。费用和 citation correctness 仍要求 Provider billing 与人工来源审查，脚本不会伪造这两项。

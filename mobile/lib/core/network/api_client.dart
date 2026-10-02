@@ -19,6 +19,28 @@ import 'api_exception.dart';
 const _accessTokenKey = 'health_os_access_token';
 const _refreshTokenKey = 'health_os_refresh_token';
 
+abstract interface class TokenStore {
+  Future<String?> read(String key);
+  Future<void> write(String key, String value);
+  Future<void> clear();
+}
+
+class SecureTokenStore implements TokenStore {
+  const SecureTokenStore(this._storage);
+
+  final FlutterSecureStorage _storage;
+
+  @override
+  Future<String?> read(String key) => _storage.read(key: key);
+
+  @override
+  Future<void> write(String key, String value) =>
+      _storage.write(key: key, value: value);
+
+  @override
+  Future<void> clear() => _storage.deleteAll();
+}
+
 final secureStorageProvider = Provider<FlutterSecureStorage>(
   (ref) => const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
@@ -31,18 +53,23 @@ final secureStorageProvider = Provider<FlutterSecureStorage>(
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(
     Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl)),
-    ref.watch(secureStorageProvider),
+    SecureTokenStore(ref.watch(secureStorageProvider)),
   );
 });
 
 class ApiClient {
-  ApiClient(this._dio, this._storage);
+  ApiClient(this._dio, this._tokens) {
+    _dio.interceptors.add(
+      InterceptorsWrapper(onError: _handleUnauthorized),
+    );
+  }
 
   final Dio _dio;
-  final FlutterSecureStorage _storage;
+  final TokenStore _tokens;
+  Future<String?>? _refreshInFlight;
 
   Future<bool> hasSession() async =>
-      (await _storage.read(key: _accessTokenKey)) != null;
+      (await _tokens.read(_accessTokenKey)) != null;
 
   Future<void> authenticate({
     required String email,
@@ -55,20 +82,59 @@ class ApiClient {
         data: {'email': email, 'password': password},
       );
       final data = response.data!['data'] as Map<String, dynamic>;
-      await _storage.write(
-        key: _accessTokenKey,
-        value: data['access_token'] as String,
-      );
-      await _storage.write(
-        key: _refreshTokenKey,
-        value: data['refresh_token'] as String,
-      );
+      await _tokens.write(_accessTokenKey, data['access_token'] as String);
+      await _tokens.write(_refreshTokenKey, data['refresh_token'] as String);
     } on DioException catch (error) {
       throw _mapError(error);
     }
   }
 
-  Future<void> clearSession() => _storage.deleteAll();
+  Future<void> clearSession() => _tokens.clear();
+
+  Future<ServerHealthResult> checkServerHealth() async {
+    final stopwatch = Stopwatch()..start();
+    final base = Uri.parse(_dio.options.baseUrl);
+    final healthUri =
+        base.replace(path: '/health/live', query: null, fragment: null);
+    try {
+      final response = await _dio.getUri<void>(healthUri);
+      stopwatch.stop();
+      return ServerHealthResult(
+        checkedAt: DateTime.now().toUtc(),
+        latencyMs: stopwatch.elapsedMilliseconds,
+        healthy: response.statusCode == 200,
+      );
+    } on DioException catch (error) {
+      stopwatch.stop();
+      return ServerHealthResult(
+        checkedAt: DateTime.now().toUtc(),
+        latencyMs: stopwatch.elapsedMilliseconds,
+        healthy: false,
+        errorCode: error.type.name,
+      );
+    }
+  }
+
+  Future<void> registerPushDevice({
+    required String deviceId,
+    required String platform,
+    required String token,
+  }) async {
+    try {
+      await _dio.put<void>(
+        '/supervision/push-device',
+        data: {
+          'device_id': deviceId,
+          'platform': platform,
+          'environment': AppConfig.apiEnvironment,
+          'token': token,
+        },
+        options: await _authorizedOptions(),
+      );
+    } on DioException catch (error) {
+      throw _mapError(error);
+    }
+  }
 
   Future<VisionPrivacySettings> fetchVisionPrivacy() async {
     try {
@@ -1393,13 +1459,82 @@ class ApiClient {
   }
 
   Future<Options> _authorizedOptions({String? idempotencyKey}) async {
-    final token = await _storage.read(key: _accessTokenKey);
+    final token = await _tokens.read(_accessTokenKey);
     return Options(
       headers: {
         'Authorization': 'Bearer $token',
         if (idempotencyKey != null) 'Idempotency-Key': idempotencyKey,
       },
     );
+  }
+
+  Future<void> _handleUnauthorized(
+    DioException error,
+    ErrorInterceptorHandler handler,
+  ) async {
+    final request = error.requestOptions;
+    final canRefresh = error.response?.statusCode == 401 &&
+        request.headers.containsKey('Authorization') &&
+        request.extra['authRetry'] != true &&
+        !request.path.contains('/auth/');
+    if (!canRefresh) {
+      if (error.response?.statusCode == 401 &&
+          request.extra['authRetry'] == true) {
+        await _tokens.clear();
+      }
+      handler.next(error);
+      return;
+    }
+    final accessToken = await _refreshAccessToken();
+    if (accessToken == null) {
+      await _tokens.clear();
+      handler.next(error);
+      return;
+    }
+    request.extra['authRetry'] = true;
+    request.headers['Authorization'] = 'Bearer $accessToken';
+    try {
+      handler.resolve(await _dio.fetch<dynamic>(request));
+    } on DioException catch (retryError) {
+      handler.next(retryError);
+    }
+  }
+
+  Future<String?> _refreshAccessToken() {
+    final current = _refreshInFlight;
+    if (current != null) return current;
+    final created = _performRefresh();
+    _refreshInFlight = created;
+    return created.whenComplete(() => _refreshInFlight = null);
+  }
+
+  Future<String?> _performRefresh() async {
+    final refreshToken = await _tokens.read(_refreshTokenKey);
+    if (refreshToken == null || refreshToken.isEmpty) return null;
+    final refreshClient = Dio(
+      BaseOptions(
+        baseUrl: _dio.options.baseUrl,
+        connectTimeout: _dio.options.connectTimeout,
+        receiveTimeout: _dio.options.receiveTimeout,
+        sendTimeout: _dio.options.sendTimeout,
+      ),
+    );
+    try {
+      final response = await refreshClient.post<Map<String, dynamic>>(
+        '/auth/refresh',
+        data: {'refresh_token': refreshToken},
+      );
+      final body = response.data?['data'];
+      if (body is! Map<String, dynamic>) return null;
+      final accessToken = body['access_token'];
+      final rotatedRefreshToken = body['refresh_token'];
+      if (accessToken is! String || rotatedRefreshToken is! String) return null;
+      await _tokens.write(_accessTokenKey, accessToken);
+      await _tokens.write(_refreshTokenKey, rotatedRefreshToken);
+      return accessToken;
+    } on DioException {
+      return null;
+    }
   }
 
   static String _date(DateTime value) =>
@@ -1416,6 +1551,20 @@ class ApiClient {
     }
     return const ApiException('无法连接服务器，请检查网络和 API 地址。');
   }
+}
+
+class ServerHealthResult {
+  const ServerHealthResult({
+    required this.checkedAt,
+    required this.latencyMs,
+    required this.healthy,
+    this.errorCode,
+  });
+
+  final DateTime checkedAt;
+  final int latencyMs;
+  final bool healthy;
+  final String? errorCode;
 }
 
 class VisionPrivacySettings {

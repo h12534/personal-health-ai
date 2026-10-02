@@ -2,7 +2,7 @@ from datetime import date
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user, get_lab_ocr_provider, get_private_storage
@@ -69,14 +69,21 @@ async def upload_lab_report(
 
 @router.get("/reports", response_model=DataResponse[list[LabReportRead]])
 async def list_lab_reports(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
     provider: LabOCRProvider = Depends(get_lab_ocr_provider),
     storage: StorageProvider = Depends(get_private_storage),
 ) -> DataResponse[list[LabReportRead]]:
-    values = await _service(session, settings, provider, storage).list_all(user.id)
-    return DataResponse(data=values, meta={"count": len(values)})
+    values = await _service(session, settings, provider, storage).list_all(
+        user.id, limit=limit, offset=offset
+    )
+    return DataResponse(
+        data=values,
+        meta={"count": len(values), "limit": limit, "offset": offset},
+    )
 
 
 @router.get("/reports/{report_id}", response_model=DataResponse[LabReportRead])

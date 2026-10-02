@@ -1,6 +1,15 @@
 class AppConfig {
   const AppConfig._();
 
+  static const appVersion = String.fromEnvironment(
+    'APP_VERSION',
+    defaultValue: '0.1.0-beta.1',
+  );
+  static const buildNumber = String.fromEnvironment(
+    'BUILD_NUMBER',
+    defaultValue: '2',
+  );
+
   static const environment = String.fromEnvironment(
     'APP_ENV',
     defaultValue: 'development',
@@ -12,6 +21,14 @@ class AppConfig {
         environment: environment,
         override: _apiBaseUrlOverride,
       );
+
+  static String get apiEnvironment =>
+      switch (environment.trim().toLowerCase()) {
+        'dev' || 'development' => 'dev',
+        'staging' => 'staging',
+        'prod' || 'production' => 'prod',
+        _ => 'dev',
+      };
 
   static String resolveApiBaseUrl({
     required String environment,

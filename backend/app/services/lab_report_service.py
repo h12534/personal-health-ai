@@ -278,7 +278,9 @@ class LabReportService:
             user_modified=False,
         )
 
-    async def list_all(self, user_id: UUID) -> list[LabReportRead]:
+    async def list_all(
+        self, user_id: UUID, *, limit: int = 50, offset: int = 0
+    ) -> list[LabReportRead]:
         values = list(
             (
                 await self.session.scalars(
@@ -286,6 +288,8 @@ class LabReportService:
                     .where(LabReport.user_id == user_id, LabReport.deleted_at.is_(None))
                     .options(*REPORT_LOAD)
                     .order_by(LabReport.report_date.desc(), LabReport.created_at.desc())
+                    .limit(limit)
+                    .offset(offset)
                 )
             )
             .unique()

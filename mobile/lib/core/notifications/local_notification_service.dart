@@ -14,6 +14,7 @@ typedef NotificationActionHandler = Future<void> Function(
 abstract interface class NotificationCoordinator {
   Future<void> initialize();
   Future<bool> requestPermission();
+  Future<String> permissionStatus();
   Future<void> applyPreferences(ReminderPreferencesModel preferences);
 }
 
@@ -86,6 +87,32 @@ class LocalNotificationService implements NotificationCoordinator {
           true;
     }
     return true;
+  }
+
+  @override
+  Future<String> permissionStatus() async {
+    if (defaultTargetPlatform != TargetPlatform.iOS &&
+        defaultTargetPlatform != TargetPlatform.android) {
+      return 'not_applicable';
+    }
+    await initialize();
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final value = await _plugin
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
+          ?.checkPermissions();
+      if (value == null) return 'unknown';
+      if (value.isProvisionalEnabled) return 'provisional';
+      return value.isEnabled ? 'granted' : 'denied_or_not_requested';
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final value = await _plugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.areNotificationsEnabled();
+      return value == true ? 'granted' : 'denied_or_not_requested';
+    }
+    return 'unknown';
   }
 
   @override
@@ -210,6 +237,10 @@ class MockNotificationCoordinator implements NotificationCoordinator {
     requestCount += 1;
     return permissionGranted;
   }
+
+  @override
+  Future<String> permissionStatus() async =>
+      permissionGranted ? 'granted' : 'denied_or_not_requested';
 
   @override
   Future<void> applyPreferences(ReminderPreferencesModel preferences) async {

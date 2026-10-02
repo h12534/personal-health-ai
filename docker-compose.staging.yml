@@ -1,0 +1,15 @@
+name: personal-health-os-staging
+
+# Use as an override of the production topology:
+# docker compose --env-file .env.staging \
+#   -f docker-compose.production.yml -f docker-compose.staging.yml config
+services:
+  backend:
+    environment:
+      APP_ENV: staging
+  celery_worker:
+    environment:
+      APP_ENV: staging
+  celery_beat:
+    environment:
+      APP_ENV: staging

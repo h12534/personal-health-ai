@@ -17,6 +17,7 @@ final localDatabaseProvider = Provider<LocalDatabase>((ref) {
 
 class LocalDatabase extends GeneratedDatabase {
   LocalDatabase() : super(_openConnection());
+  LocalDatabase.forTesting(super.executor);
 
   @override
   int get schemaVersion => 4;
@@ -529,6 +530,14 @@ class LocalDatabase extends GeneratedDatabase {
         ORDER BY created_at ASC
       ''').get();
     return rows.map(OutboxRecord.fromRow).toList();
+  }
+
+  Future<int> pendingOutboxCount() async {
+    final row = await customSelect('''
+        SELECT COUNT(*) AS pending_count FROM sync_outbox
+        WHERE status IN ('pending', 'failed')
+      ''').getSingle();
+    return row.read<int>('pending_count');
   }
 
   Future<LocalMealRecord?> mealByLocalId(String localId) async {

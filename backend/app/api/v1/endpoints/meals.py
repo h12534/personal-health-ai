@@ -29,11 +29,16 @@ async def create_meal(
 async def list_meals(
     date_from: date | None = Query(default=None, alias="from"),
     date_to: date | None = Query(default=None, alias="to"),
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ) -> DataResponse[list[MealRead]]:
-    meals = await MealService(session).list(user.id, date_from, date_to)
-    return DataResponse(data=meals, meta={"count": len(meals)})
+    meals = await MealService(session).list(user.id, date_from, date_to, limit=limit, offset=offset)
+    return DataResponse(
+        data=meals,
+        meta={"count": len(meals), "limit": limit, "offset": offset},
+    )
 
 
 @router.get("/{meal_id}", response_model=DataResponse[MealRead])

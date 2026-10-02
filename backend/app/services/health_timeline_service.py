@@ -49,6 +49,9 @@ class HealthTimelineService:
         date_from: date,
         date_to: date,
         category: str = "all",
+        *,
+        limit: int = 100,
+        offset: int = 0,
     ) -> list[TimelineEventRead]:
         if date_to < date_from or (date_to - date_from).days > 730:
             raise AppError("invalid_timeline_range", "Timeline range is invalid or too large.", 422)
@@ -284,7 +287,8 @@ class HealthTimelineService:
             if allowed is None:
                 raise AppError("invalid_timeline_category", "Unknown timeline category.", 422)
             events = [item for item in events if item.event_type in allowed]
-        return sorted(events, key=lambda item: item.occurred_at, reverse=True)
+        ordered = sorted(events, key=lambda item: item.occurred_at, reverse=True)
+        return ordered[offset : offset + limit]
 
     async def cross_domain(
         self, user_id: UUID, date_from: date, date_to: date, metrics: list[str]

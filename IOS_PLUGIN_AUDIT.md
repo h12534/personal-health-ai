@@ -1,5 +1,7 @@
 # iOS Plugin Audit
 
+> Historical Phase 0 audit. HealthKit, notifications, local authentication and later plugins were added in subsequent phases. Use `IOS_NATIVE_ACCEPTANCE.md` as the current RC authority.
+
 Audit date: 2026-09-30
 
 Flutter baseline: 3.47.5 / Dart 3.13.4

@@ -1,5 +1,7 @@
 # iOS Build, Device, Signing, and TestFlight Setup
 
+> RC note (2026-10-02): HealthKit, local notifications and biometric lock are now implemented. Use `IOS_BUILD_CHECKLIST.md` and `IOS_NATIVE_ACCEPTANCE.md` for the current acceptance state; this file remains the detailed setup guide.
+
 The iPhone app is the primary mobile deliverable. Android remains supported as
 a secondary compatibility target. The committed `mobile/ios` directory was
 generated with Flutter 3.47.5 and must not be recreated during normal work.

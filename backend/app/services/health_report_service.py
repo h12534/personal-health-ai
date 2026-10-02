@@ -125,7 +125,12 @@ class HealthReportService:
         return report
 
     async def list_reports(
-        self, user_id: UUID, report_type: str | None = None
+        self,
+        user_id: UUID,
+        report_type: str | None = None,
+        *,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[HealthReport]:
         statement = select(HealthReport).where(HealthReport.user_id == user_id)
         if report_type:
@@ -136,6 +141,8 @@ class HealthReportService:
                     statement.order_by(
                         HealthReport.period_end.desc(), HealthReport.created_at.desc()
                     )
+                    .limit(limit)
+                    .offset(offset)
                 )
             ).all()
         )

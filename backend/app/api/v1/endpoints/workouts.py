@@ -38,13 +38,17 @@ async def create_workout(
 async def list_workouts(
     date_from: date | None = Query(default=None, alias="from"),
     date_to: date | None = Query(default=None, alias="to"),
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ) -> DataResponse[list[WorkoutSessionRead]]:
-    workouts = await WorkoutService(session).list_all(user.id, date_from, date_to)
+    workouts = await WorkoutService(session).list_all(
+        user.id, date_from, date_to, limit=limit, offset=offset
+    )
     return DataResponse(
         data=[WorkoutSessionRead.model_validate(item) for item in workouts],
-        meta={"count": len(workouts)},
+        meta={"count": len(workouts), "limit": limit, "offset": offset},
     )
 
 

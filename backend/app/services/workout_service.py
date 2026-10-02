@@ -70,7 +70,13 @@ class WorkoutService:
         return await self.get(user_id, session.id)
 
     async def list_all(
-        self, user_id: UUID, date_from: date | None = None, date_to: date | None = None
+        self,
+        user_id: UUID,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        *,
+        limit: int = 100,
+        offset: int = 0,
     ) -> list[WorkoutSession]:
         statement = select(WorkoutSession).where(WorkoutSession.user_id == user_id)
         if date_from:
@@ -82,7 +88,12 @@ class WorkoutService:
                 WorkoutSession.started_at
                 < datetime.combine(date_to + timedelta(days=1), datetime.min.time(), UTC)
             )
-        statement = statement.options(WORKOUT_LOAD).order_by(WorkoutSession.started_at.desc())
+        statement = (
+            statement.options(WORKOUT_LOAD)
+            .order_by(WorkoutSession.started_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
         sessions = list((await self.session.scalars(statement)).unique().all())
         for workout in sessions:
             workout.sets.sort(key=lambda item: (item.created_at, item.set_number))

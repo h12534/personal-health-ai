@@ -1,5 +1,7 @@
 # iPhone / TestFlight Beta Readiness
 
+> Phase 7 snapshot. The current source of truth is `RC_ACCEPTANCE_REPORT.md`; no external gate is considered passed without actual evidence.
+
 状态定义：“代码就绪”表示仓库中已实现；“外部门禁”表示需要 Apple 凭据、macOS/真机、域名或服务器才能证明，不伪造通过。
 
 | 项目 | 状态 | 验收 |

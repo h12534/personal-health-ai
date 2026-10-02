@@ -59,7 +59,13 @@ class MealService:
         return self._read(meal)
 
     async def list(
-        self, user_id: UUID, date_from: date | None = None, date_to: date | None = None
+        self,
+        user_id: UUID,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        *,
+        limit: int = 100,
+        offset: int = 0,
     ) -> list[MealRead]:
         today = datetime.now(await self._timezone(user_id)).date()
         start_date = date_from or today
@@ -69,7 +75,8 @@ class MealService:
         timezone = await self._timezone(user_id)
         start = datetime.combine(start_date, time.min, timezone).astimezone(UTC)
         end = datetime.combine(end_date + timedelta(days=1), time.min, timezone).astimezone(UTC)
-        return [self._read(meal) for meal in await self.meals.list_for_user(user_id, start, end)]
+        values = await self.meals.list_for_user(user_id, start, end, limit=limit, offset=offset)
+        return [self._read(meal) for meal in values]
 
     async def get(self, user_id: UUID, meal_id: UUID) -> MealRead:
         return self._read(await self._owned(user_id, meal_id))

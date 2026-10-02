@@ -121,6 +121,7 @@ class PushDevice(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     device_id: Mapped[str] = mapped_column(String(160), nullable=False)
     platform: Mapped[str] = mapped_column(String(24), default="ios", nullable=False)
+    environment: Mapped[str] = mapped_column(String(24), default="dev", nullable=False)
     token: Mapped[str] = mapped_column(String(512), nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

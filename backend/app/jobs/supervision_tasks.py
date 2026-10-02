@@ -1,7 +1,9 @@
 import asyncio
+import uuid
 from datetime import UTC, datetime
 
 import structlog
+from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -36,8 +38,17 @@ def _runtime() -> tuple[Settings, AsyncEngine, async_sessionmaker[AsyncSession]]
 
 async def _supervision_sweep() -> dict[str, int]:
     settings, engine, sessions = _runtime()
-    stats = {"users": 0, "tasks": 0, "notifications": 0, "reports": 0}
+    stats = {"users": 0, "tasks": 0, "notifications": 0, "reports": 0, "skipped_locked": 0}
+    redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    lock_key = "locks:supervision-sweep"
+    lock_token = str(uuid.uuid4())
+    lock_acquired = False
     try:
+        lock_acquired = bool(await redis.set(lock_key, lock_token, nx=True, ex=30 * 60))
+        if not lock_acquired:
+            stats["skipped_locked"] = 1
+            logger.info("supervision_sweep_skipped_locked", **stats)
+            return stats
         async with sessions() as session:
             users = list(
                 (await session.scalars(select(User).where(User.is_active.is_(True)))).all()
@@ -73,6 +84,18 @@ async def _supervision_sweep() -> dict[str, int]:
         logger.info("supervision_sweep_completed", **stats)
         return stats
     finally:
+        if lock_acquired:
+            try:
+                await redis.eval(
+                    "if redis.call('get', KEYS[1]) == ARGV[1] then "
+                    "return redis.call('del', KEYS[1]) else return 0 end",
+                    1,
+                    lock_key,
+                    lock_token,
+                )
+            except Exception:
+                logger.exception("supervision_sweep_lock_release_failed")
+        await redis.aclose()
         await engine.dispose()
 
 

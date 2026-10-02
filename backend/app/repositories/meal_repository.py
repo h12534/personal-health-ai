@@ -13,8 +13,16 @@ class MealRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def list_for_user(self, user_id: UUID, start: datetime, end: datetime) -> list[MealLog]:
-        meals = await self.session.scalars(
+    async def list_for_user(
+        self,
+        user_id: UUID,
+        start: datetime,
+        end: datetime,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[MealLog]:
+        statement = (
             select(MealLog)
             .options(selectinload(MealLog.items))
             .where(
@@ -25,6 +33,9 @@ class MealRepository:
             )
             .order_by(MealLog.eaten_at.asc())
         )
+        if limit is not None:
+            statement = statement.limit(limit).offset(offset)
+        meals = await self.session.scalars(statement)
         return list(meals.all())
 
     async def by_id(self, user_id: UUID, meal_id: UUID) -> MealLog | None:

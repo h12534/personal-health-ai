@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../../core/network/api_client.dart';
 import 'health_sync_screen.dart';
+import 'beta_debug_screen.dart';
+import 'report_issue_screen.dart';
 import '../../supervision/presentation/supervision_screens.dart';
 
 final visionPrivacyProvider = FutureProvider<VisionPrivacySettings>((ref) {
@@ -76,6 +78,20 @@ class ProfileScreen extends ConsumerWidget {
           subtitle: const Text('Face ID / Touch ID、导出和删除'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _open(context, const PrivacyDataScreen()),
+        ),
+        ListTile(
+          leading: const Icon(Icons.bug_report_outlined),
+          title: const Text('报告问题'),
+          subtitle: const Text('Bug、数据、AI、提醒或 UI 问题'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _open(context, const ReportIssueScreen()),
+        ),
+        ListTile(
+          leading: const Icon(Icons.developer_mode_outlined),
+          title: const Text('Beta 诊断'),
+          subtitle: const Text('版本、环境、同步、权限与服务状态'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _open(context, const BetaDebugScreen()),
         ),
         Card(
           child: privacy.when(

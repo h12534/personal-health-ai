@@ -3,8 +3,26 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  release-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/release_audit.py
+      - run: sh -n scripts/backup.sh scripts/restore_test.sh scripts/measure_resources.sh
+
   backend:
     runs-on: ubuntu-latest
     defaults:
@@ -63,11 +81,20 @@ jobs:
           cache: pip
       - run: pip install -e '.[dev]'
       - run: alembic upgrade head
+      - run: alembic check
+      - name: Verify migration downgrade and re-upgrade chain
+        run: |
+          alembic downgrade 0006_phase6_health_knowledge
+          alembic upgrade 0007_phase7_supervision
+          alembic upgrade head
+          alembic check
       - run: pytest -q tests_postgres -m integration
+      - name: Seed representative restore-drill records
+        run: python -m app.scripts.seed_restore_drill
       - name: Install PostgreSQL client tools
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Run isolated PostgreSQL restore drill
-        working-directory: .
+        working-directory: ${{ github.workspace }}
         env:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
@@ -75,7 +102,14 @@ jobs:
           PGPASSWORD: health-test-password
           SOURCE_DATABASE: health_os_test
           RESTORE_DATABASE: health_os_restore_drill
+          RESTORE_REPORT_PATH: artifacts/restore-report.txt
         run: sh scripts/restore_test.sh
+      - name: Upload restore drill evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-restore-report
+          path: artifacts/restore-report.txt
+          if-no-files-found: error
 
   mobile-ios-primary:
     runs-on: macos-latest
@@ -84,7 +118,7 @@ jobs:
         working-directory: mobile
     env:
       IOS_BUNDLE_ID: com.personal.healthcoach
-      APP_DISPLAY_NAME: Personal Health
+      APP_DISPLAY_NAME: 私人健康
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -92,6 +126,8 @@ jobs:
           flutter-version: '3.47.5'
           channel: stable
           cache: true
+      - run: flutter doctor -v
+      - run: xcodebuild -version
       - run: pod --version
       - run: flutter pub get
       - run: dart run tool/configure_ios.dart
@@ -110,6 +146,10 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.5'
