@@ -104,7 +104,7 @@ try {
 
 ```bash
 flutter build ipa --release \
-  --export-options-plist="$SIGNING_DIR/ExportOptions.plist" \
+  --export-options-plist="$RUNNER_TEMP/health-ios-signing/ExportOptions.plist" \
   --build-name=0.1.0 --build-number="$BUILD_NUMBER" \
   --dart-define=APP_VERSION=0.1.0 --dart-define=BUILD_NUMBER="$BUILD_NUMBER" \
   --dart-define=APP_ENV=staging --dart-define=API_BASE_URL="$API_BASE_URL"

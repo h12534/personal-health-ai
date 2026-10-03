@@ -169,6 +169,24 @@ class ReleaseGuardrailsTest(unittest.TestCase):
                 ):
                     release.signing_dir()
 
+    def test_runner_temp_is_resolved_at_runtime_not_in_job_env(self):
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            patch.dict(os.environ, {"RUNNER_TEMP": temporary}, clear=True),
+        ):
+            self.assertEqual(
+                release.signing_dir(), Path(temporary).resolve() / "health-ios-signing"
+            )
+
+    def test_workflow_job_env_does_not_use_runtime_only_contexts(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/ci.yml").read_text(
+            encoding="utf-8"
+        )
+        signed_job = workflow.split("  mobile-ios-signed:", 1)[1]
+        job_env = signed_job.split("    env:\n", 1)[1].split("    steps:\n", 1)[0]
+        self.assertNotIn("runner.", job_env)
+        self.assertNotIn("steps.", job_env)
+
     def test_actual_ipa_command_and_matching_debug_version(self):
         with tempfile.TemporaryDirectory() as temporary:
             target = Path(temporary) / "health-ios-signing"

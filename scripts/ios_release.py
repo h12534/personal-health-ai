@@ -91,7 +91,9 @@ def validate_config(config: dict[str, str]) -> None:
 
 def signing_dir() -> Path:
     root = Path(required("RUNNER_TEMP")).resolve()
-    target = Path(required("SIGNING_DIR")).resolve()
+    target = Path(
+        os.environ.get("SIGNING_DIR") or root / "health-ios-signing"
+    ).resolve()
     if target.parent != root or target.name != "health-ios-signing":
         raise ValueError("SIGNING_DIR must be the dedicated child of RUNNER_TEMP")
     return target

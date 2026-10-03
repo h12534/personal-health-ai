@@ -199,7 +199,6 @@ jobs:
       APP_VERSION: '0.1.0'
       # Unique across workflow reruns; native and diagnostic build numbers match.
       BUILD_NUMBER: ${{ github.run_number }}.${{ github.run_attempt }}
-      SIGNING_DIR: ${{ runner.temp }}/health-ios-signing
     steps:
       - uses: actions/checkout@v4
         with:
