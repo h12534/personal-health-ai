@@ -15,9 +15,12 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+
+JSON_TYPE = JSON().with_variant(JSONB(), "postgresql")
 
 
 class DietAdjustment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -41,7 +44,7 @@ class DietAdjustment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     proposed_protein_target_g: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     reason_code: Mapped[str] = mapped_column(String(64), nullable=False)
     reason: Mapped[str] = mapped_column(Text, nullable=False)
-    evidence_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    evidence_snapshot: Mapped[dict[str, object]] = mapped_column(JSON_TYPE, default=dict)
     rule_version: Mapped[str] = mapped_column(String(32), default="diet_adjustment_v1")
     input_snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     source: Mapped[str] = mapped_column(String(32), default="rule_engine")
@@ -115,7 +118,7 @@ class CanteenDish(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     favorite: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     source: Mapped[str] = mapped_column(String(32), default="manual", nullable=False)
-    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    tags: Mapped[list[str]] = mapped_column(JSON_TYPE, default=list)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     stall: Mapped[CanteenStall] = relationship(back_populates="dishes")
 
@@ -156,7 +159,7 @@ class PersonalEnergyModel(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     sample_days: Mapped[int] = mapped_column(Integer, nullable=False)
     completeness: Mapped[Decimal] = mapped_column(Numeric(4, 3), nullable=False)
     method_version: Mapped[str] = mapped_column(String(32), default="energy_v1")
-    evidence_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    evidence_snapshot: Mapped[dict[str, object]] = mapped_column(JSON_TYPE, default=dict)
 
 
 class SavedMeal(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -218,5 +221,5 @@ class CoachMessage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     provider: Mapped[str | None] = mapped_column(String(64), nullable=True)
     model: Mapped[str | None] = mapped_column(String(128), nullable=True)
     prompt_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    structured_payload: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    structured_payload: Mapped[dict[str, object] | None] = mapped_column(JSON_TYPE, nullable=True)
     conversation: Mapped[CoachConversation] = relationship(back_populates="messages")

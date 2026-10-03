@@ -47,18 +47,52 @@ void _configureIos() {
 void _configureAndroid() {
   final kotlin = File('android/app/build.gradle.kts');
   if (kotlin.existsSync()) {
-    final content = kotlin.readAsStringSync().replaceFirst(
+    var content = kotlin.readAsStringSync().replaceFirst(
           'minSdk = flutter.minSdkVersion',
           'minSdk = 26',
         );
+    if (!content.contains('isCoreLibraryDesugaringEnabled')) {
+      if (!content.contains('compileOptions {')) {
+        throw const FormatException('Android Kotlin compileOptions is missing');
+      }
+      content = content.replaceFirst(
+        'compileOptions {',
+        'compileOptions {\n        isCoreLibraryDesugaringEnabled = true',
+      );
+    }
+    content =
+        content.replaceAll('JavaVersion.VERSION_11', 'JavaVersion.VERSION_17');
+    if (!content.contains('coreLibraryDesugaring(')) {
+      content += '\n'
+          'dependencies {\n'
+          '    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n'
+          '}\n';
+    }
     kotlin.writeAsStringSync(content);
   }
   final groovy = File('android/app/build.gradle');
   if (groovy.existsSync()) {
-    final content = groovy.readAsStringSync().replaceFirst(
+    var content = groovy.readAsStringSync().replaceFirst(
           'minSdkVersion flutter.minSdkVersion',
           'minSdkVersion 26',
         );
+    if (!content.contains('coreLibraryDesugaringEnabled')) {
+      if (!content.contains('compileOptions {')) {
+        throw const FormatException('Android Groovy compileOptions is missing');
+      }
+      content = content.replaceFirst(
+        'compileOptions {',
+        'compileOptions {\n        coreLibraryDesugaringEnabled true',
+      );
+    }
+    content =
+        content.replaceAll('JavaVersion.VERSION_11', 'JavaVersion.VERSION_17');
+    if (!content.contains('coreLibraryDesugaring ')) {
+      content += '\n'
+          'dependencies {\n'
+          "    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'\n"
+          '}\n';
+    }
     groovy.writeAsStringSync(content);
   }
 

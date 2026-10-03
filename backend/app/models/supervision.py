@@ -14,9 +14,12 @@ from sqlalchemy import (
     Time,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+
+JSON_TYPE = JSON().with_variant(JSONB(), "postgresql")
 
 
 class DailyTask(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -37,7 +40,7 @@ class DailyTask(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     source: Mapped[str] = mapped_column(String(40), default="daily_engine", nullable=False)
     source_entity_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    reminder_policy: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    reminder_policy: Mapped[dict[str, object]] = mapped_column(JSON_TYPE, default=dict)
     dedup_key: Mapped[str] = mapped_column(String(240), nullable=False)
 
 
@@ -50,7 +53,7 @@ class ReminderPreference(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     mode: Mapped[str] = mapped_column(String(16), default="standard", nullable=False)
     weigh_time: Mapped[time] = mapped_column(Time, default=time(8, 0), nullable=False)
     meal_windows: Mapped[dict[str, list[str]]] = mapped_column(
-        JSON,
+        JSON_TYPE,
         default=lambda: {
             "breakfast": ["07:00", "10:00"],
             "lunch": ["11:00", "14:00"],
@@ -140,9 +143,9 @@ class HealthReport(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     report_type: Mapped[str] = mapped_column(String(16), nullable=False)
     period_start: Mapped[date] = mapped_column(Date, nullable=False)
     period_end: Mapped[date] = mapped_column(Date, nullable=False)
-    metrics_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    metrics_snapshot: Mapped[dict[str, object]] = mapped_column(JSON_TYPE, default=dict)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
-    next_actions: Mapped[list[str]] = mapped_column(JSON, default=list)
+    next_actions: Mapped[list[str]] = mapped_column(JSON_TYPE, default=list)
     rule_version: Mapped[str] = mapped_column(String(32), nullable=False)
     prompt_version: Mapped[str] = mapped_column(String(32), nullable=False)
     input_snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -162,6 +165,6 @@ class ProactiveCoachEvent(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     event_date: Mapped[date] = mapped_column(Date, nullable=False)
     trigger_type: Mapped[str] = mapped_column(String(48), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
-    evidence_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    evidence_snapshot: Mapped[dict[str, object]] = mapped_column(JSON_TYPE, default=dict)
     provider: Mapped[str] = mapped_column(String(64), nullable=False)
     model: Mapped[str] = mapped_column(String(160), nullable=False)

@@ -4,9 +4,12 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
+from alembic.autogenerate import compare_metadata
+from alembic.migration import MigrationContext
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
+from app.db.migration_metadata import migration_metadata
 from app.providers.ai.embedding import MockEmbeddingProvider
 from app.services.knowledge_retrieval import HybridKnowledgeRetriever
 
@@ -47,6 +50,18 @@ async def test_pgvector_jsonb_cosine_and_hybrid_retrieval() -> None:
             )
         )
         assert metadata_type == "jsonb"
+        indexes = set(
+            (
+                await connection.scalars(
+                    text("SELECT indexname FROM pg_indexes WHERE tablename = 'knowledge_chunks'")
+                )
+            ).all()
+        )
+        assert {
+            "ix_knowledge_chunks_search_vector",
+            "ix_knowledge_chunks_embedding_hnsw",
+            "ix_knowledge_chunks_metadata_gin",
+        } <= indexes
         for document_id, title, category in (
             (protein_document, "Protein Guideline", "protein"),
             (sleep_document, "Sleep Guideline", "sleep"),
@@ -134,6 +149,13 @@ async def test_pgvector_jsonb_cosine_and_hybrid_retrieval() -> None:
             {"filter": json.dumps({"category": "protein"})},
         )
         assert filtered == 1
+        lexical_match = await connection.scalar(
+            text(
+                "SELECT id FROM knowledge_chunks "
+                "WHERE search_vector @@ plainto_tsquery('simple', 'protein')"
+            )
+        )
+        assert lexical_match == protein_chunk
 
     async with AsyncSession(engine) as session:
         evidence = await HybridKnowledgeRetriever(session, provider).search(
@@ -144,4 +166,18 @@ async def test_pgvector_jsonb_cosine_and_hybrid_retrieval() -> None:
         assert evidence[0].title == "Protein Guideline"
         assert evidence[0].category == "protein"
 
+    await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_postgres_model_and_migration_metadata_have_no_drift() -> None:
+    engine = create_async_engine(os.environ["DATABASE_URL"])
+    async with engine.connect() as connection:
+        differences = await connection.run_sync(
+            lambda sync_connection: compare_metadata(
+                MigrationContext.configure(sync_connection, opts={"compare_type": True}),
+                migration_metadata("postgresql"),
+            )
+        )
+        assert differences == []
     await engine.dispose()

@@ -15,9 +15,12 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+
+JSON_TYPE = JSON().with_variant(JSONB(), "postgresql")
 
 
 class ActivityLog(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -71,7 +74,7 @@ class SleepLog(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     sleep_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     duration_min: Mapped[int] = mapped_column(Integer, nullable=False)
     source: Mapped[str] = mapped_column(String(32), default="manual")
-    sleep_stages: Mapped[list[dict[str, object]]] = mapped_column(JSON, default=list)
+    sleep_stages: Mapped[list[dict[str, object]]] = mapped_column(JSON_TYPE, default=list)
     quality: Mapped[int | None] = mapped_column(Integer, nullable=True)
     source_record_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
@@ -124,6 +127,6 @@ class RecoverySnapshot(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     pain_severity: Mapped[int | None] = mapped_column(Integer, nullable=True)
     recent_training_count: Mapped[int] = mapped_column(Integer, default=0)
-    reasons: Mapped[list[str]] = mapped_column(JSON, default=list)
-    evidence_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    reasons: Mapped[list[str]] = mapped_column(JSON_TYPE, default=list)
+    evidence_snapshot: Mapped[dict[str, object]] = mapped_column(JSON_TYPE, default=dict)
     rule_version: Mapped[str] = mapped_column(String(32), default="recovery_v1")

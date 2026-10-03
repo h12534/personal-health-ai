@@ -14,27 +14,31 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
+JSON_TYPE = JSON().with_variant(JSONB(), "postgresql")
+
 
 class Exercise(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "exercise_library"
+    __table_args__ = (UniqueConstraint("normalized_name"),)
 
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     normalized_name: Mapped[str] = mapped_column(String(160), unique=True, index=True)
     category: Mapped[str] = mapped_column(String(64), nullable=False)
     movement_pattern: Mapped[str] = mapped_column(String(32), index=True)
-    primary_muscles: Mapped[list[str]] = mapped_column(JSON, default=list)
-    secondary_muscles: Mapped[list[str]] = mapped_column(JSON, default=list)
-    equipment: Mapped[list[str]] = mapped_column(JSON, default=list)
+    primary_muscles: Mapped[list[str]] = mapped_column(JSON_TYPE, default=list)
+    secondary_muscles: Mapped[list[str]] = mapped_column(JSON_TYPE, default=list)
+    equipment: Mapped[list[str]] = mapped_column(JSON_TYPE, default=list)
     difficulty: Mapped[str] = mapped_column(String(24), default="beginner")
     instructions: Mapped[str] = mapped_column(Text, nullable=False)
-    setup_instructions: Mapped[list[str]] = mapped_column(JSON, default=list)
-    execution_cues: Mapped[list[str]] = mapped_column(JSON, default=list)
-    common_mistakes: Mapped[list[str]] = mapped_column(JSON, default=list)
-    safety_notes: Mapped[list[str]] = mapped_column(JSON, default=list)
+    setup_instructions: Mapped[list[str]] = mapped_column(JSON_TYPE, default=list)
+    execution_cues: Mapped[list[str]] = mapped_column(JSON_TYPE, default=list)
+    common_mistakes: Mapped[list[str]] = mapped_column(JSON_TYPE, default=list)
+    safety_notes: Mapped[list[str]] = mapped_column(JSON_TYPE, default=list)
     video_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     unilateral: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -193,7 +197,7 @@ class PainLog(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     body_area: Mapped[str] = mapped_column(String(64), nullable=False)
     severity: Mapped[int] = mapped_column(Integer, nullable=False)
-    symptoms: Mapped[list[str]] = mapped_column(JSON, default=list)
+    symptoms: Mapped[list[str]] = mapped_column(JSON_TYPE, default=list)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     acute: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -211,10 +215,10 @@ class TrainingAdjustment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     adjustment_type: Mapped[str] = mapped_column(String(32), nullable=False)
     status: Mapped[str] = mapped_column(String(24), default="suggested")
-    previous_value: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
-    proposed_value: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    previous_value: Mapped[dict[str, object]] = mapped_column(JSON_TYPE, default=dict)
+    proposed_value: Mapped[dict[str, object]] = mapped_column(JSON_TYPE, default=dict)
     reason: Mapped[str] = mapped_column(Text, nullable=False)
-    evidence_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    evidence_snapshot: Mapped[dict[str, object]] = mapped_column(JSON_TYPE, default=dict)
     rule_version: Mapped[str] = mapped_column(String(32), default="progression_v1")
     idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
     applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

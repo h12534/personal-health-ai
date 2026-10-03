@@ -91,14 +91,16 @@ done
 compare_marker_ids() {
   name=$1
   query=$2
-  source_ids=$(psql --host="$POSTGRES_HOST" --port="$POSTGRES_PORT" \
+  source_ids=$(printf '%s\n' "$query" | psql -X --set=ON_ERROR_STOP=1 \
+    --host="$POSTGRES_HOST" --port="$POSTGRES_PORT" \
     --username="$POSTGRES_USER" --dbname="$SOURCE_DATABASE" --tuples-only --no-align \
     --set=marker_email="$MARKER_EMAIL" --set=marker_title="$MARKER_DOCUMENT_TITLE" \
-    --command="$query")
-  restored_ids=$(psql --host="$POSTGRES_HOST" --port="$POSTGRES_PORT" \
+    --file=-)
+  restored_ids=$(printf '%s\n' "$query" | psql -X --set=ON_ERROR_STOP=1 \
+    --host="$POSTGRES_HOST" --port="$POSTGRES_PORT" \
     --username="$POSTGRES_USER" --dbname="$RESTORE_DATABASE" --tuples-only --no-align \
     --set=marker_email="$MARKER_EMAIL" --set=marker_title="$MARKER_DOCUMENT_TITLE" \
-    --command="$query")
+    --file=-)
   if [ -z "$source_ids" ] || [ "$source_ids" != "$restored_ids" ]; then
     echo "Marker mismatch for $name: source=$source_ids restored=$restored_ids" >&2
     exit 1
