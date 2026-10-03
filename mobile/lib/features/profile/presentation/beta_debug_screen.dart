@@ -7,6 +7,7 @@ import '../../../core/database/local_database.dart';
 import '../../../core/diagnostics/local_diagnostics.dart';
 import '../../../core/network/api_client.dart';
 import '../../supervision/presentation/supervision_controller.dart';
+import 'health_sync_screen.dart';
 
 final betaDebugSnapshotProvider =
     FutureProvider<BetaDebugSnapshot>((ref) async {
@@ -24,11 +25,16 @@ final betaDebugSnapshotProvider =
   }
 
   var healthKitState = 'unavailable';
+  var providerStatus = <String, String>{};
   DateTime? lastSync;
   try {
+    final nativeAvailable =
+        await ref.read(healthDataProviderProvider).isAvailable();
     final permissions = await api.fetchHealthPermissions();
     final enabled = permissions.where((item) => item.enabled).length;
-    healthKitState = '$enabled/${permissions.length} data types enabled';
+    healthKitState = '${nativeAvailable ? 'available' : 'unavailable'}; '
+        '$enabled/${permissions.length} sync switches enabled; '
+        'Apple read authorization is not disclosed';
     final sync = await api.fetchHealthSyncStatus();
     final values = sync
         .map(
@@ -40,6 +46,11 @@ final betaDebugSnapshotProvider =
   } on Object {
     healthKitState = 'server state unavailable';
   }
+  try {
+    providerStatus = await api.fetchBetaProviderStatus();
+  } on Object {
+    // Offline / older servers are explicit unknown, never reported as healthy.
+  }
 
   return BetaDebugSnapshot(
     health: health,
@@ -47,6 +58,9 @@ final betaDebugSnapshotProvider =
     notificationStatus: notificationStatus,
     healthKitState: healthKitState,
     lastSync: lastSync,
+    apiHost: api.apiHost,
+    providerStatus: providerStatus,
+    requestId: api.lastRequestId,
   );
 });
 
@@ -57,6 +71,9 @@ class BetaDebugSnapshot {
     required this.notificationStatus,
     required this.healthKitState,
     this.lastSync,
+    this.apiHost = '',
+    this.providerStatus = const {},
+    this.requestId,
   });
 
   final ServerHealthResult health;
@@ -64,11 +81,17 @@ class BetaDebugSnapshot {
   final String notificationStatus;
   final String healthKitState;
   final DateTime? lastSync;
+  final String apiHost;
+  final Map<String, String> providerStatus;
+  final String? requestId;
 
   Map<String, Object?> toSafeJson() => {
         'app_version': AppConfig.appVersion,
         'build_number': AppConfig.buildNumber,
         'api_environment': AppConfig.apiEnvironment,
+        'api_url_host': apiHost,
+        'provider_status': providerStatus,
+        'last_request_id': requestId,
         'last_sync': lastSync?.toIso8601String(),
         'healthkit_state': healthKitState,
         'notification_permission': notificationStatus,
@@ -106,6 +129,15 @@ class BetaDebugScreen extends ConsumerWidget {
             _DiagnosticTile('App 版本', AppConfig.appVersion),
             _DiagnosticTile('Build', AppConfig.buildNumber),
             _DiagnosticTile('API 环境', AppConfig.apiEnvironment),
+            _DiagnosticTile('API host', value.apiHost),
+            _DiagnosticTile(
+                'Provider 配置（非实测结果）',
+                value.providerStatus.isEmpty
+                    ? 'unknown'
+                    : value.providerStatus.entries
+                        .map((e) => '${e.key}: ${e.value}')
+                        .join('\n')),
+            _DiagnosticTile('最近 request_id', value.requestId ?? '尚无记录'),
             _DiagnosticTile('最近同步', _time(value.lastSync)),
             _DiagnosticTile('HealthKit', value.healthKitState),
             _DiagnosticTile('通知权限', value.notificationStatus),

@@ -11,24 +11,23 @@ the primary native dependency manager. Flutter automatically falls back to
 CocoaPods for a plugin that has not migrated to SwiftPM, so CocoaPods is a
 required compatibility tool on build Macs.
 
-## 1. Required Mac and Apple access
+## 1. Required cloud and Apple access (no local Mac)
 
-- A supported Mac with current macOS security updates.
-- Xcode capable of building an iOS 16.0 deployment target.
+- GitHub-hosted macOS Runner with Xcode capable of building an iOS 16.0 deployment target; no personally owned Mac required.
 - Flutter 3.47.5 stable for reproducible local/CI results.
-- An Apple ID added to Xcode.
+- App Store Connect Team API Key in protected CI Secrets; no Apple ID password or 2FA shared with the assistant.
 - Paid Apple Developer Program membership for TestFlight/App Store
-  distribution. A free Personal Team can be used for limited device testing.
+  distribution. Current owner has an iPhone but has not enrolled yet.
 - A registered App ID whose identifier matches `IOS_BUNDLE_ID`.
 
 Information that must come from the Apple account owner:
 
-- Apple Developer Team ID and the team to select in Xcode.
+- Apple Developer Team ID configured in cloud signing.
 - Final bundle identifier; default placeholder is
   `com.personal.healthcoach`.
 - Final App Store display name, App Store Connect SKU, primary language, and
   category.
-- Distribution certificate/provisioning access or permission for Xcode to
+- Distribution certificate/provisioning access or permission for cloud CI to
   manage signing.
 - Final app icon, screenshots, support URL, privacy-policy URL, age rating, and
   App Privacy answers.
@@ -37,7 +36,9 @@ Information that must come from the Apple account owner:
 Never commit certificates, private keys, provisioning profiles, API secrets, or
 an `AppConfig.local.xcconfig` file.
 
-## 2. Install the toolchain
+## 2. Optional local debug toolchain (not an acceptance gate)
+
+The default supported path is `CLOUD_IOS_RELEASE.md`: GitHub macOS supplies Xcode/Flutter/CocoaPods; signed IPA is installed through TestFlight. The following local Xcode instructions are optional for debugging only, never a requirement to purchase a Mac.
 
 1. Install Xcode from the Mac App Store.
 2. Launch Xcode once, accept its license, and install requested platform
@@ -95,9 +96,7 @@ Open `ios/Runner.xcworkspace` in Xcode and select:
    profiles.
 4. Confirm the resolved bundle identifier matches the registered App ID.
 
-Do not add HealthKit, Push Notifications, Background Modes, App Groups, or
-Keychain Sharing capabilities until the corresponding feature is implemented
-and reviewed.
+HealthKit is implemented and its entitlement is committed; the final Apple App ID/profile must enable it. Push Notifications, Background Modes, App Groups, or additional Keychain Sharing capabilities remain separately scoped.
 
 ## 4. Configure the API endpoint
 
@@ -167,6 +166,8 @@ pressure, HEIC input, or background/foreground tests on hardware.
 
 ## 7. Run on a physical iPhone
 
+**Default without a Mac:** cloud signed IPA → API Key upload → App Store Connect processing → owner-only internal group → install using TestFlight. Complete `TESTFLIGHT_IPHONE_ACCEPTANCE.md`. The cable/Xcode/Developer Mode steps below are optional local debug instructions, not the unique or required acceptance path.
+
 1. Connect the phone by cable, trust the Mac, and enable Developer Mode when
    prompted.
 2. In Xcode, select the Runner scheme and the phone.
@@ -229,8 +230,4 @@ pass it with `flutter build ipa --export-options-plist=/secure/path/file.plist`.
 7. Record the tested build number, device models, iOS versions, backend
    environment, and known limitations.
 
-Current readiness limit: repository configuration and Windows Flutter
-analyze/tests can be checked locally, and macOS CI is configured. A signed IPA,
-physical-iPhone run, archive validation, and TestFlight upload remain blocked
-until the Apple account information and a Mac/Xcode execution environment are
-available.
+Current readiness: real GitHub macOS no-codesign compilation already PASSED (run 37135036631). Cloud signing is implemented but NOT RUN; signed IPA, TestFlight upload/processing and physical acceptance require Apple membership/Secrets, app identity/record and a real HTTPS API. The owner does not need a local Mac. See `CLOUD_IOS_RELEASE.md`; interactive Xcode debugging is only a documented limitation.

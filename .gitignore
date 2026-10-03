@@ -24,10 +24,17 @@ artifacts/*
 *.sql.gz
 *.p8
 *.p12
+*.pfx
 *.mobileprovision
+*.provisionprofile
 *.cer
+*.certSigningRequest
 *.key
 *.pem
+*.ipa
+*.xcarchive/
+private_keys/
+secrets/
 backend/tests/provider_eval/private/
 backend/tests/provider_eval/results/
 mobile/ios/Flutter/AppConfig.local.xcconfig

@@ -2,6 +2,8 @@
 
 更新日期：2026-10-03。iOS deployment target 为 16.0，Swift language mode 5，HealthKit entitlement 已提交；Bundle ID 与显示名通过 xcconfig 可覆盖。[真实 CI run 37134206768](https://github.com/h12534/personal-health-ai/actions/runs/37134206768) 在 macOS 26.6.2 arm64 / Xcode 26.6 (17F113) 构建通过；native runtime 仍需签名安装到 iPhone 实证。
 
+2026-10-04 路线修正：所有者没有 Mac、不要求购买 Mac。默认使用 `CLOUD_IOS_RELEASE.md` 的 GitHub-hosted macOS 签名/IPA/API Key 上传，再从 TestFlight 在 iPhone 验收。已有 no-codesign 编译门禁保持 CLOSED；签名与 runtime 尚 NOT RUN。Xcode 交互调试仅为可选 Debug Limitation。
+
 | 能力 | 锁定依赖 | 静态状态 | macOS/真机验收 |
 |---|---:|---|---|
 | HealthKit | `health 13.3.1` | entitlement、用途说明、按类型授权、去重和 null≠0 代码已审计 | 授权/拒绝/恢复；Steps/Distance/Energy/RHR/Sleep/Workout；iPhone/Watch 多来源 |

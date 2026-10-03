@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
+from app.core.config import get_settings
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.common import DataResponse
@@ -14,6 +15,32 @@ from app.schemas.profile import (
 from app.services.profile_service import ProfileService
 
 router = APIRouter()
+
+
+@router.get("/beta-status", response_model=DataResponse[dict[str, str]])
+async def get_beta_status(
+    _user: User = Depends(get_current_user),
+) -> DataResponse[dict[str, str]]:
+    """Authenticated configuration summary, NOT a live Provider acceptance result."""
+    settings = get_settings()
+    providers = {
+        "coach": settings.coach_provider,
+        "vision": settings.vision_provider,
+        "embedding": settings.embedding_provider,
+        "lab_ocr": settings.lab_ocr_provider,
+        "health_answer": settings.health_answer_provider,
+        "push": settings.push_provider,
+    }
+    return DataResponse(
+        data={
+            name: mode
+            if mode in {"mock", "disabled"}
+            else (
+                "configured_not_verified" if mode in {"openai_compatible", "apple"} else "unknown"
+            )
+            for name, mode in providers.items()
+        }
+    )
 
 
 @router.get("", response_model=DataResponse[HealthProfileRead])

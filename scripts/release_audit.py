@@ -16,12 +16,22 @@ REQUIRED = (
     "deploy/nginx/nginx.production.conf",
     "mobile/ios/Runner/Info.plist",
     "mobile/ios/Runner/Runner.entitlements",
+    "CLOUD_IOS_RELEASE.md",
+    "TESTFLIGHT_IPHONE_ACCEPTANCE.md",
+    "scripts/ios_release.py",
 )
 FORBIDDEN_TRACKED_NAMES = {".env", ".env.production", ".env.staging"}
 FORBIDDEN_SUFFIXES = {
     ".p8",
     ".p12",
+    ".pfx",
     ".mobileprovision",
+    ".provisionprofile",
+    ".key",
+    ".pem",
+    ".cer",
+    ".certsigningrequest",
+    ".ipa",
     ".dump",
     ".sqlite",
     ".sqlite3",
@@ -105,7 +115,7 @@ def main() -> int:
     warnings.extend(
         [
             "external gate: GitHub CI requires a successful run for the release commit",
-            "external gate: macOS/Xcode/iPhone/TestFlight require Apple infrastructure",
+            "external gate: cloud signing/TestFlight need Apple membership and Secrets; iPhone needs owner acceptance (no local Mac required)",
             "external gate: staging HTTPS and real providers require owner-supplied access",
         ]
     )

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -5,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../features/dashboard/data/dashboard_model.dart';
 import '../../features/coach/data/coach_models.dart';
@@ -14,6 +16,7 @@ import '../../features/nutrition/data/meal_analysis_models.dart';
 import '../../features/training/data/training_models.dart';
 import '../../features/supervision/data/supervision_models.dart';
 import '../config/app_config.dart';
+import '../diagnostics/local_diagnostics.dart';
 import 'api_exception.dart';
 
 const _accessTokenKey = 'health_os_access_token';
@@ -52,13 +55,20 @@ final secureStorageProvider = Provider<FlutterSecureStorage>(
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(
-    Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl)),
+    Dio(BaseOptions(
+      baseUrl: AppConfig.apiBaseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 20),
+      sendTimeout: const Duration(seconds: 20),
+    )),
     SecureTokenStore(ref.watch(secureStorageProvider)),
   );
 });
 
 class ApiClient {
-  ApiClient(this._dio, this._tokens) {
+  ApiClient(this._dio, this._tokens, {LocalDiagnosticsLog? diagnostics})
+      : _diagnostics = diagnostics ?? localDiagnostics {
+    _installDiagnostics(_dio);
     _dio.interceptors.add(
       InterceptorsWrapper(onError: _handleUnauthorized),
     );
@@ -66,7 +76,75 @@ class ApiClient {
 
   final Dio _dio;
   final TokenStore _tokens;
+  final LocalDiagnosticsLog _diagnostics;
+  String? _lastRequestId;
   Future<String?>? _refreshInFlight;
+
+  String get apiHost => Uri.parse(_dio.options.baseUrl).host;
+  String? get lastRequestId => _lastRequestId;
+
+  void _installDiagnostics(Dio client) {
+    client.interceptors.add(InterceptorsWrapper(
+      onRequest: (request, handler) {
+        final id = const Uuid().v4();
+        request.headers['X-Request-ID'] = id;
+        request.extra['diagnosticRequestId'] = id;
+        request.extra['diagnosticTimer'] = Stopwatch()..start();
+        handler.next(request);
+      },
+      onResponse: (response, handler) {
+        _recordRequest(response.requestOptions, response.statusCode, 'http');
+        handler.next(response);
+      },
+      onError: (error, handler) {
+        _recordRequest(
+          error.requestOptions,
+          error.response?.statusCode,
+          error.type.name,
+        );
+        handler.next(error);
+      },
+    ));
+  }
+
+  void _recordRequest(RequestOptions request, int? status, String code) {
+    final timer = request.extra['diagnosticTimer'];
+    if (timer is Stopwatch) timer.stop();
+    final id = request.extra['diagnosticRequestId'] as String?;
+    _lastRequestId = id;
+    unawaited(_diagnostics.record(
+      event: 'http_completed',
+      source: 'api',
+      code: code,
+      requestId: id,
+      statusCode: status,
+      durationMs: timer is Stopwatch ? timer.elapsedMilliseconds : null,
+    ));
+  }
+
+  Future<Map<String, String>> fetchBetaProviderStatus() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/profile/beta-status',
+      options: await _authorizedOptions(),
+    );
+    final data = response.data?['data'];
+    if (data is! Map<String, dynamic>) return const {};
+    const names = {
+      'coach',
+      'vision',
+      'embedding',
+      'lab_ocr',
+      'health_answer',
+      'push'
+    };
+    const statuses = {'mock', 'disabled', 'configured_not_verified', 'unknown'};
+    return {
+      for (final name in names)
+        if (data.containsKey(name))
+          name:
+              statuses.contains(data[name]) ? data[name] as String : 'unknown',
+    };
+  }
 
   Future<bool> hasSession() async =>
       (await _tokens.read(_accessTokenKey)) != null;
@@ -1519,6 +1597,7 @@ class ApiClient {
         sendTimeout: _dio.options.sendTimeout,
       ),
     );
+    _installDiagnostics(refreshClient);
     try {
       final response = await refreshClient.post<Map<String, dynamic>>(
         '/auth/refresh',

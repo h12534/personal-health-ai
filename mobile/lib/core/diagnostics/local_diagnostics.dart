@@ -47,6 +47,9 @@ class LocalDiagnosticsLog {
     required String event,
     required String source,
     required String code,
+    String? requestId,
+    int? statusCode,
+    int? durationMs,
   }) async {
     try {
       final file = await _file();
@@ -58,6 +61,13 @@ class LocalDiagnosticsLog {
         'event': _safeToken(event),
         'source': _safeToken(source),
         'code': _safeToken(code),
+        if (requestId != null &&
+            RegExp(r'^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
+                .hasMatch(requestId))
+          'request_id': requestId,
+        if (statusCode != null && statusCode >= 100 && statusCode <= 599)
+          'status_code': statusCode,
+        if (durationMs != null && durationMs >= 0) 'duration_ms': durationMs,
       };
       await file.writeAsString(
         '${jsonEncode(entry)}\n',

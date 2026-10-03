@@ -4,7 +4,7 @@
 
 当前仓库已完成 Phase 0–7。在认证、档案、体重、饮食、训练、HealthKit、体检和健康知识之上，现已具备每日任务、防轰炸提醒、iOS 本地通知、日/周/月报、统一健康时间线、复查任务、可选生物识别锁和个人数据导出/删除。
 
-移动端以 Apple iPhone / iOS 16+ 为首要交付目标；Android 作为次要兼容平台保留。后端继续部署到 Linux，Windows 可进行后端与 Flutter 静态开发，但 iOS 原生构建必须在 macOS + Xcode 上完成。
+移动端以 Apple iPhone / iOS 16+ 为首要交付目标；Android 作为次要兼容平台保留。后端继续部署到 Linux，Windows 可进行后端与 Flutter 静态开发。iOS 原生构建/签名由 GitHub Actions 云 macOS + Xcode 完成，通过 TestFlight 在 iPhone 验收，**不要求拥有本地 Mac**；见 `CLOUD_IOS_RELEASE.md`。
 
 ## 核心原则
 
@@ -155,7 +155,7 @@ flutter build ios --release --no-codesign \
   --dart-define=API_BASE_URL=https://staging-api.example.com/api/v1
 ~~~
 
-最后一条命令只能在 macOS + Xcode 执行。iPhone 不能通过 `localhost` 访问开发 Mac；应使用设备可达的 HTTPS 主机。开发环境可显式使用局域网 HTTP，但仓库不提交全局 ATS 放行；staging/prod 强制 HTTPS。完整签名、真机和 TestFlight 步骤见 `IOS_BUILD_SETUP.md`。
+最后一条命令在云 macOS + Xcode 执行即可，不要求本地 Mac。iPhone 不能通过 `localhost` 访问后端；应使用设备可达的 HTTPS 主机。开发环境可显式使用局域网 HTTP，但仓库不提交全局 ATS 放行；staging/prod 强制 HTTPS。默认签名、IPA、TestFlight 和真机路径见 `CLOUD_IOS_RELEASE.md`；本地 Xcode 仅作为可选 debug。
 
 Android 兼容 Runner 仍由 CI 临时生成：
 

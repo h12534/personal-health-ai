@@ -48,7 +48,10 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.middleware("http")
 async def request_context(request: Request, call_next):  # type: ignore[no-untyped-def]
-    request_id = request.headers.get("x-request-id", str(uuid.uuid4()))[:128]
+    try:
+        request_id = str(uuid.UUID(request.headers.get("x-request-id", "")))
+    except ValueError:
+        request_id = str(uuid.uuid4())
     request.state.request_id = request_id
     started = perf_counter()
     response = await call_next(request)

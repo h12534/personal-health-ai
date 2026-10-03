@@ -2,6 +2,8 @@
 
 Audit date: 2026-09-30
 
+2026-10-04 update: this is the historical static audit. Real macOS CI compilation is now CLOSED (run 37135036631). The current release path is cloud macOS signing/IPA → TestFlight → physical iPhone; **no local Mac is required**. See `CLOUD_IOS_RELEASE.md`. Apple membership has not been enrolled yet; signing and TestFlight remain NOT RUN.
+
 Target: iPhone, iOS 16.0+
 
 Branch: `feature/ios-readiness`

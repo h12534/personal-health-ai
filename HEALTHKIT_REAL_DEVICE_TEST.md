@@ -2,11 +2,11 @@
 
 ## 前置条件
 
-1. 一台运行 iOS 15 或更高版本的 iPhone。
+1. 一台运行 iOS 16 或更高版本的 iPhone（当前 deployment target 16.0）。
 2. Apple Developer Team、匹配的 Bundle ID 与包含 HealthKit capability 的 provisioning profile。
-3. 在 macOS 使用 Xcode 打开 mobile/ios/Runner.xcodeproj。
-4. Runner → Signing & Capabilities 中确认 HealthKit 已启用，Runner.entitlements 包含 com.apple.developer.healthkit。
-5. 选择物理 iPhone 签名并安装 Debug build。
+3. 在 Apple Developer 网页给最终 App ID 启用 HealthKit；云签名流程校验证书/profile、Runner.entitlements 中的 com.apple.developer.healthkit。
+4. 使用 GitHub Actions macOS Runner 构建 signed IPA 并上传 TestFlight（`CLOUD_IOS_RELEASE.md`）。
+5. 从 TestFlight Internal 安装 Beta 到 iPhone；本地 Mac、USB Debug build、`flutter run` 均非必要条件。
 
 ## 步数
 

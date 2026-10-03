@@ -23,5 +23,17 @@ void main() {
     unawaited(localCrashReporter.recordFatal(error, stack, 'platform'));
     return true;
   };
+  WidgetsBinding.instance.addObserver(_BetaLifecycleObserver());
   runApp(const ProviderScope(child: HealthOsApp()));
+}
+
+class _BetaLifecycleObserver extends WidgetsBindingObserver {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    unawaited(localDiagnostics.record(
+      event: 'app_lifecycle',
+      source: 'flutter',
+      code: state.name,
+    ));
+  }
 }

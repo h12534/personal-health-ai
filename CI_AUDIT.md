@@ -68,4 +68,12 @@ flutter build ios --release --no-codesign \
 
 ## 下一门禁
 
-停止业务功能扩展，进入 **macOS + Xcode + physical iPhone acceptance**。CI no-codesign 不覆盖签名、安装、真实授权与设备数据；按 `IOS_BUILD_CHECKLIST.md` 和 `BETA_TEST_PLAN.md` 执行真机矩阵。
+停止业务功能扩展，进入 **Cloud macOS signing → IPA → TestFlight Internal → physical iPhone acceptance**。**拥有本地 Mac 不是门禁**；CI no-codesign 不覆盖签名、安装、真实授权与设备数据。按 `CLOUD_IOS_RELEASE.md` 和 `TESTFLIGHT_IPHONE_ACCEPTANCE.md` 执行，不强制 USB/Xcode Run。
+
+## Cloud signing preparation（2026-10-04）
+
+- 当前 no-codesign 编译门禁最终证据仍为 [run 37135036631](https://github.com/h12534/personal-health-ai/actions/runs/37135036631)，commit `42bbd93baf73312167a32529fe7cb711018effb5`；五个既有 Job 全绿。
+- 新增 `mobile-ios-signed` 独立 opt-in Job：限制授权仓库 main/RC，不在 PR/fork 注入 Secrets；自动签名优先/手动 fallback，真实 IPA 命令、内部限定导出、API Key 上传、签名材料 always cleanup。
+- 代码回归本地：Backend 87 tests、Ruff、strict mypy 165 files；Flutter analyze、40 tests；签名基础设施 12 unittest guardrails，Release Audit PASS。Windows 中文路径 LSP 缺陷通过同一源码临时 ASCII 映射核验，无检查降级。
+- **没有执行 signed build / IPA / TestFlight**。所有者已确认 membership 未办理；2026-10-04 API 只读检查显示 repository secrets/variables 为空、`ios-beta` 未创建（404）。不读取/打印 Secret 值，不声称配置等于 PASS。环境配置后依然不启用发布开关。
+- 随后实际创建并 GET 复核 `ios-beta`：required reviewer 仅 `h12534`（允许 self-review，避免单人开发无法审批），custom branch policy 仅 main 与 RC；Secrets/Variables 为空、发布 opt-in 未启用。只改授权 GitHub 仓库，无 Apple 注册/付款/证书生成。
