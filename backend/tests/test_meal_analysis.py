@@ -81,6 +81,7 @@ async def test_analysis_happy_path_confirm_is_atomic_idempotent_and_learns(
     client: AsyncClient,
     auth_headers: dict[str, str],
     tmp_path: Path,
+    user_today: date,
 ) -> None:
     await _seed()
     _configure(
@@ -113,7 +114,7 @@ async def test_analysis_happy_path_confirm_is_atomic_idempotent_and_learns(
 
     confirm_payload = {
         "meal_type": "lunch",
-        "eaten_at": f"{date.today().isoformat()}T12:00:00+08:00",
+        "eaten_at": f"{user_today.isoformat()}T12:00:00+08:00",
         "note": "AI 草稿已人工确认",
     }
     confirmed = await client.post(

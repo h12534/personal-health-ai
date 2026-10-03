@@ -4,9 +4,9 @@ from httpx import AsyncClient
 
 
 async def test_weight_crud_trend_and_dashboard(
-    client: AsyncClient, auth_headers: dict[str, str]
+    client: AsyncClient, auth_headers: dict[str, str], user_today: date
 ) -> None:
-    today = date.today()
+    today = user_today
     ids: list[str] = []
     for offset in range(13, -1, -1):
         measured_on = today - timedelta(days=offset)

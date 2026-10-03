@@ -1,6 +1,8 @@
 import os
 from collections.abc import AsyncIterator
+from datetime import date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -39,3 +41,9 @@ async def auth_headers(client: AsyncClient) -> dict[str, str]:
     assert response.status_code == 201
     token = response.json()["data"]["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def user_today() -> date:
+    """The default user's calendar day, not the CI host's UTC calendar day."""
+    return datetime.now(ZoneInfo("Asia/Shanghai")).date()

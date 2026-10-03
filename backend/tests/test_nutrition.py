@@ -29,13 +29,13 @@ async def _add_food(
 
 
 async def test_daily_range_goals_and_dashboard_use_real_meal_totals(
-    client: AsyncClient, auth_headers: dict[str, str]
+    client: AsyncClient, auth_headers: dict[str, str], user_today: date
 ) -> None:
     async with SessionLocal() as session:
         await seed_foods(session)
     rice_id = await _food_id(client, auth_headers, "米饭")
     egg_id = await _food_id(client, auth_headers, "鸡蛋")
-    today = date.today()
+    today = user_today
 
     breakfast = await client.post(
         "/api/v1/meals",

@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Response, status
@@ -15,6 +15,7 @@ from app.schemas.weight import (
     WeightTrendSummary,
     WeightUpdate,
 )
+from app.services.daily_nutrition_service import DailyNutritionService
 from app.services.weight_service import WeightService, build_weight_trend
 
 router = APIRouter()
@@ -26,7 +27,8 @@ async def trends(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ) -> DataResponse[WeightTrendSummary]:
-    today = date.today()
+    timezone = await DailyNutritionService(session).timezone(user.id)
+    today = datetime.now(timezone).date()
     logs = await WeightRepository(session).list_for_user(
         user.id, date_from=today - timedelta(days=days - 1), date_to=today
     )
