@@ -1,27 +1,29 @@
 # Release Candidate Audit
 
-审计日期：2026-10-02
+审计日期：2026-10-03（Asia/Shanghai）
 分支：`feature/release-candidate-beta`
 Beta 版本：`0.1.0-beta.1+2`
 
 ## 结论
 
-当前仓库已完成可在 Windows、本地、无外部凭据条件下完成的 RC 加固，但**尚未 Beta Ready**。本地代码门禁通过；真实 PostgreSQL、GitHub CI、macOS/Xcode、iPhone、Staging HTTPS、真实 Provider、APNs 和 TestFlight 仍必须以外部环境的实际证据关闭，不能用 Mock、SQLite 或文档代替。
+**Real GitHub CI 已关闭，尚未 Beta Ready。** [全绿 run 37134206768](https://github.com/h12534/personal-health-ai/actions/runs/37134206768) / commit `af22faaab2b6694ff00808d07f7f8ad0edea4b48` 已提供真实 PostgreSQL/pgvector/Redis、Restore、macOS/Xcode iOS no-codesign 与 Android 构建证据。下一门禁为 physical iPhone acceptance；Staging HTTPS、真实 Provider、APNs 和 TestFlight 仍待实证。详情见 `CI_AUDIT.md`。
+
+公开推送前检查 main/RC 可达的 54 个提交与 625 个 blob，未发现匹配的凭据/私有数据/备份；媒体仅为 iOS 图标/启动图，Provider manifest 为未填充样本位。凭据保存在本机 GCM，日志和下载证据位于被忽略的 artifacts；未上传原始备份或健康数据。仓库使用 Public 是所有者最新的明确决定。
 
 ## 本地已验证
 
 | 门禁 | 结果 | 证据 |
 |---|---|---|
-| Backend pytest | PASS | 81 passed，137.97s |
-| Ruff | PASS | 199 files checked/formatted |
-| strict mypy | PASS | 164 source files |
+| Backend pytest | PASS | 修复后本地 83 passed，163.98s；CI 83 passed，27.66s |
+| Ruff | PASS | 201 files checked/formatted |
+| strict mypy | PASS | 165 source files |
 | Flutter analyze | PASS | No issues found |
 | Flutter test | PASS | 37 tests passed |
 | SQLite 迁移链 | PASS | 空库 0001→0008；`alembic check`；0008→0006→0007→0008；再次 check |
 | Release static audit | PASS | 0 errors，3 个预期外部门禁 warning |
 | Provider inventory | PASS（仅工具） | Vision 25 slots/0 ready；OCR 5/0 ready；RAG 36 cases；Coach 10 cases |
 
-SQLite 的 PASS 只证明迁移脚本的便携性，不替代 PostgreSQL 16 + pgvector 验收。
+SQLite 的 PASS 证明便携性；真实 PostgreSQL 16 + pgvector 也已在上述 workflow 验收通过。
 
 ## 本轮修复
 
@@ -35,14 +37,14 @@ SQLite 的 PASS 只证明迁移脚本的便携性，不替代 PostgreSQL 16 + pg
 - CI 固定 Android Java 17，并加入 migration check、降级/升级和 Restore Drill artifact。
 - Restore Drill 写入用户、体重、饮食、训练、知识/RAG、体检、任务和报告的固定测试 UUID。
 
-## 尚未关闭的发布门禁
+## 发布门禁状态
 
 | 门禁 | 当前状态 | 关闭条件 |
 |---|---|---|
-| GitHub private remote / actual CI | BLOCKED | 私有仓库 URL 与权限 |
-| PostgreSQL 16 + pgvector | BLOCKED | Docker/Linux 或 CI 实跑记录 |
-| Restore Drill 实跑 | BLOCKED | PostgreSQL 环境执行并保存 artifact |
-| macOS/Xcode no-codesign | BLOCKED | macOS runner 实际绿色 Job |
+| GitHub remote / actual CI | PASS / CLOSED | 所有者授权 Public；指定 main/RC 已推送，五 Job 全绿 |
+| PostgreSQL 16 + pgvector | PASS | 真实 PostgreSQL 16.15、7 integration tests、两次 Alembic check |
+| Restore Drill 实跑 | PASS | 10 表 count/UUID 一致、artifact 已下载验证 |
+| macOS/Xcode no-codesign | PASS | Xcode 26.6 / macOS 26.6.2，真实 release build |
 | iPhone/HealthKit/Camera/PDF/通知/Face ID | BLOCKED | 真机与测试记录 |
 | Staging HTTPS/resource measurement | BLOCKED | 主机、域名、DNS、证书 |
 | Vision/LLM/Embedding/OCR | BLOCKED | Provider 配置、授权样本和费用数据 |

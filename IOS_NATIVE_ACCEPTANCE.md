@@ -1,6 +1,6 @@
 # iOS Native Acceptance
 
-静态审计日期：2026-10-02。iOS deployment target 为 16.0，Swift 5，HealthKit entitlement 已提交；Bundle ID 与显示名通过 xcconfig 可覆盖。Windows 上完成了 Dart analyze/test，但所有 native runtime 项仍需 macOS 和 iPhone 实证。
+更新日期：2026-10-03。iOS deployment target 为 16.0，Swift language mode 5，HealthKit entitlement 已提交；Bundle ID 与显示名通过 xcconfig 可覆盖。[真实 CI run 37134206768](https://github.com/h12534/personal-health-ai/actions/runs/37134206768) 在 macOS 26.6.2 arm64 / Xcode 26.6 (17F113) 构建通过；native runtime 仍需签名安装到 iPhone 实证。
 
 | 能力 | 锁定依赖 | 静态状态 | macOS/真机验收 |
 |---|---:|---|---|
@@ -25,6 +25,7 @@
 ## 当前结果
 
 - Static/Dart：PASS（Flutter analyze 0 issues；37 tests）。
-- macOS native build：NOT RUN。
+- macOS native build：PASS，commit `af22faaab2b6694ff00808d07f7f8ad0edea4b48`；Flutter 3.47.5 / Dart 3.13.4 / CocoaPods 1.17.0；release no-codesign Runner.app 24.4MB。
+- SwiftPM + CocoaPods fallback：PASS；日志明确 health/secure storage 由 Pods 接入，native dependencies 和 UIDocumentPicker 桥接编译成功。
 - iPhone runtime：NOT RUN。
 - 本文不把 Simulator 或 Mock Provider 结果计作真机 PASS。

@@ -104,7 +104,7 @@ def main() -> int:
         errors.append("production database or Redis is exposed on a host port")
     warnings.extend(
         [
-            "external gate: GitHub remote and CI run evidence are unavailable locally",
+            "external gate: GitHub CI requires a successful run for the release commit",
             "external gate: macOS/Xcode/iPhone/TestFlight require Apple infrastructure",
             "external gate: staging HTTPS and real providers require owner-supplied access",
         ]

@@ -1,6 +1,8 @@
 # iPhone / TestFlight Beta Readiness
 
-> Phase 7 snapshot. The current source of truth is `RC_ACCEPTANCE_REPORT.md`; no external gate is considered passed without actual evidence.
+> 2026-10-03：Real GitHub CI 已关闭，五个 Job 全部 SUCCESS。主报告为 `RC_ACCEPTANCE_REPORT.md`，逐 Job 与修复证据为 `CI_AUDIT.md`。整体仍未 Beta Ready；下一门禁为 macOS + Xcode + physical iPhone acceptance。
+
+实际全绿：[workflow 37134206768](https://github.com/h12534/personal-health-ai/actions/runs/37134206768)，commit `af22faaab2b6694ff00808d07f7f8ad0edea4b48`。Ruff、strict mypy、83 backend tests、7 PostgreSQL integration tests、Redis、迁移/恢复演练、Flutter analyze、37 Flutter tests、iOS no-codesign 和 Android secondary 均有 SUCCESS 证据。首轮 PostgreSQL 元数据漂移与 Android desugaring 失败已在该提交修复，未降低任何门禁。
 
 状态定义：“代码就绪”表示仓库中已实现；“外部门禁”表示需要 Apple 凭据、macOS/真机、域名或服务器才能证明，不伪造通过。
 
@@ -17,7 +19,10 @@
 | Network HTTPS | 代码就绪/域名待配 | staging/prod 拒绝 HTTP，未添加全局 ATS 放行 |
 | Keychain / App Lock | 代码就绪/真机待验 | Token 保留 Keychain，可选 Face ID/Touch ID 默认关闭，2 分钟后台宽限 |
 | Privacy policy / support URL | 外部门禁 | 需真实 HTTPS URL，内容与 Provider/保留/删除一致 |
-| iOS no-codesign build | CI 已配置 | 需 Git remote 启用 Actions 后获得 macOS 实际结果 |
+| Real GitHub CI | PASS / CLOSED | 上述 workflow 五个 Job 全绿；公开开源仓库由所有者明确授权，main/RC 已推送 |
+| PostgreSQL / Redis / Restore | PASS（CI） | 真实 PostgreSQL 16.15/pgvector，7 integration tests，10 表恢复 count/UUID 核验与 artifact |
+| iOS no-codesign build | PASS（真实 macOS CI） | macOS 26.6.2 arm64、Xcode 26.6 (17F113)、CocoaPods 1.17.0；Runner.app 24.4MB；尚未签名/安装真机 |
+| Android secondary | PASS（真实 CI） | Java 17、desugaring、Gradle debug APK 成功；不改变 iOS 主平台定位 |
 | TestFlight upload | 外部门禁 | 需签名、App Store Connect record、版本/构建号和审核 metadata |
 
 ## 真机 Beta 清单
