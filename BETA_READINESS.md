@@ -1,8 +1,8 @@
 # Private Personal Sideload Readiness
 
-> 2026-10-04 发布目标调整：**Private Personal Sideload**。不要求付费 Apple Developer、本地 Mac、App Store Connect 或 TestFlight；下一门禁是 **Cloud macOS unsigned IPA → Windows 免费重签名 → 本人 iPhone 安装/启动**。既有五个 Job 保留；新增双 unsigned artifact 流程与 capability fallback，实际构建/设备证据分别记账。安装与首次启动仍 NOT RUN。
+> 2026-10-04 发布目标调整：**Private Personal Sideload**。不要求付费 Apple Developer、本地 Mac、App Store Connect 或 TestFlight；下一门禁是 **Windows 免费重签名 → 本人 iPhone 安装/启动**。云端双 unsigned IPA 已真实生成、下载并核验；安装与首次启动仍 NOT RUN。
 
-实际常规 CI 全绿：[workflow 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992)，commit `df4a1e161dfe565787e3a59beed19c7d84bcff97`。Ruff、strict mypy 165 files、89 backend tests、7 PostgreSQL integration tests、Redis、迁移/恢复演练、Flutter analyze、40 Flutter tests、14 signing guardrail tests、iOS no-codesign 和 Android secondary 均有 SUCCESS 证据。此前 PostgreSQL 元数据漂移/Android desugaring，以及本轮 workflow context / 用户时区跨日失败均已修复复验；失败运行与修复记录保留在 `CI_AUDIT.md`，未降低任何门禁。
+本轮代码实际 CI 全绿：[workflow 37183670494](https://github.com/h12534/personal-health-ai/actions/runs/37183670494)，commit `d029f4956cf854015d52b751a92abf2a268b146e`。五个原有 Job 与 personal sideload Job SUCCESS，付费签名 Job SKIPPED / SUSPENDED。Ruff、strict mypy 165 files、89 backend tests、7 PostgreSQL integration tests、Redis、迁移/恢复、Flutter analyze、三种模式各 47 tests、24 guardrail tests、iOS no-codesign / Android 均有真实证据。运行产出 `0.1.0` / build `8.1` 双 IPA，已下载核对完整 SHA256/版本/commit/arm64 unsigned/Payload；详细 Job/hash 在 `CI_AUDIT.md`，未降低门禁。
 
 状态定义：“代码就绪”表示仓库实现，不伪造设备通过。所有者已确认有 iPhone；现在不要求 Apple paid membership、Team ID、App record 或 API Key。免费 Apple Account 只在 Windows 侧载工具内自行认证，不向助手/CI 提供密码或 2FA；真实 HTTPS API 仍未提供。原付费发布路径保留但暂停。安装说明见 `PERSONAL_SIDELOAD_WINDOWS.md`，能力审计见 `FREE_SIGNING_ENTITLEMENT_AUDIT.md`。
 
@@ -23,7 +23,7 @@
 | PostgreSQL / Redis / Restore | PASS（CI） | 真实 PostgreSQL 16.15/pgvector，7 integration tests，10 表恢复 count/UUID 核验与 artifact |
 | iOS no-codesign build | PASS（真实 macOS CI） | macOS 26.6.2 arm64、Xcode 26.6 (17F113)、CocoaPods 1.17.0；Runner.app 24.4MB；尚未签名/安装真机 |
 | Android secondary | PASS（真实 CI） | Java 17、desugaring、Gradle debug APK 成功；不改变 iOS 主平台定位 |
-| Personal unsigned IPA | 流程实现 / 待真实 CI 产物 | 独立 Job 输出 HealthKit-attempt 与 PERSONAL_SIDELOAD_FREE 两版 IPA/hash/commit/version/build，不含 Apple 签名材料 |
+| Personal unsigned IPA | PASS（CI + 下载独立核验） | [run 37183670494](https://github.com/h12534/personal-health-ai/actions/runs/37183670494) 的 HealthKit-attempt / PERSONAL_SIDELOAD_FREE 双 IPA、0.1.0 / 8.1 / hash/commit；无 CI Apple credentials，无 Runner 签名/profile |
 | Apple Distribution / TestFlight / APNs | 当前暂停 | 不属于个人侧载门禁；原正式发布代码保留，需未来明确 opt-in |
 | Physical iPhone acceptance | NOT RUN | Windows 免费重签名安装；记录 `IPHONE_PERSONAL_ACCEPTANCE.md`，不使用 TestFlight |
 

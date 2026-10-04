@@ -10,7 +10,11 @@
 4. 先尝试这个保留正式 HealthKit 源配置的版本。若签名/安装失败，或已安装但 HealthKit 不可用，改下载 `personal-health-ios-free-unsigned`，使用 `personal-health-ios-free-unsigned.ipa`（`PERSONAL_SIDELOAD_FREE`，明确禁用 Apple Health、保留手动记录）。两版不要同时安装；尽量保持同一 Apple Account 与实际 Bundle ID 覆盖更新，避免占用额外免费槽位或丢失本地数据。
 5. PowerShell 核对哈希：`Get-FileHash -Algorithm SHA256 -LiteralPath '.\personal-health-ios-unsigned.ipa'`，与 SHA256SUMS/evidence 比较；free 文件同理。evidence 同时给出 version/build/commit/环境/API host 与未验收状态。
 
+首个真实成功构建（已下载独立核验）：[run 37183670494](https://github.com/h12534/personal-health-ai/actions/runs/37183670494)，source `d029f4956cf854015d52b751a92abf2a268b146e`，`0.1.0` / build `8.1`。直接 artifact：[HealthKit-attempt](https://github.com/h12534/personal-health-ai/actions/runs/37183670494/artifacts/11296048839)、[free fallback](https://github.com/h12534/personal-health-ai/actions/runs/37183670494/artifacts/11296416798)。本地忽略目录 `artifacts/personal-sideload/37183670494/` 已有这两份 IPA；完整 hash 见 `CI_AUDIT.md`。Windows 签名和设备启动仍需你执行。
+
 unsigned IPA 不含个人签名，因此无法直接点击安装。Artifact 保留 7 天（不是设备签名期限）；过期后重新构建。Public repo 的产物可能被他人下载：不含健康样本/签名材料/Provider keys，不等于防复制分发。
+
+重新构建可由所有者在上述已有运行页面选择 **Re-run all jobs**；重新读取新 run attempt 的 evidence / hash / build，不重用旧哈希或旧到期时间。不为显示 Run workflow 按钮擅自合并 main。
 
 ## 路线 A：Sideloadly（当前首选）
 

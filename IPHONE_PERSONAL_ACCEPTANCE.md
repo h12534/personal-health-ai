@@ -4,8 +4,8 @@
 
 | 证据 | 实际值 |
 |---|---|
-| CI run / source commit / artifact | 待实际构建；文件内 evidence 给出 commit/run |
-| IPA SHA-256 / version / build / flavor | 待实际产物；使用 SHA256SUMS 核验 |
+| CI run / source commit / artifact | [37183670494](https://github.com/h12534/personal-health-ai/actions/runs/37183670494) / `d029f4956cf854015d52b751a92abf2a268b146e`；HealthKit `11296048839`、free `11296416798`，CI SUCCESS / 下载独立核验 PASS |
+| IPA SHA-256 / version / build / flavor | `0.1.0` / `8.1`；HealthKit `875c71454ca12462979e496defd133fcf4b89fe2d729295ff0c98acb1696be61`；free `6ce3605bbeadfc457c1eb6fec76c5f0438da080836de3fc609933f901d6a84e2`。仅构建证据，不是设备 PASS |
 | Windows / 签名工具与版本 | 待所有者填写；不得写密码/2FA |
 | 手机型号 / iOS | 所有者已有 iPhone，具体待填 |
 | 实际重签名 Bundle ID / 到期时间 | 待安装工具显示；与源 IPA ID 可能不同 |

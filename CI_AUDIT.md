@@ -4,7 +4,30 @@
 
 验收更新：2026-10-04（Asia/Shanghai）。工作流文件为 `.github/workflows/ci.yml`。
 
-**Real GitHub CI：PASS / CLOSED。** 最新代码证据为 [run 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992)，event `push`，attempt `1`，commit `df4a1e161dfe565787e3a59beed19c7d84bcff97`，workflow conclusion `success`。五个原有 Job 全部 SUCCESS；新增签名 Job **SKIPPED / NOT RUN**，不计作签名门禁通过。下方保留首次关闭门禁的历史证据。
+**Real GitHub CI：PASS / CLOSED。** 本轮个人侧载代码证据为 [run 37183670494](https://github.com/h12534/personal-health-ai/actions/runs/37183670494)，event `push`，attempt `1`，commit `d029f4956cf854015d52b751a92abf2a268b146e`，workflow conclusion `success`。五个原有 Job 和个人侧载 Job 全部 SUCCESS；付费签名 Job **SKIPPED / SUSPENDED**，不是签名通过。下方保留之前各次关闭门禁的历史证据。
+
+## Personal Sideload 实际验收（2026-10-04）
+
+| Job | 实际结果 | 记录 |
+|---|---|---|
+| `release-audit` | SUCCESS | [111381099922](https://github.com/h12534/personal-health-ai/actions/runs/37183670494/job/111381099922)，24 guardrail tests / release audit / Shell syntax |
+| `backend` | SUCCESS | [111381099904](https://github.com/h12534/personal-health-ai/actions/runs/37183670494/job/111381099904)，89 tests / Ruff / 203 files format / strict mypy 165 files |
+| `backend-postgres` | SUCCESS | [111381099941](https://github.com/h12534/personal-health-ai/actions/runs/37183670494/job/111381099941)，真实 PG/Redis、7 integration tests、迁移/check/restore `result=passed` |
+| `mobile-ios-primary` | SUCCESS | [111381099882](https://github.com/h12534/personal-health-ai/actions/runs/37183670494/job/111381099882)，47 Flutter tests、analyze、no-codesign 24.4MB |
+| `mobile-android-compat` | SUCCESS | [111381099801](https://github.com/h12534/personal-health-ai/actions/runs/37183670494/job/111381099801)，真实 debug APK |
+| `mobile-ios-personal-sideload` | SUCCESS | [111382045711](https://github.com/h12534/personal-health-ai/actions/runs/37183670494/job/111382045711)，两模式各 47 tests、两次 no-codesign/IPA packaging、两 artifact 上传 |
+| `mobile-ios-signed` | SKIPPED / SUSPENDED | [111382046783](https://github.com/h12534/personal-health-ai/actions/runs/37183670494/job/111382046783)，不要求付费凭据、不签名、不上传 TestFlight |
+
+版本 `0.1.0` / build `8.1`，source commit `d029f4956cf854015d52b751a92abf2a268b146e`；Xcode 26.6 (17F113)、Flutter 3.47.5 / Dart 3.13.4、CocoaPods 1.17.0、iOS 16。
+
+| 实际 artifact | SHA-256（IPA 文件，不是 GitHub 外层 ZIP） |
+|---|---|
+| [HealthKit-attempt 11296048839](https://github.com/h12534/personal-health-ai/actions/runs/37183670494/artifacts/11296048839) / `personal-health-ios-unsigned.ipa` | `875c71454ca12462979e496defd133fcf4b89fe2d729295ff0c98acb1696be61` |
+| [Free fallback 11296416798](https://github.com/h12534/personal-health-ai/actions/runs/37183670494/artifacts/11296416798) / `personal-health-ios-free-unsigned.ipa` | `6ce3605bbeadfc457c1eb6fec76c5f0438da080836de3fc609933f901d6a84e2` |
+
+两份已下载到本地忽略目录 `artifacts/personal-sideload/37183670494/`，独立核对 SHA256SUMS/evidence/source commit/native version/build/flavor/IPA CRC/Payload/arm64 iPhoneOS Mach-O、无 Runner signature 或 profile；PASS。HealthKit 请求 plist 不等于签名权限。API host 仍 `.invalid`，`api_configured=false`；CI 明确 warning，真实登录/AI/API acceptance NOT RUN。Windows re-sign、iPhone install/launch/HealthKit/权限均 NOT RUN，不把产物构建等同私人安装成功。
+
+本轮本地发现并修复：Windows fixture 的 chmod 不能表达 Unix +x，打包器明确保存 Runner 可执行位，保留权限断言；新增模式关闭 remote push 后，旧认证 fixture 不能再借 push-device 触发 401，改用所有模式均保留的体重接口，全部 refresh/retry/清理断言保留；HealthKit widget fixture 明确 capability 可用，并为 free 模式增加手动提示/无开关断言。三模式各 47 Flutter tests、24 Python guardrails、analyze/Ruff PASS；没有 skip/disable test、降 lint 或绕过数据库。本轮首次真实 CI 即通过。
 
 仓库 [h12534/personal-health-ai](https://github.com/h12534/personal-health-ai) 按所有者 2026-10-03 的明确决定使用 Public 开源。仅推送 `main`（Phase 1 基线 `25b026d`）和 `feature/release-candidate-beta`；未推送其他历史 feature refs。验收针对 RC 分支，未合并或替换 main 的基线。
 

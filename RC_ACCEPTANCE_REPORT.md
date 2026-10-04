@@ -2,7 +2,13 @@
 
 **2026-10-04 目标调整：Private Personal Sideload。** 当前不要求 Apple Developer paid membership、App Store Connect、TestFlight、Apple Distribution 或 APNs。unsigned IPA → Windows 免费个人重签名 → 本人 iPhone；不要求 Mac。下方付费门禁/版本记录为历史，不再作为当前阻断；私人安装证据以 `IPHONE_PERSONAL_ACCEPTANCE.md` 记账，安装/启动尚 NOT RUN。所有者密码/2FA 只在本机工具输入。
 
-报告更新：2026-10-04（Asia/Shanghai）。本地候选版本：`0.1.0-beta.1+2`，不是已发布 TestFlight build。Real GitHub CI 门禁已关闭。最新代码证据：[run 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992)，commit `df4a1e161dfe565787e3a59beed19c7d84bcff97`，五个原有 Job 全部 SUCCESS；新增签名 Job SKIPPED / NOT RUN。逐 Job 记录、耗时和两次失败修复见 `CI_AUDIT.md`。
+**个人侧载代码/产物实证**：[run 37183670494](https://github.com/h12534/personal-health-ai/actions/runs/37183670494) / source `d029f4956cf854015d52b751a92abf2a268b146e`，五个原有 Job + personal Job SUCCESS、paid signed SKIPPED。`0.1.0` / build `8.1` 双 unsigned IPA 已生成/上传/下载并独立核对；完整 Job/hash 见 `CI_AUDIT.md`。Windows re-sign / iPhone install / launch / HealthKit / 真实 API 均 NOT RUN；当前下一步只有本人 Windows 免费签名与设备验收，不是付费会员或 TestFlight。
+
+## 之前的 RC / 付费发布路线快照（历史，不作为当前门禁）
+
+以下是目标调整前的验收快照，包含当时的“当前缺失项”和 TestFlight 路线；不再要求办理会员或提供 Apple 发布凭据。当前版本为上方个人侧载 `0.1.0` / build `8.1`，设备门禁见 `IPHONE_PERSONAL_ACCEPTANCE.md`。
+
+历史报告：2026-10-04（Asia/Shanghai）。本地候选版本：`0.1.0-beta.1+2`，不是已发布 TestFlight build。Real GitHub CI 门禁已关闭。历史代码证据：[run 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992)，commit `df4a1e161dfe565787e3a59beed19c7d84bcff97`，五个原有 Job 全部 SUCCESS；新增签名 Job SKIPPED / NOT RUN。逐 Job 记录、耗时和两次失败修复见 `CI_AUDIT.md`。
 
 1. **GitHub remote**：CONFIGURED / PUSHED，`origin=https://github.com/h12534/personal-health-ai.git`；按所有者明确决定使用 Public 开源。仅 main 与 RC 两个远端分支。
 2. **CI 每个 Job 实际结果**：PASS；release-audit / backend / backend-postgres / mobile-ios-primary / mobile-android-compat 均 SUCCESS。

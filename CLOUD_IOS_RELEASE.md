@@ -6,6 +6,8 @@
 
 当前执行文档：`PERSONAL_SIDELOAD_WINDOWS.md`、`FREE_SIGNING_ENTITLEMENT_AUDIT.md`、`IPHONE_PERSONAL_ACCEPTANCE.md`。免费 profile 约 7 天，Windows 需定期重签名/刷新；不要求购买或拥有 Mac。
 
+**已真实完成 unsigned 构建门禁**：[run 37183670494](https://github.com/h12534/personal-health-ai/actions/runs/37183670494)，source `d029f4956cf854015d52b751a92abf2a268b146e`；五个原有 Job 与 personal Job SUCCESS，paid signed Job SKIPPED。产物 `0.1.0` / build `8.1`：HealthKit artifact `11296048839` 与 free artifact `11296416798`，两份均已下载独立核对 hash/Payload/arm64 unsigned/native metadata；SHA256 与逐 Job 结果见 `CI_AUDIT.md`。当前实际 API 尚未配置、Windows re-sign/安装/启动/HealthKit 实测仍 NOT RUN，不把这条门禁扩大为设备可用承诺。
+
 ## 以下为未来付费发布能力（保留，当前暂停）
 
 下方历史路线/配置不再是当前前置条件，所有“需要 membership / ASC / TestFlight”的说明只适用于未来重新启用付费发布。签名 Job 增加 `vars.APP_DISTRIBUTION == 'app_store'` 防护；将来必须所有者明确改变目标并配置该变量、原 opt-in 与受保护 Secrets 才运行。当前不进行 Apple 注册/签名/上传。
