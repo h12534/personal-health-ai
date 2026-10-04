@@ -15,7 +15,7 @@ The user requires sequential page gates: analyze → whole test suite → real F
 | Shared States | Complete: analyzer clean, 160 whole-suite tests pass; twelve new L/D actual captures plus six intentional existing changes reviewed; A34/40 and independent B original P1 closed |
 | Dark Mode | Complete: analyzer clean, 166 whole-suite tests pass; A/B finish confirms semantic surfaces, actual dialog L/D and contrast |
 | Accessibility | Complete: analyze clean, 182 whole-suite tests pass; four constrained composer captures manually reviewed; A/B finish no blocking issues |
-| Final Polish | Next: auxiliary presentation consistency, final evidence/report and local preview |
+| Final Polish | Complete: analyzer clean, 203 whole-suite tests pass including 54 golden cases; A34/40 no blocking issues; independent B native14/20; local preview18 states verified |
 
 ## Navigation review
 
@@ -70,3 +70,13 @@ No palette replacement. Explicit shared dialog surface/flat elevation/radius and
 ## Accessibility
 
 Twelve new tests cover 320×568, 393×852 and 430×932, light/dark, 200% text and Reduce Motion: six root pages plus Health AI hit-target semantics; both composers under a simulated 300pt keyboard inset, send action above the inset, failed input retained and safe retry. Actual available height is read through LayoutBuilder because Scaffold removes viewInsets from body MediaQuery. Decorative header and introduction compact on short layouts; visible input lines adapt without shrinking text or truncating controller content. Four real Flutter body captures are 320×268; they do not draw or claim an actual iOS keyboard. A transparent test capture was corrected with the real Material surface, not a warning override. Final analyzer clean / 182 whole-suite passes. Native VoiceOver, keyboard and device performance remain explicit limitations.
+
+## Final Polish
+
+Shared detail headers, lazy food-search slivers, wrapped search modes, natural quantity/unit fields, weak macro units and awaited manual save; existing food calculation/amount/unit unchanged. Login uses safe known error codes and a busy guard. A found the production auth.when host unmounted the form during AsyncLoading: two real HealthOsApp tests first reproduced it, then the view-only route continuity fix preserved controller identity through slow failure (including startup error). AuthController/API unchanged; success still passes PrivacyGate. Food-search's new 300pt inset assertion reproduced a29px overflow at320/200% in both themes; a scrollable header and lazy results fixed it without hiding filters. Thirteen final Polish tests pass.
+
+School-food lists use open groups instead of nested cards/FAB; errors no longer pretend to be no data; all three existing editors await inside a protected dialog and preserve failed input and original payloads/defaults. No Saved Meal creation feature was added. ReportIssue changes only clarity and an awaited clipboard action. Training's known difficulty/equipment labels become Chinese; unrecognized values remain unchanged. All data-bearing type roles request tabular figures.
+
+Eight new L/D images plus four intentional existing unit changes were manually reviewed; only those four existing images were refreshed after viewing actual failure captures. The final sliver change did not change any of54 goldens. A's sole new P1 is closed; final scoped Nielsen34/40, specificity8/10. B code-native audit14/20, no blocking issues, one inherited P2: canteen collections remain eager, not a measured frame-rate failure. Complete203 tests pass / analyzer clean.
+
+The app-owned local gallery now shows six pages × light/dark/before, with image byte hashes,44px rendered controls, no page errors/external requests, and old interactive mock retained. TypeScript/Vite build and28 protected runtime hashes pass. Screenshot reviewed. No public deployment or push. Full final evidence and remaining native limits are in UI_REDESIGN_REPORT.md.

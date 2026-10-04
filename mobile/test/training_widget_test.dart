@@ -41,7 +41,7 @@ void main() {
     await tester.tap(find.text('计划'));
     await tester.pump();
 
-    expect(find.text('每周 3 次 · beginner'), findsOneWidget);
+    expect(find.text('每周 3 次 · 入门'), findsOneWidget);
     expect(find.textContaining('卧推'), findsWidgets);
   });
 

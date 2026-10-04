@@ -117,16 +117,31 @@ abstract final class AppTypography {
       fontFeatures: [FontFeature.tabularFigures()]);
   static const sectionTitle =
       TextStyle(fontSize: 21, fontWeight: FontWeight.w600, height: 1.3);
-  static const cardTitle =
-      TextStyle(fontSize: 17, fontWeight: FontWeight.w600, height: 1.35);
-  static const body =
-      TextStyle(fontSize: 17, fontWeight: FontWeight.w400, height: 1.5);
-  static const secondary =
-      TextStyle(fontSize: 15, fontWeight: FontWeight.w400, height: 1.45);
-  static const caption =
-      TextStyle(fontSize: 13, fontWeight: FontWeight.w400, height: 1.4);
-  static const metricLabel =
-      TextStyle(fontSize: 15, fontWeight: FontWeight.w500, height: 1.4);
+  static const cardTitle = TextStyle(
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
+      height: 1.35,
+      fontFeatures: [FontFeature.tabularFigures()]);
+  static const body = TextStyle(
+      fontSize: 17,
+      fontWeight: FontWeight.w400,
+      height: 1.5,
+      fontFeatures: [FontFeature.tabularFigures()]);
+  static const secondary = TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.w400,
+      height: 1.45,
+      fontFeatures: [FontFeature.tabularFigures()]);
+  static const caption = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w400,
+      height: 1.4,
+      fontFeatures: [FontFeature.tabularFigures()]);
+  static const metricLabel = TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.w500,
+      height: 1.4,
+      fontFeatures: [FontFeature.tabularFigures()]);
   static const metric = TextStyle(
       fontSize: 26,
       fontWeight: FontWeight.w500,

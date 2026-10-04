@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/widgets/app_components.dart';
 import 'features/auth/presentation/auth_controller.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
@@ -16,6 +17,8 @@ class HealthOsApp extends ConsumerStatefulWidget {
 
 class _HealthOsAppState extends ConsumerState<HealthOsApp>
     with WidgetsBindingObserver {
+  // View continuity only. AuthController remains the authority for sessions.
+  bool _loginVisible = false;
   @override
   void initState() {
     super.initState();
@@ -48,14 +51,24 @@ class _HealthOsAppState extends ConsumerState<HealthOsApp>
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      home: auth.when(
-        loading: () => const _LaunchScreen(),
-        error: (error, stack) => LoginScreen(initialError: error.toString()),
-        data: (state) => state.isAuthenticated
-            ? const PrivacyGate(child: DashboardScreen())
-            : const LoginScreen(),
-      ),
+      home: _home(auth),
     );
+  }
+
+  Widget _home(AsyncValue<AuthState> auth) {
+    if (auth.isLoading) {
+      return _loginVisible ? const LoginScreen() : const _LaunchScreen();
+    }
+    if (auth.hasError) {
+      _loginVisible = true;
+      return LoginScreen(initialError: auth.error);
+    }
+    if (auth.requireValue.isAuthenticated) {
+      _loginVisible = false;
+      return const PrivacyGate(child: DashboardScreen());
+    }
+    _loginVisible = true;
+    return const LoginScreen();
   }
 }
 
@@ -64,5 +77,5 @@ class _LaunchScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: CircularProgressIndicator()));
+      const Scaffold(body: SafeArea(child: LoadingState(label: '正在打开你的健康记录')));
 }

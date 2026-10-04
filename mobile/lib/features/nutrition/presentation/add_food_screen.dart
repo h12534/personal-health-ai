@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_components.dart';
+
 import '../data/nutrition_models.dart';
 import 'nutrition_controller.dart';
 
@@ -18,6 +21,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
   late final TextEditingController _amountController;
   late String _unit;
   bool _saving = false;
+  Object? _error;
 
   @override
   void initState() {
@@ -45,91 +49,107 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       if (widget.food.servingUnit != null) widget.food.servingUnit!,
     };
     NutritionTotals? preview;
-    if (amount > 0) preview = widget.food.calculate(amount, _unit);
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.food.name)),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text('记录份量', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 6),
-          Text(widget.food.servingDescription ?? '营养基准：每 100g'),
-          const SizedBox(height: 20),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    if (amount.isFinite && amount > 0) {
+      preview = widget.food.calculate(amount, _unit);
+    }
+    return PopScope(
+        canPop: !_saving,
+        child: Scaffold(
+          appBar: DetailPageHeader(label: widget.food.name),
+          body: ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
+              Text('记录份量', style: AppTypography.sectionTitle),
+              const SizedBox(height: 6),
+              Text(widget.food.servingDescription ?? '营养基准：每 100g'),
+              const SizedBox(height: 20),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: _amountController,
+                    enabled: !_saving,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(labelText: '数量'),
                   ),
-                  decoration: const InputDecoration(labelText: '数量'),
-                ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: _unit,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: '单位'),
+                    items: units
+                        .map(
+                          (unit) => DropdownMenuItem(
+                            value: unit,
+                            child: Text(_unitLabel(unit)),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: _saving
+                        ? null
+                        : (value) {
+                            if (value == null) return;
+                            setState(() {
+                              _unit = value;
+                              _amountController.text =
+                                  value == 'g' ? '100' : '1';
+                            });
+                          },
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              DropdownButton<String>(
-                value: _unit,
-                items: units
-                    .map(
-                      (unit) => DropdownMenuItem(
-                        value: unit,
-                        child: Text(_unitLabel(unit)),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    _unit = value;
-                    _amountController.text = value == 'g' ? '100' : '1';
-                  });
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: preview == null
+              const SizedBox(height: 20),
+              preview == null
                   ? const Text('请输入大于 0 的份量')
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '预计营养',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        Text('${preview.calories.toStringAsFixed(0)} kcal'),
-                        Text('蛋白质 ${preview.protein.toStringAsFixed(1)} g'),
-                        Text(
-                          '碳水 ${preview.carbs.toStringAsFixed(1)} g · '
-                          '脂肪 ${preview.fat.toStringAsFixed(1)} g',
-                        ),
+                        MetricHero(
+                            label: '预计热量',
+                            value: AppFormat.number(preview.calories),
+                            unit: 'kcal'),
+                        MetricRow(
+                            label: '蛋白质',
+                            value:
+                                AppFormat.number(preview.protein, decimals: 1),
+                            unit: 'g'),
+                        MetricRow(
+                            label: '碳水',
+                            value: AppFormat.number(preview.carbs, decimals: 1),
+                            unit: 'g'),
+                        MetricRow(
+                            label: '脂肪',
+                            value: AppFormat.number(preview.fat, decimals: 1),
+                            unit: 'g'),
                       ],
                     ),
-            ),
+              if (_error != null)
+                Semantics(
+                    liveRegion: true,
+                    child: Text('${UiFailure.title(_error!)}。份量已保留，请检查记录后重试。',
+                        style: AppTypography.secondary
+                            .copyWith(color: AppColors.of(context).danger))),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed:
+                    preview == null || _saving ? null : () => _save(amount),
+                icon: const Icon(Icons.check),
+                label:
+                    Text(_saving ? '保存中' : '加入${_mealLabel(widget.mealType)}'),
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: preview == null || _saving ? null : () => _save(amount),
-            icon: _saving
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check),
-            label: Text(_saving ? '保存中' : '加入${_mealLabel(widget.mealType)}'),
-          ),
-        ],
-      ),
-    );
+        ));
   }
 
   Future<void> _save(double amount) async {
-    setState(() => _saving = true);
+    if (_saving || !amount.isFinite || amount <= 0) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
       await ref.read(nutritionControllerProvider.notifier).addFood(
             mealType: widget.mealType,
@@ -140,9 +160,10 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
       if (mounted) Navigator.pop(context, true);
     } on Object catch (error) {
       if (mounted) {
-        setState(() => _saving = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.toString())));
+        setState(() {
+          _saving = false;
+          _error = error;
+        });
       }
     }
   }

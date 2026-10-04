@@ -535,6 +535,34 @@ class _WorkoutSetEditorState extends State<WorkoutSetEditor> {
   }
 }
 
+String _trainingTerm(String value) =>
+    const {
+      'beginner': '入门',
+      'novice': '初级',
+      'intermediate': '中级',
+      'advanced': '进阶',
+      'squat': '蹲类',
+      'hinge': '髋铰链',
+      'isolation': '单关节',
+      'horizontal_push': '水平推',
+      'vertical_push': '垂直推',
+      'horizontal_pull': '水平拉',
+      'vertical_pull': '垂直拉',
+      'core': '核心',
+      'carry': '负重行走',
+      'cardio': '有氧',
+      'barbell': '杠铃',
+      'dumbbell': '哑铃',
+      'bodyweight': '徒手',
+      'machine': '器械',
+      'smith_machine': '史密斯机',
+      'cable': '绳索',
+      'resistance_band': '弹力带',
+      'cardio_machine': '有氧器械',
+      'other': '其他',
+    }[value] ??
+    value;
+
 class _PlanView extends ConsumerWidget {
   const _PlanView({required this.data});
 
@@ -544,9 +572,9 @@ class _PlanView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (data.plans.isEmpty) {
       return Center(
-        child: FilledButton(
+        child: AsyncActionButton(
           onPressed: () => TrainingPlanController(ref).generateDefault(),
-          child: const Text('生成每周 3 次全身计划'),
+          label: '生成每周 3 次全身计划',
         ),
       );
     }
@@ -558,7 +586,7 @@ class _PlanView extends ConsumerWidget {
             initiallyExpanded: plan.active,
             title: Text(plan.name),
             subtitle: Text(
-              '每周 ${plan.sessionsPerWeek} 次 · ${plan.difficulty}',
+              '每周 ${plan.sessionsPerWeek} 次 · ${_trainingTerm(plan.difficulty)}',
             ),
             children: [
               for (final day in plan.days)
@@ -645,7 +673,7 @@ class _ExerciseLibraryState extends State<_ExerciseLibrary> {
           ExpansionTile(
             title: Text(exercise.name),
             subtitle: Text(
-              '${exercise.movementPattern} · ${exercise.equipment.join("/")}',
+              '${_trainingTerm(exercise.movementPattern)} · ${exercise.equipment.map(_trainingTerm).join(" / ")}',
             ),
             childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             expandedCrossAxisAlignment: CrossAxisAlignment.start,
@@ -695,13 +723,14 @@ class _ProgressView extends StatelessWidget {
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               MetricRow(
                   label: exercises[record.exerciseId] ?? '训练动作',
-                  value:
-                      '${AppFormat.number(record.value, decimals: record.type == "max_reps" ? 0 : 1)} ${switch (record.type) {
-                    "max_weight" || "estimated_1rm" => "kg",
-                    "max_reps" => "次",
-                    "volume" || "max_volume" => "kg × 次",
-                    _ => "（单位待确认）"
-                  }}',
+                  value: AppFormat.number(record.value,
+                      decimals: record.type == 'max_reps' ? 0 : 1),
+                  unit: switch (record.type) {
+                    'max_weight' || 'estimated_1rm' => 'kg',
+                    'max_reps' => '次',
+                    'volume' || 'max_volume' => 'kg × 次',
+                    _ => '（单位待确认）'
+                  },
                   detail:
                       '${record.achievedAt.year}年${AppFormat.date(record.achievedAt)}'),
               Text(_prLabel(record.type, record.confidence),
@@ -720,7 +749,8 @@ class _ProgressView extends StatelessWidget {
                     ..sort((a, b) => b.key.compareTo(a.key)))
                 MetricRow(
                     label: '${AppFormat.date(week.key)}这一周',
-                    value: '${week.value} 次'),
+                    value: '${week.value}',
+                    unit: '次'),
             ])),
         for (final exercise in data.exercises.where((e) => completed.any((w) =>
             w.sets.any((s) => s.exerciseId == e.id && s.setType != 'warmup'))))

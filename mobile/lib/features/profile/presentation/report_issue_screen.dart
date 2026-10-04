@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/diagnostics/local_diagnostics.dart';
+import '../../../core/widgets/app_components.dart';
 
 class ReportIssueScreen extends ConsumerStatefulWidget {
   const ReportIssueScreen({super.key});
@@ -27,15 +28,16 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('报告问题')),
+        appBar: DetailPageHeader(label: '报告问题'),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: _category,
               decoration: const InputDecoration(labelText: '问题类型'),
               items: const [
-                DropdownMenuItem(value: 'bug', child: Text('Bug')),
+                DropdownMenuItem(value: 'bug', child: Text('功能异常')),
                 DropdownMenuItem(value: 'data', child: Text('数据错误')),
                 DropdownMenuItem(value: 'ai', child: Text('AI 回答问题')),
                 DropdownMenuItem(value: 'reminder', child: Text('提醒问题')),
@@ -63,11 +65,11 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                   setState(() => _includeDiagnostics = value ?? false),
             ),
             const SizedBox(height: 16),
-            FilledButton.icon(
+            AsyncActionButton(
               key: const Key('copy-issue-report'),
               onPressed: _copy,
-              icon: const Icon(Icons.copy_all_outlined),
-              label: const Text('生成并复制问题报告'),
+              icon: Icons.copy_all_outlined,
+              label: '生成并复制问题报告',
             ),
             const Padding(
               padding: EdgeInsets.all(12),

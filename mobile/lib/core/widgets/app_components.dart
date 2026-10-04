@@ -547,6 +547,7 @@ abstract final class UiFailure {
   static bool _connection(Object error) =>
       error is ApiException && error.message == '无法连接服务器，请检查网络和 API 地址。';
   static String title(Object error) => switch (_code(error)) {
+        'invalid_credentials' => '邮箱或密码不正确',
         'camera_access_denied' || 'camera_access_restricted' => '相机权限不可用',
         'photo_access_denied' || 'photo_access_restricted' => '相册权限不可用',
         'ai_not_configured' => 'AI 暂不可用',
@@ -559,6 +560,7 @@ abstract final class UiFailure {
         _ => _connection(error) ? '连接暂不可用' : '暂时无法完成',
       };
   static String message(Object error) => switch (_code(error)) {
+        'invalid_credentials' => '请检查邮箱和密码后重试。',
         'camera_access_denied' => '请在 iPhone 设置中允许此 App 使用相机，或改从相册选择。',
         'photo_access_denied' => '请在 iPhone 设置中允许此 App 访问照片，或改用相机。',
         'camera_access_restricted' ||
@@ -575,6 +577,88 @@ abstract final class UiFailure {
             ? '请检查网络和服务地址后重试。未确认保存的内容仍需重试。'
             : '暂时无法确认结果。请检查记录后重试。',
       };
+}
+
+/// A protected editor: validation and persistence stay with the caller.
+class AwaitedEntryDialog extends StatefulWidget {
+  const AwaitedEntryDialog(
+      {super.key,
+      required this.title,
+      required this.content,
+      required this.validate,
+      required this.onSave});
+  final String title;
+  final Widget content;
+  final String? Function() validate;
+  final Future<void> Function() onSave;
+  @override
+  State<AwaitedEntryDialog> createState() => _AwaitedEntryDialogState();
+}
+
+class _AwaitedEntryDialogState extends State<AwaitedEntryDialog> {
+  bool _busy = false;
+  String? _validation;
+  Object? _error;
+  Future<void> _save() async {
+    if (_busy) return;
+    final validation = widget.validate();
+    setState(() {
+      _validation = validation;
+      _error = null;
+    });
+    if (validation != null) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _busy = true);
+    try {
+      await widget.onSave();
+      if (mounted) Navigator.pop(context, true);
+    } on Object catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = error;
+          _busy = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+      canPop: !_busy,
+      child: AlertDialog(
+          scrollable: true,
+          title: Text(widget.title),
+          content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FocusScope(
+                    canRequestFocus: !_busy,
+                    child:
+                        AbsorbPointer(absorbing: _busy, child: widget.content)),
+                if (_validation != null || _error != null) ...[
+                  const SizedBox(height: 12),
+                  Semantics(
+                      liveRegion: true,
+                      child: Text(
+                          _validation ??
+                              '${UiFailure.title(_error!)}。输入已保留，请重试。',
+                          style: AppTypography.secondary
+                              .copyWith(color: AppColors.of(context).danger))),
+                ],
+              ]),
+          actions: [
+            TextButton(
+                onPressed: _busy ? null : () => Navigator.pop(context),
+                child: const Text('取消')),
+            FilledButton(
+                onPressed: _busy ? null : _save,
+                child: Text(_busy
+                    ? '正在保存…'
+                    : _error == null
+                        ? '保存'
+                        : '重试保存')),
+          ]));
 }
 
 abstract final class AppFormat {

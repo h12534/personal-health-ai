@@ -35,6 +35,14 @@ import 'package:personal_health_os/features/supervision/presentation/supervision
     as supervision;
 import 'package:personal_health_os/features/supervision/presentation/supervision_screens.dart';
 import 'package:personal_health_os/core/privacy/privacy_lock.dart';
+import 'package:personal_health_os/core/database/local_database.dart';
+import 'package:personal_health_os/features/auth/presentation/auth_controller.dart';
+import 'package:personal_health_os/features/auth/presentation/login_screen.dart';
+import 'package:personal_health_os/features/coach/presentation/canteen_screen.dart';
+import 'package:personal_health_os/features/nutrition/data/offline_meal_repository.dart';
+import 'package:personal_health_os/features/nutrition/presentation/food_search_screen.dart';
+import 'package:personal_health_os/features/nutrition/presentation/add_food_screen.dart';
+import 'ui_polish_fixtures.dart';
 
 const _frameKey = Key('golden-frame');
 
@@ -141,6 +149,14 @@ void main() {
     ('health-keyboard-small', true),
     ('coach-keyboard-small', false),
     ('coach-keyboard-small', true),
+    ('login', false),
+    ('login', true),
+    ('food-search', false),
+    ('food-search', true),
+    ('add-food', false),
+    ('add-food', true),
+    ('canteen', false),
+    ('canteen', true),
   ]) {
     final (name, dark) = entry;
     testWidgets('$name ${dark ? 'dark' : 'light'} themed golden',
@@ -153,7 +169,13 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final note = TextEditingController();
       addTearDown(note.dispose);
+      final db = LocalDatabase();
+      addTearDown(db.close);
       final Widget screen = switch (name) {
+        'login' => const LoginScreen(),
+        'food-search' => const FoodSearchScreen(mealType: 'lunch'),
+        'add-food' => const AddFoodScreen(mealType: 'lunch', food: polishFood),
+        'canteen' => const CanteenScreen(),
         'dashboard' => DashboardContent(data: _dashboard, onAddWeight: () {}),
         'nutrition' => NutritionContent(
             data: _nutrition,
@@ -210,6 +232,11 @@ void main() {
       final theme = dark ? AppTheme.dark : AppTheme.light;
       await tester.pumpWidget(ProviderScope(
         overrides: [
+          authControllerProvider.overrideWith(PolishAuth.new),
+          offlineMealRepositoryProvider.overrideWithValue(PolishFoods(db)),
+          canteensProvider.overrideWith((ref) async => []),
+          canteenRecommendationsProvider.overrideWith((ref) async => []),
+          savedMealsProvider.overrideWith((ref) async => []),
           healthReportsProvider.overrideWith((ref) async => [sampleReport]),
           labTrendProvider.overrideWith((ref, name) async => sampleTrend),
           healthChatProvider.overrideWith(SharedHealthChat.new),
@@ -272,26 +299,34 @@ void main() {
                                 color: theme.scaffoldBackgroundColor,
                                 child: SafeArea(child: screen))
                             : SafeArea(child: screen)),
-                    bottomNavigationBar: name == 'meal-draft'
-                        ? BottomActionArea(
-                            child: FilledButton.icon(
-                                onPressed: () {},
-                                icon: const Icon(Icons.check_circle_outline),
-                                label: const Text('确认并计入今日营养')))
-                        : AppNavigationBar(
-                            index: switch (name) {
-                              'dashboard' || 'weight-editor' => 0,
-                              'nutrition' => 1,
-                              'nutrition-flow' => 1,
-                              'training' || 'training-progress' => 2,
-                              'health-chat' ||
-                              'health-knowledge' ||
-                              'health-data-detail' ||
-                              'lab-draft' =>
-                                3,
-                              _ => 4
-                            },
-                            onSelect: _ignoreSelection))),
+                    bottomNavigationBar: [
+                      'login',
+                      'food-search',
+                      'add-food',
+                      'canteen'
+                    ].contains(name)
+                        ? null
+                        : name == 'meal-draft'
+                            ? BottomActionArea(
+                                child: FilledButton.icon(
+                                    onPressed: () {},
+                                    icon:
+                                        const Icon(Icons.check_circle_outline),
+                                    label: const Text('确认并计入今日营养')))
+                            : AppNavigationBar(
+                                index: switch (name) {
+                                  'dashboard' || 'weight-editor' => 0,
+                                  'nutrition' => 1,
+                                  'nutrition-flow' => 1,
+                                  'training' || 'training-progress' => 2,
+                                  'health-chat' ||
+                                  'health-knowledge' ||
+                                  'health-data-detail' ||
+                                  'lab-draft' =>
+                                    3,
+                                  _ => 4
+                                },
+                                onSelect: _ignoreSelection))),
           ),
         ),
       ));

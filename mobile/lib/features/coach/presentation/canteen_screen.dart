@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_components.dart';
 import '../../dashboard/presentation/dashboard_controller.dart';
 import '../../nutrition/presentation/nutrition_controller.dart';
 import '../data/coach_models.dart';
@@ -16,12 +18,7 @@ class CanteenScreen extends ConsumerWidget {
     final recommendations = ref.watch(canteenRecommendationsProvider);
     final savedMeals = ref.watch(savedMealsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('学校饮食')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _editCanteen(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('新增食堂'),
-      ),
+      appBar: DetailPageHeader(label: '学校饮食'),
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
@@ -32,15 +29,16 @@ class CanteenScreen extends ConsumerWidget {
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+          padding: AppSpacing.pageInsets,
           children: [
             _SectionTitle(
               title: '常吃套餐',
-              subtitle: '一键记录会生成新的餐次，不会复用旧 Meal ID。',
+              subtitle: '从已经保存的组合开始，记录一餐。',
             ),
             _SavedMeals(
               value: savedMeals,
               onLog: (value) => _logSavedMeal(context, ref, value),
+              onReload: () => ref.invalidate(savedMealsProvider),
             ),
             const SizedBox(height: 18),
             _SectionTitle(
@@ -49,6 +47,8 @@ class CanteenScreen extends ConsumerWidget {
             ),
             _CanteenTree(
               value: canteens,
+              onReload: () => ref.invalidate(canteensProvider),
+              onAddCanteen: () => _editCanteen(context, ref),
               onEditCanteen: (value) => _editCanteen(context, ref, value),
               onAddStall: (value) => _editStall(context, ref, value),
               onEditStall: (canteen, stall) =>
@@ -62,7 +62,10 @@ class CanteenScreen extends ConsumerWidget {
               title: '现在吃什么',
               subtitle: '按今天的热量和蛋白质缺口给出多个可执行选择，不做“健康评分”。',
             ),
-            _Recommendations(value: recommendations),
+            _Recommendations(
+                value: recommendations,
+                onReload: () => ref.invalidate(canteenRecommendationsProvider),
+                onAddCanteen: () => _editCanteen(context, ref)),
           ],
         ),
       ),
@@ -88,7 +91,7 @@ class CanteenScreen extends ConsumerWidget {
     } on Object catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.toString())));
+            .showSnackBar(SnackBar(content: Text(UiFailure.message(error))));
       }
     }
   }
@@ -102,56 +105,44 @@ class CanteenScreen extends ConsumerWidget {
     final campus = TextEditingController(text: value?.campus);
     final location = TextEditingController(text: value?.location);
     final note = TextEditingController(text: value?.note);
-    final save = await showDialog<bool>(
+    await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(value == null ? '新增食堂' : '编辑食堂'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(labelText: '名称 *'),
-              ),
-              TextField(
-                controller: campus,
-                decoration: const InputDecoration(labelText: '校区'),
-              ),
-              TextField(
-                controller: location,
-                decoration: const InputDecoration(labelText: '位置'),
-              ),
-              TextField(
-                controller: note,
-                decoration: const InputDecoration(labelText: '备注'),
-              ),
-            ],
-          ),
+      builder: (context) => AwaitedEntryDialog(
+        title: value == null ? '新增食堂' : '编辑食堂',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: name,
+              decoration: const InputDecoration(labelText: '名称 *'),
+            ),
+            TextField(
+              controller: campus,
+              decoration: const InputDecoration(labelText: '校区'),
+            ),
+            TextField(
+              controller: location,
+              decoration: const InputDecoration(labelText: '位置'),
+            ),
+            TextField(
+              controller: note,
+              decoration: const InputDecoration(labelText: '备注'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(context, name.text.trim().isNotEmpty),
-            child: const Text('保存'),
-          ),
-        ],
+        validate: () => name.text.trim().isEmpty ? '请填写食堂名称' : null,
+        onSave: () async {
+          await ref.read(apiClientProvider).saveCanteen(
+                id: value?.id,
+                name: name.text.trim(),
+                campus: _optional(campus.text),
+                location: _optional(location.text),
+                note: _optional(note.text),
+              );
+          _refreshCanteens(ref);
+        },
       ),
     );
-    if (save == true) {
-      await ref.read(apiClientProvider).saveCanteen(
-            id: value?.id,
-            name: name.text.trim(),
-            campus: _optional(campus.text),
-            location: _optional(location.text),
-            note: _optional(note.text),
-          );
-      _refreshCanteens(ref);
-    }
     name.dispose();
     campus.dispose();
     location.dispose();
@@ -168,57 +159,45 @@ class CanteenScreen extends ConsumerWidget {
     final cuisine = TextEditingController(text: value?.cuisine);
     final floor = TextEditingController(text: value?.floor);
     final location = TextEditingController(text: value?.locationNote);
-    final save = await showDialog<bool>(
+    await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(value == null ? '新增档口' : '编辑档口'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(labelText: '档口名称 *'),
-              ),
-              TextField(
-                controller: cuisine,
-                decoration: const InputDecoration(labelText: '菜系'),
-              ),
-              TextField(
-                controller: floor,
-                decoration: const InputDecoration(labelText: '楼层'),
-              ),
-              TextField(
-                controller: location,
-                decoration: const InputDecoration(labelText: '位置备注'),
-              ),
-            ],
-          ),
+      builder: (context) => AwaitedEntryDialog(
+        title: value == null ? '新增档口' : '编辑档口',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: name,
+              decoration: const InputDecoration(labelText: '档口名称 *'),
+            ),
+            TextField(
+              controller: cuisine,
+              decoration: const InputDecoration(labelText: '菜系'),
+            ),
+            TextField(
+              controller: floor,
+              decoration: const InputDecoration(labelText: '楼层'),
+            ),
+            TextField(
+              controller: location,
+              decoration: const InputDecoration(labelText: '位置备注'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(context, name.text.trim().isNotEmpty),
-            child: const Text('保存'),
-          ),
-        ],
+        validate: () => name.text.trim().isEmpty ? '请填写档口名称' : null,
+        onSave: () async {
+          await ref.read(apiClientProvider).saveCanteenStall(
+                id: value?.id,
+                canteenId: canteen.id,
+                name: name.text.trim(),
+                cuisine: _optional(cuisine.text),
+                floor: _optional(floor.text),
+                locationNote: _optional(location.text),
+              );
+          _refreshCanteens(ref);
+        },
       ),
     );
-    if (save == true) {
-      await ref.read(apiClientProvider).saveCanteenStall(
-            id: value?.id,
-            canteenId: canteen.id,
-            name: name.text.trim(),
-            cuisine: _optional(cuisine.text),
-            floor: _optional(floor.text),
-            locationNote: _optional(location.text),
-          );
-      _refreshCanteens(ref);
-    }
     name.dispose();
     cuisine.dispose();
     floor.dispose();
@@ -242,88 +221,79 @@ class CanteenScreen extends ConsumerWidget {
     final weight =
         TextEditingController(text: _displayNumber(value?.averageWeight));
     var favorite = value?.favorite ?? false;
-    final save = await showDialog<bool>(
+    await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(value == null ? '新增菜品' : '编辑菜品'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: name,
-                  decoration: const InputDecoration(labelText: '菜品名称 *'),
-                ),
-                Row(
-                  children: [
-                    Expanded(child: _NumberField(calories, '热量 kcal *')),
-                    const SizedBox(width: 10),
-                    Expanded(child: _NumberField(protein, '蛋白质 g *')),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(child: _NumberField(carbs, '碳水 g')),
-                    const SizedBox(width: 10),
-                    Expanded(child: _NumberField(fat, '脂肪 g')),
-                  ],
-                ),
-                _NumberField(fiber, '纤维 g'),
-                TextField(
-                  controller: portion,
-                  decoration: const InputDecoration(labelText: '份量描述'),
-                ),
-                _NumberField(weight, '平均重量 g（可选）'),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('收藏菜品'),
-                  value: favorite,
-                  onChanged: (next) => setState(() => favorite = next),
-                ),
-              ],
-            ),
+        builder: (context, setState) => AwaitedEntryDialog(
+          title: value == null ? '新增菜品' : '编辑菜品',
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: name,
+                decoration: const InputDecoration(labelText: '菜品名称 *'),
+              ),
+              _NumberField(calories, '热量 kcal *'),
+              _NumberField(protein, '蛋白质 g *'),
+              _NumberField(carbs, '碳水 g'),
+              _NumberField(fat, '脂肪 g'),
+              _NumberField(fiber, '纤维 g'),
+              TextField(
+                controller: portion,
+                decoration: const InputDecoration(labelText: '份量描述'),
+              ),
+              _NumberField(weight, '平均重量 g（可选）'),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('收藏菜品'),
+                value: favorite,
+                onChanged: (next) => setState(() => favorite = next),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final requiredNumbers = [calories, protein]
-                    .map((controller) => double.tryParse(controller.text))
-                    .toList();
-                final valid = name.text.trim().isNotEmpty &&
-                    requiredNumbers.every(
-                      (number) => number != null && number >= 0,
-                    );
-                if (valid) Navigator.pop(context, true);
-              },
-              child: const Text('保存'),
-            ),
-          ],
+          validate: () {
+            if (name.text.trim().isEmpty) return '请填写菜品名称';
+            for (final input in [
+              calories,
+              protein,
+              carbs,
+              fat,
+              fiber,
+              weight
+            ]) {
+              if (input.text.trim().isEmpty &&
+                  input != calories &&
+                  input != protein) {
+                continue;
+              }
+              final number = double.tryParse(input.text.trim());
+              if (number == null || !number.isFinite || number < 0) {
+                return '营养数值请填写有效的非负数字';
+              }
+            }
+            return null;
+          },
+          onSave: () async {
+            await ref.read(apiClientProvider).saveCanteenDish(
+                  id: value?.id,
+                  stallId: stall.id,
+                  name: name.text.trim(),
+                  calories: double.parse(calories.text),
+                  protein: double.parse(protein.text),
+                  carbs: double.tryParse(carbs.text) ?? 0,
+                  fat: double.tryParse(fat.text) ?? 0,
+                  fiber: double.tryParse(fiber.text) ?? 0,
+                  portionDescription: _optional(portion.text),
+                  averageWeight: double.tryParse(weight.text),
+                  confidence: value?.confidence ?? 0.5,
+                  favorite: favorite,
+                  source: value?.source ?? 'manual',
+                );
+            _refreshCanteens(ref);
+          },
         ),
       ),
     );
-    if (save == true) {
-      await ref.read(apiClientProvider).saveCanteenDish(
-            id: value?.id,
-            stallId: stall.id,
-            name: name.text.trim(),
-            calories: double.parse(calories.text),
-            protein: double.parse(protein.text),
-            carbs: double.tryParse(carbs.text) ?? 0,
-            fat: double.tryParse(fat.text) ?? 0,
-            fiber: double.tryParse(fiber.text) ?? 0,
-            portionDescription: _optional(portion.text),
-            averageWeight: double.tryParse(weight.text),
-            confidence: value?.confidence ?? 0.5,
-            favorite: favorite,
-            source: value?.source ?? 'manual',
-          );
-      _refreshCanteens(ref);
-    }
     for (final controller in [
       name,
       calories,
@@ -363,7 +333,7 @@ class CanteenScreen extends ConsumerWidget {
     } on Object catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.toString())));
+            .showSnackBar(SnackBar(content: Text(UiFailure.message(error))));
       }
     }
   }
@@ -403,38 +373,41 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _SavedMeals extends StatelessWidget {
-  const _SavedMeals({required this.value, required this.onLog});
+  const _SavedMeals(
+      {required this.value, required this.onLog, required this.onReload});
 
   final AsyncValue<List<SavedMealModel>> value;
   final Future<void> Function(SavedMealModel) onLog;
+  final VoidCallback onReload;
 
   @override
   Widget build(BuildContext context) => value.when(
-        loading: () => const LinearProgressIndicator(),
-        error: (error, stack) => const Text('常吃套餐暂时无法加载'),
+        loading: () => const LoadingState(inline: true, label: '正在读取套餐'),
+        error: (error, stack) =>
+            ErrorState(error: error, onRetry: onReload, inline: true),
         data: (values) => values.isEmpty
-            ? const Card(
-                child: ListTile(
-                  leading: Icon(Icons.bookmark_border),
-                  title: Text('还没有常吃套餐'),
-                  subtitle: Text('可通过 Saved Meal API 保存早餐、食堂或便利店组合。'),
-                ),
-              )
+            ? EmptyState(
+                title: '还没有常吃套餐',
+                message: '这里显示已经保存的组合。也可以返回饮食页，逐项记录这一餐。',
+                actionLabel: '重新读取',
+                onAction: onReload)
             : Column(
                 children: [
                   for (final item in values)
-                    Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.bookmark_outline),
-                        title: Text(item.name),
-                        subtitle: Text(
-                          '${item.itemCount} 项 · ${item.totalCalories.toStringAsFixed(0)} kcal',
-                        ),
-                        trailing: FilledButton.tonal(
-                          onPressed: () => onLog(item),
-                          child: const Text('一键记录'),
-                        ),
-                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item.name, style: AppTypography.cardTitle),
+                            Text(
+                              '${item.itemCount} 项 · ${item.totalCalories.toStringAsFixed(0)} kcal',
+                            ),
+                            AsyncActionButton(
+                              onPressed: () => onLog(item),
+                              label: '一键记录',
+                            ),
+                          ]),
                     ),
                 ],
               ),
@@ -450,6 +423,8 @@ class _CanteenTree extends StatelessWidget {
     required this.onAddDish,
     required this.onEditDish,
     required this.onToggleFavorite,
+    required this.onReload,
+    required this.onAddCanteen,
   });
 
   final AsyncValue<List<CanteenModel>> value;
@@ -458,62 +433,64 @@ class _CanteenTree extends StatelessWidget {
   final void Function(CanteenModel, CanteenStallModel) onEditStall;
   final void Function(CanteenStallModel) onAddDish;
   final void Function(CanteenStallModel, CanteenDishModel) onEditDish;
-  final void Function(CanteenDishModel) onToggleFavorite;
+  final Future<void> Function(CanteenDishModel) onToggleFavorite;
+  final VoidCallback onReload, onAddCanteen;
 
   @override
   Widget build(BuildContext context) => value.when(
-        loading: () => const LinearProgressIndicator(),
-        error: (error, stack) => const Text('食堂列表加载失败'),
+        loading: () => const LoadingState(inline: true, label: '正在读取食堂'),
+        error: (error, stack) =>
+            ErrorState(error: error, onRetry: onReload, inline: true),
         data: (values) => values.isEmpty
-            ? const Card(
-                child: ListTile(
-                  leading: Icon(Icons.storefront_outlined),
-                  title: Text('还没有食堂'),
-                  subtitle: Text('点击右下角新增，之后再逐步添加档口和菜品。'),
-                ),
-              )
+            ? EmptyState(
+                title: '还没有食堂',
+                message: '先记住一个常去的地方，再逐步添加档口和菜品。',
+                actionLabel: '新增食堂',
+                onAction: onAddCanteen)
             : Column(
                 children: [
+                  TextButton.icon(
+                      onPressed: onAddCanteen,
+                      icon: const Icon(Icons.add),
+                      label: const Text('新增食堂')),
                   for (final canteen in values)
-                    Card(
-                      child: ExpansionTile(
-                        leading: const Icon(Icons.storefront_outlined),
-                        title: Text(canteen.name),
-                        subtitle: Text(
-                          [canteen.campus, canteen.location]
-                              .whereType<String>()
-                              .where((value) => value.isNotEmpty)
-                              .join(' · '),
-                        ),
-                        trailing: IconButton(
-                          tooltip: '编辑食堂',
-                          onPressed: () => onEditCanteen(canteen),
-                          icon: const Icon(Icons.edit_outlined),
-                        ),
-                        children: [
-                          if (canteen.stalls.isEmpty)
-                            const ListTile(
-                              title: Text('暂无档口'),
-                              subtitle: Text('先添加一个经常购买的档口。'),
-                            ),
-                          for (final stall in canteen.stalls)
-                            _StallTile(
-                              stall: stall,
-                              onEdit: () => onEditStall(canteen, stall),
-                              onAddDish: () => onAddDish(stall),
-                              onEditDish: (dish) => onEditDish(stall, dish),
-                              onToggleFavorite: onToggleFavorite,
-                            ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton.icon(
-                              onPressed: () => onAddStall(canteen),
-                              icon: const Icon(Icons.add),
-                              label: const Text('新增档口'),
-                            ),
-                          ),
-                        ],
+                    ExpansionTile(
+                      leading: const Icon(Icons.storefront_outlined),
+                      title: Text(canteen.name),
+                      subtitle: Text(
+                        [canteen.campus, canteen.location]
+                            .whereType<String>()
+                            .where((value) => value.isNotEmpty)
+                            .join(' · '),
                       ),
+                      trailing: IconButton(
+                        tooltip: '编辑食堂',
+                        onPressed: () => onEditCanteen(canteen),
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                      children: [
+                        if (canteen.stalls.isEmpty)
+                          const ListTile(
+                            title: Text('暂无档口'),
+                            subtitle: Text('先添加一个经常购买的档口。'),
+                          ),
+                        for (final stall in canteen.stalls)
+                          _StallTile(
+                            stall: stall,
+                            onEdit: () => onEditStall(canteen, stall),
+                            onAddDish: () => onAddDish(stall),
+                            onEditDish: (dish) => onEditDish(stall, dish),
+                            onToggleFavorite: onToggleFavorite,
+                          ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: () => onAddStall(canteen),
+                            icon: const Icon(Icons.add),
+                            label: const Text('新增档口'),
+                          ),
+                        ),
+                      ],
                     ),
                 ],
               ),
@@ -533,7 +510,7 @@ class _StallTile extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onAddDish;
   final void Function(CanteenDishModel) onEditDish;
-  final void Function(CanteenDishModel) onToggleFavorite;
+  final Future<void> Function(CanteenDishModel) onToggleFavorite;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -556,26 +533,24 @@ class _StallTile extends StatelessWidget {
             if (stall.dishes.isEmpty)
               const ListTile(title: Text('暂无菜品，吃过后再慢慢添加。')),
             for (final dish in stall.dishes)
-              ListTile(
-                leading: IconButton(
-                  tooltip: dish.favorite ? '取消收藏' : '收藏',
-                  onPressed: () => onToggleFavorite(dish),
-                  icon: Icon(
-                    dish.favorite ? Icons.star : Icons.star_border,
-                    color: dish.favorite ? Colors.amber.shade700 : null,
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                ListTile(
+                  title: Text(dish.name),
+                  subtitle: Text(
+                    '${dish.calories.toStringAsFixed(0)} kcal · '
+                    '蛋白质 ${dish.protein.toStringAsFixed(0)} g',
+                  ),
+                  trailing: IconButton(
+                    tooltip: '编辑菜品',
+                    onPressed: () => onEditDish(dish),
+                    icon: const Icon(Icons.edit_outlined),
                   ),
                 ),
-                title: Text(dish.name),
-                subtitle: Text(
-                  '${dish.calories.toStringAsFixed(0)} kcal · '
-                  '蛋白质 ${dish.protein.toStringAsFixed(0)} g',
-                ),
-                trailing: IconButton(
-                  tooltip: '编辑菜品',
-                  onPressed: () => onEditDish(dish),
-                  icon: const Icon(Icons.edit_outlined),
-                ),
-              ),
+                AsyncActionButton(
+                    label: dish.favorite ? '取消收藏' : '收藏',
+                    icon: dish.favorite ? Icons.star : Icons.star_border,
+                    onPressed: () => onToggleFavorite(dish)),
+              ]),
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
@@ -590,35 +565,35 @@ class _StallTile extends StatelessWidget {
 }
 
 class _Recommendations extends StatelessWidget {
-  const _Recommendations({required this.value});
+  const _Recommendations(
+      {required this.value,
+      required this.onReload,
+      required this.onAddCanteen});
 
   final AsyncValue<List<CanteenRecommendationModel>> value;
+  final VoidCallback onReload, onAddCanteen;
 
   @override
   Widget build(BuildContext context) => value.when(
-        loading: () => const LinearProgressIndicator(),
-        error: (error, stack) => const Card(
-          child: ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text('还没有可推荐的菜品'),
-            subtitle: Text('新增菜品后，系统会结合下一餐范围给出多个选项。'),
-          ),
-        ),
+        loading: () => const LoadingState(inline: true, label: '正在读取饮食建议'),
+        error: (error, stack) =>
+            ErrorState(error: error, onRetry: onReload, inline: true),
         data: (values) => values.isEmpty
-            ? const Card(child: ListTile(title: Text('暂无可用菜品')))
+            ? EmptyState(
+                title: '还没有可推荐的菜品',
+                message: '记录食堂菜品后，可以查看下一餐的现有建议。',
+                actionLabel: '新增食堂',
+                onAction: onAddCanteen)
             : Column(
                 children: [
                   for (final item in values)
-                    Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.restaurant_outlined),
-                        title: Text(item.dishName),
-                        subtitle: Text(
-                          '${item.calories.toStringAsFixed(0)} kcal · '
-                          '蛋白质 ${item.protein.toStringAsFixed(0)} g\n'
-                          '${item.reasons.join('；')}',
-                        ),
-                        isThreeLine: true,
+                    ListTile(
+                      leading: const Icon(Icons.restaurant_outlined),
+                      title: Text(item.dishName),
+                      subtitle: Text(
+                        '${item.calories.toStringAsFixed(0)} kcal · '
+                        '蛋白质 ${item.protein.toStringAsFixed(0)} g\n'
+                        '${item.reasons.join('；')}',
                       ),
                     ),
                 ],

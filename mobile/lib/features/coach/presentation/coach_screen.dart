@@ -337,11 +337,13 @@ class _OverviewCard extends ConsumerWidget {
           if (data.trend.average7d case final average?)
             MetricRow(
                 label: '7 日平均体重',
-                value: '${AppFormat.number(average, decimals: 1)} kg'),
+                value: AppFormat.number(average, decimals: 1),
+                unit: 'kg'),
           if (data.trend.change14d case final change?)
             MetricRow(
                 label: '14 日体重变化',
-                value: '${AppFormat.number(change, decimals: 1)} kg'),
+                value: AppFormat.number(change, decimals: 1),
+                unit: 'kg'),
           if (data.nextActions.isNotEmpty)
             Padding(
                 padding: const EdgeInsets.only(top: 12),
