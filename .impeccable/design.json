@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-04T10:09:15Z",
+  "generatedAt": "2026-10-04T16:35:46Z",
   "title": "Design System: Personal Health OS",
   "extensions": {
     "colorMeta": {
@@ -404,7 +404,7 @@
       },
       "caption": {
         "displayName": "Context",
-        "purpose": "Readable dates and ranges, never fake freshness."
+        "purpose": "Readable dates and ranges with tabular figures, never fake freshness."
       }
     },
     "shadows": [
@@ -484,7 +484,7 @@
   ],
   "narrative": {
     "northStar": "Quiet Premium Health Intelligence",
-    "overview": "Data-forward private health records with restrained warmth. This documents the implemented Flutter reference, not a completed app-wide rollout. Browser snippets and synthesized tonal ramps are panel illustrations, not new runtime tokens.",
+    "overview": "Data-forward private health records with restrained warmth. The implemented app-wide Flutter system extends the confirmed Health Overview reference through root pages, supporting flows and shared states without another visual direction. Automated coverage is not physical iPhone acceptance. Browser snippets and synthesized tonal ramps remain panel illustrations, not new runtime tokens.",
     "keyCharacteristics": [
       "Evidence first",
       "Clear personal data",

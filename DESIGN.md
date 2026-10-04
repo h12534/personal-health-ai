@@ -129,7 +129,7 @@ components:
 
 Quiet Premium Health Intelligence. The confirmed direction is Data-forward Health Intelligence, with restrained Warm Personal Wellness. Clear evidence, a readable number, and personal context take priority over decoration. The product should feel private and dependable, not clinical, commercial, competitive, or administrative.
 
-This document describes the implemented Flutter theme and Health Overview reference screen. Other pages currently inherit the theme but await page-by-page redesign. Source of truth: `mobile/lib/core/theme/app_tokens.dart`, `app_theme.dart`, and the health presentation widgets. Portable `px` values above correspond to Flutter logical pixels before text scaling, not physical screen pixels. The platform resolves its own system font; `system-ui` is a portable description, not a new runtime font override.
+This document describes the implemented Flutter app-wide system: five root destinations, the personal coach, supporting food and health flows, settings, and shared states. Health Overview remains the visual reference; Phase 2 extends that established world rather than introducing another direction. Source of truth: `mobile/lib/core/theme/app_tokens.dart`, `app_theme.dart`, shared presentation components, and their production consumers. Portable `px` values above correspond to Flutter logical pixels before text scaling, not physical screen pixels. The platform resolves its own system font; `system-ui` is a portable description, not a new runtime font override. Automated and screenshot coverage is recorded in `UI_REDESIGN_REPORT.md`; it is not physical iPhone acceptance.
 
 ## Colors
 
@@ -149,7 +149,7 @@ The Evidence Rule: report flags and reference context are authoritative; color m
 
 ## Typography
 
-Use the platform system font, including the iOS system Latin and Chinese fallbacks. The production app does not bundle the screenshot test font. Page titles orient; the hero metric owns the first reading; unit, date, and report range remain subordinate but readable. Hero and metric roles use tabular figures.
+Use the platform system font, including the iOS system Latin and Chinese fallbacks. The production app does not bundle the screenshot test font. Page titles orient; the hero metric owns the first reading; unit, date, and report range remain subordinate but readable. All data-bearing roles (hero-metric, metric, metric-label, card-title, body, secondary, caption) request tabular figures. Display adapters retain the source's meaning and precision requirements: chart and editor values are not rounded simply to match a summary label.
 
 Respect `MediaQuery.textScalerOf(context)`. Do not clamp Dynamic Type or hide content to fit. Long Chinese text wraps. Base typography above is not a fixed rendered size when accessibility scaling is enabled.
 
@@ -158,6 +158,10 @@ Respect `MediaQuery.textScalerOf(context)`. Do not clamp Dynamic Type or hide co
 Use the defined spacing scale. The reference page has open sections, one metric surface, then a dated trend, complete-report action, contextual AI entry, and a progressively disclosed safety notice. This is a reference composition, not a prohibition on all cards elsewhere.
 
 Allow headers to wrap, charts to grow with text, and details to scroll. Respect SafeArea and the framework's bottom navigation inset. Keep actions at least (44 logical pixels) in each tap-target dimension. Icon sizes use the shared small, regular, and navigation roles (18 / 22 / 24 logical pixels).
+
+Root, detail, and data-detail headers share one language. Ordinary meals, tasks, exercises, conversations, and settings use open sections or rows rather than equal-weight nested cards. Long search results and conversations use lazy scrolling. A bounded summary may keep a complete Column; unbounded collections need separate performance assessment.
+
+Use actual available layout height when the keyboard reduces a Scaffold body. On short chat layouts, compact decorative heading content and adapt visible input lines; keep full controller text, normal text scaling, reachable actions, and scrollable content. Food search keeps its filters in a scrollable sliver header instead of hiding them. Portrait widget tests cover small, ordinary, and large iPhone-like sizes; landscape, iPad, system keyboard, and physical-device performance are not verified by that evidence.
 
 ## Elevation & Depth
 
@@ -171,9 +175,13 @@ Small radius marks selected segments; medium radius shapes buttons and fields; l
 
 Buttons use the theme's minimum height; the frontmatter height is a minimum, not a text-clipping fixed height. Inputs are softly filled with an explicit focused outline. Bottom navigation is a stable five-destination solid surface, text plus one consistent outlined Material icon family, no pill indicator. This is native-feeling Flutter, not an SF Symbols claim.
 
-MetricFocus presents name, current value, unit, report flag, date context, and report range. Its merged accessibility node includes an actual tap action. HealthMetricRow carries textual state. LabTrendChart positions data by real date, filters incompatible units/non-finite values, uses a zero-origin positive-value scale with sparse grid rules, and exposes a readable point selector. It does not draw reference lines for unavailable ranges or infer medical trends.
+RootPageHeader, DetailPageHeader, and DataDetailHeader handle orientation and return paths. AppSection, MetricHero, MetricRow, ProgressMetric, InsightBlock, TaskRow, ListRow, TrendIndicator, and BottomActionArea reuse the same type and spacing roles. Units can remain visually subordinate without disappearing from values or goals. Chinese date labels retain the year when cross-year context matters; machine-readable exports keep their original formats.
 
-Loading is static skeleton plus explanatory text; no shimmering attention demand. Empty/error states offer the existing upload/retry path. Unconfirmed OCR drafts are separate from confirmed report evidence. Offline freshness is not fabricated when its metadata is unavailable.
+MetricFocus presents name, current value, unit, report flag, date context, and report range. Its merged accessibility node includes an actual tap action. HealthMetricRow carries textual state. AppTrendChart supplies common date positioning, sparse grid rules, finite-value handling, and readable selection by point index. The clinical adapter filters incompatible units, keeps raw point precision and each report's own range, and supports signed finite clinical values. Positive series use a zero-origin scale. It does not draw reference lines for unavailable ranges or infer medical trends; the LabTrendChart reference consumer retains its evidence context.
+
+LoadingState is static skeleton plus explanatory text; no shimmering attention demand. EmptyState and ErrorState provide an existing next action or retry. No data, no matching knowledge, known permission failures, disabled HealthKit, offline records, and unavailable AI are not interchangeable. UiFailure translates known exception codes and supported platform errors without exposing raw payloads. Unknown errors remain safe and general: an API wrapper that discards HTTP status cannot justify a fabricated server-error classification. Unconfirmed OCR drafts are separate from confirmed report evidence. Offline freshness is not fabricated when its metadata is unavailable.
+
+AsyncActionButton and awaited entry dialogs lock duplicate actions while retaining failed input. Dialogs close after successful persistence, not before it; blocking navigation during a pending save does not change the original payload or business operation. Production login keeps the same form state through loading and recoverable failure while the existing authentication and privacy-gate sequence remains authoritative. Dialogs explicitly use semantic surfaces, flat elevation, the shared radius, and readable hint text in both appearances.
 
 Programmatic tab changes use the shared short transition and resolve to zero duration for Reduce Motion. Bottom destination changes use selection haptic only when the selected destination actually changes. New hero-expansion or chart animation is not claimed. The sidecar browser snippets illustrate these components; they are not the Flutter implementation.
 
