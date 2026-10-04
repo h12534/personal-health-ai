@@ -6,21 +6,46 @@ import 'package:intl/intl.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/privacy/privacy_lock.dart';
 import '../../../core/widgets/app_components.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/supervision_models.dart';
 import 'supervision_controller.dart';
 
-class TodayTasksScreen extends ConsumerWidget {
+class TodayTasksScreen extends ConsumerStatefulWidget {
   const TodayTasksScreen({super.key});
+  @override
+  ConsumerState<TodayTasksScreen> createState() => _TodayTasksScreenState();
+}
+
+class _TodayTasksScreenState extends ConsumerState<TodayTasksScreen> {
+  bool _updating = false;
+  Object? _error;
+
+  Future<void> _update(String id, String status) async {
+    if (_updating) return;
+    setState(() {
+      _updating = true;
+      _error = null;
+    });
+    try {
+      await SupervisionController(ref).setTaskStatus(id, status);
+      await ref.read(dailyTasksProvider.future);
+    } on Object catch (error) {
+      if (mounted) setState(() => _error = error);
+    } finally {
+      if (mounted) setState(() => _updating = false);
+    }
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final tasks = ref.watch(dailyTasksProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('今日任务')),
+      appBar: DetailPageHeader(label: '今日任务'),
       body: tasks.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => _Retry(
+        loading: () => const LoadingState(label: '正在读取今日任务'),
+        error: (error, _) => _Retry(
+          error: error,
           label: '今日任务加载失败',
           onRetry: () => ref.invalidate(dailyTasksProvider),
         ),
@@ -29,43 +54,52 @@ class TodayTasksScreen extends ConsumerWidget {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (values.isEmpty)
+                EmptyState(
+                    title: '今天还没有任务',
+                    message: '任务依据已有记录生成。重新读取可检查最新任务，不会添加虚构完成状态。',
+                    actionLabel: '重新读取今日任务',
+                    onAction: () => ref.invalidate(dailyTasksProvider)),
               const Text('多数任务会在记录完成后自动勾选；也可以手动跳过。'),
               const SizedBox(height: 12),
+              if (_updating) const Text('正在更新并重新读取任务…'),
+              if (_error != null)
+                Text(UiFailure.message(_error!),
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error)),
               for (final task in values)
-                Card(
-                  child: Semantics(
-                    label: '${task.title}，${_taskStatus(task.status)}',
-                    child: ListTile(
-                      leading: Icon(
-                        task.isCompleted
-                            ? Icons.check_circle
-                            : task.status == 'skipped'
-                                ? Icons.remove_circle_outline
-                                : Icons.radio_button_unchecked,
-                        color: task.isCompleted
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
-                      ),
-                      title: Text(task.title),
-                      subtitle: Text(task.description),
-                      trailing: task.status == 'pending'
-                          ? PopupMenuButton<String>(
-                              tooltip: '更新任务状态',
-                              onSelected: (status) => SupervisionController(ref)
-                                  .setTaskStatus(task.id, status),
-                              itemBuilder: (_) => const [
-                                PopupMenuItem(
-                                  value: 'completed',
-                                  child: Text('标记完成'),
-                                ),
-                                PopupMenuItem(
-                                  value: 'skipped',
-                                  child: Text('今天跳过'),
-                                ),
-                              ],
-                            )
+                Semantics(
+                  label: '${task.title}，${_taskStatus(task.status)}',
+                  child: ListTile(
+                    leading: Icon(
+                      task.isCompleted
+                          ? Icons.check_circle
+                          : task.status == 'skipped'
+                              ? Icons.remove_circle_outline
+                              : Icons.radio_button_unchecked,
+                      color: task.isCompleted
+                          ? Theme.of(context).colorScheme.primary
                           : null,
                     ),
+                    title: Text(task.title),
+                    subtitle: Text(task.description),
+                    trailing: task.status == 'pending'
+                        ? PopupMenuButton<String>(
+                            tooltip: '更新任务状态',
+                            enabled: !_updating,
+                            onSelected: (status) => _update(task.id, status),
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(
+                                value: 'completed',
+                                child: Text('标记完成'),
+                              ),
+                              PopupMenuItem(
+                                value: 'skipped',
+                                child: Text('今天跳过'),
+                              ),
+                            ],
+                          )
+                        : null,
                   ),
                 ),
             ],
@@ -333,8 +367,8 @@ class ReportsScreen extends StatelessWidget {
   Widget build(BuildContext context) => DefaultTabController(
         length: 3,
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text('健康报告'),
+          appBar: DetailPageHeader(
+            label: '健康报告',
             bottom: const TabBar(
               tabs: [Tab(text: '日报'), Tab(text: '周报'), Tab(text: '月报')],
             ),
@@ -359,26 +393,38 @@ class _ReportTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final reports = ref.watch(healthReportsProvider(type));
     return reports.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => _Retry(
+      loading: () => const LoadingState(label: '正在读取健康报告'),
+      error: (error, _) => _Retry(
+        error: error,
         label: '报告加载失败',
         onRetry: () => ref.invalidate(healthReportsProvider(type)),
       ),
       data: (values) => ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          FilledButton.tonalIcon(
-            key: Key('generate-$type-report'),
-            onPressed: () => SupervisionController(ref).generateReport(type),
-            icon: const Icon(Icons.auto_awesome_outlined),
-            label: Text(values.isEmpty ? '生成本期报告' : '刷新本期数据'),
-          ),
+          if (values.isNotEmpty)
+            AsyncActionButton(
+              key: Key('generate-$type-report'),
+              onPressed: () async {
+                await SupervisionController(ref).generateReport(type);
+                await ref.read(healthReportsProvider(type).future);
+              },
+              icon: Icons.auto_awesome_outlined,
+              label: values.isEmpty ? '生成本期报告' : '刷新本期数据',
+            ),
           const SizedBox(height: 12),
           if (values.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Text('即使数据不完整，也可以生成简短报告。'),
-            ),
+            EmptyState(
+                title: '还没有本期报告',
+                message: '即使数据不完整，也可以生成简短报告。',
+                actionWidget: AsyncActionButton(
+                    key: Key('generate-$type-report'),
+                    label: '生成本期报告',
+                    icon: Icons.auto_awesome_outlined,
+                    onPressed: () async {
+                      await SupervisionController(ref).generateReport(type);
+                      await ref.read(healthReportsProvider(type).future);
+                    })),
           for (final report in values) _ReportCard(report: report),
         ],
       ),
@@ -392,22 +438,21 @@ class _ReportCard extends StatelessWidget {
   final HealthReportModel report;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.zero,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${DateFormat('M月d日').format(report.periodStart)}–${DateFormat('M月d日').format(report.periodEnd)}',
+                '${AppFormat.fullDate(report.periodStart)}–${AppFormat.fullDate(report.periodEnd)}',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               Text(report.summary),
               const Divider(height: 24),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              Column(
                 children: [
                   _MetricChip('平均步数', report.metrics['average_steps']),
                   _MetricChip('平均睡眠', report.metrics['average_sleep_hours']),
@@ -442,8 +487,8 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
   Widget build(BuildContext context) {
     final timeline = ref.watch(healthTimelineProvider(category));
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('健康时间线'),
+      appBar: DetailPageHeader(
+        label: '健康时间线',
         actions: [
           IconButton(
             tooltip: '同期趋势对照',
@@ -483,32 +528,50 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
           ),
           Expanded(
             child: timeline.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => _Retry(
+              loading: () => const LoadingState(label: '正在读取健康时间线'),
+              error: (error, _) => _Retry(
+                error: error,
                 label: '时间线加载失败',
                 onRetry: () => ref.invalidate(healthTimelineProvider(category)),
               ),
-              data: (events) => ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: events.length,
-                itemBuilder: (context, index) {
-                  final event = events[index];
-                  return Semantics(
-                    label:
-                        '${DateFormat('yyyy年M月d日').format(event.occurredAt.toLocal())}，${event.title}，${event.summary}',
-                    child: Card(
-                      child: ListTile(
-                        leading: Icon(_eventIcon(event.eventType)),
-                        title: Text(event.title),
-                        subtitle: Text(event.summary),
-                        trailing: Text(
-                          DateFormat('M/d').format(event.occurredAt.toLocal()),
-                        ),
-                      ),
+              data: (events) => events.isEmpty
+                  ? ListView(padding: AppSpacing.pageInsets, children: [
+                      EmptyState(
+                          title: '还没有这类记录',
+                          message: '日常记录会逐步汇集到这里。可查看全部记录，或重新读取。',
+                          actionLabel: category == 'all' ? '重新读取时间线' : '查看全部记录',
+                          onAction: () {
+                            if (category == 'all') {
+                              ref.invalidate(healthTimelineProvider(category));
+                            } else {
+                              setState(() => category = 'all');
+                            }
+                          })
+                    ])
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: events.length,
+                      itemBuilder: (context, index) {
+                        final event = events[index];
+                        return Semantics(
+                          label:
+                              '${DateFormat('yyyy年M月d日').format(event.occurredAt.toLocal())}，${event.title}，${event.summary}',
+                          child: ListTile(
+                            leading: Icon(_eventIcon(event.eventType)),
+                            title: Text(event.title),
+                            subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                      AppFormat.fullDate(
+                                          event.occurredAt.toLocal()),
+                                      style: AppTypography.caption),
+                                  Text(event.summary)
+                                ]),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ),
         ],
@@ -524,32 +587,25 @@ class CrossDomainScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(crossDomainProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('同期趋势对照')),
+      appBar: DetailPageHeader(label: '同期趋势对照'),
       body: data.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => _Retry(
+        loading: () => const LoadingState(label: '正在读取同期趋势'),
+        error: (error, _) => _Retry(
+          error: error,
           label: '趋势对照加载失败',
           onRetry: () => ref.invalidate(crossDomainProvider),
         ),
         data: (value) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Card(
-              color: Theme.of(context).colorScheme.tertiaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(value.disclaimer),
-              ),
-            ),
+            InsightBlock(title: '观察同期变化，不推断因果', message: value.disclaimer),
             for (final entry in value.series.entries)
               Semantics(
                 label: '${_metricLabel(entry.key)}共有${entry.value.length}个数据点',
-                child: Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.show_chart),
-                    title: Text(_metricLabel(entry.key)),
-                    subtitle: Text('${entry.value.length} 个数据点'),
-                  ),
+                child: ListTile(
+                  leading: const Icon(Icons.show_chart),
+                  title: Text(_metricLabel(entry.key)),
+                  subtitle: Text('${entry.value.length} 个数据点'),
                 ),
               ),
             const Padding(
@@ -570,10 +626,11 @@ class FollowupsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final followups = ref.watch(healthFollowupsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('健康复查')),
+      appBar: DetailPageHeader(label: '健康复查'),
       body: followups.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => _Retry(
+        loading: () => const LoadingState(label: '正在读取复查建议'),
+        error: (error, _) => _Retry(
+          error: error,
           label: '复查提醒加载失败',
           onRetry: () => ref.invalidate(healthFollowupsProvider),
         ),
@@ -582,24 +639,33 @@ class FollowupsScreen extends ConsumerWidget {
           children: [
             const Text('AI 或规则只能提出建议；你确认后才会创建复查任务。'),
             const SizedBox(height: 12),
+            if (values.isEmpty)
+              EmptyState(
+                  title: '还没有复查建议',
+                  message: '这里只展示已有建议，不会自动创建任务。',
+                  actionLabel: '重新读取建议',
+                  onAction: () => ref.invalidate(healthFollowupsProvider)),
             for (final item in values)
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.event_repeat_outlined),
-                  title: Text(item.labTestCode ?? '健康复查'),
-                  subtitle: Text(
-                    '${DateFormat('yyyy-MM-dd').format(item.recommendedDate)}\n${item.reason}',
-                  ),
-                  isThreeLine: true,
-                  trailing: item.status == 'suggested'
-                      ? TextButton(
-                          onPressed: () => SupervisionController(ref)
-                              .confirmFollowup(item.id),
-                          child: const Text('确认'),
-                        )
-                      : Text(_taskStatus(item.status)),
-                ),
-              ),
+              AppSection(
+                  title: item.labTestCode ?? '健康复查',
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(AppFormat.fullDate(item.recommendedDate),
+                            style: AppTypography.caption),
+                        Text(item.reason),
+                        if (item.status == 'suggested')
+                          AsyncActionButton(
+                              label: '确认',
+                              icon: Icons.check,
+                              onPressed: () async {
+                                await SupervisionController(ref)
+                                    .confirmFollowup(item.id);
+                                await ref.read(healthFollowupsProvider.future);
+                              })
+                        else
+                          Text(_taskStatus(item.status))
+                      ])),
           ],
         ),
       ),
@@ -908,25 +974,31 @@ class _MetricChip extends StatelessWidget {
   final Object? value;
 
   @override
-  Widget build(BuildContext context) => Chip(
-        label: Text('$label ${value ?? '--'}'),
-      );
+  Widget build(BuildContext context) => MetricRow(
+      label: label,
+      value: value is num && (value as num).isFinite
+          ? AppFormat.number(value as num,
+              decimals: label == '平均睡眠' ? 1 : 0, grouped: label == '平均步数')
+          : '—',
+      unit: switch (label) {
+        '平均步数' => '步',
+        '平均睡眠' => '小时',
+        '完成训练' => '次',
+        _ => ''
+      });
 }
 
 class _Retry extends StatelessWidget {
-  const _Retry({required this.label, required this.onRetry});
+  const _Retry(
+      {required this.label, required this.onRetry, required this.error});
 
   final String label;
   final VoidCallback onRetry;
+  final Object error;
 
   @override
-  Widget build(BuildContext context) => Center(
-        child: FilledButton.tonalIcon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh),
-          label: Text(label),
-        ),
-      );
+  Widget build(BuildContext context) =>
+      ErrorState(error: error, title: label, onRetry: onRetry);
 }
 
 String _taskStatus(String status) => switch (status) {

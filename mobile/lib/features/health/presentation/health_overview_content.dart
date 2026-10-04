@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_components.dart';
 import '../data/health_models.dart';
 import 'health_trend_chart.dart';
 
@@ -69,7 +69,7 @@ class HealthOverviewContent extends StatelessWidget {
       children: [
         Wrap(spacing: AppSpacing.md, runSpacing: AppSpacing.sm, children: [
           Semantics(header: true, child: Text('上次体检', style: text.titleMedium)),
-          Text(DateFormat('yyyy-MM-dd').format(report.reportDate),
+          Text(AppFormat.fullDate(report.reportDate),
               style: text.bodySmall?.copyWith(color: colors.secondaryText)),
         ]),
         const SizedBox(height: AppSpacing.sm),
@@ -102,13 +102,16 @@ class HealthOverviewContent extends StatelessWidget {
             ...history.points.map((point) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                   child: Text(
-                      '${DateFormat('yyyy-MM-dd').format(point.date)}   ${point.value} ${point.unit}',
+                      '${AppFormat.fullDate(point.date)}   ${point.value} ${point.unit}',
                       style: text.bodyMedium),
                 ))
           else
             LabTrendChart(trend: history, detailKey: false)
         else if (trendLoading)
           const HealthSkeleton(label: '正在读取历史记录', compact: true)
+        else if (onRetryTrend != null)
+          Text('历史记录暂时无法读取，请重试。',
+              style: text.bodyMedium?.copyWith(color: colors.secondaryText))
         else
           Text('暂无可比较的历史记录。单次结果不能说明趋势。',
               style: text.bodyMedium?.copyWith(color: colors.secondaryText)),
@@ -173,7 +176,7 @@ class MetricFocus extends StatelessWidget {
       button: true,
       onTap: onTap,
       label:
-          '${result.testName}，${result.displayValue} ${result.unit ?? ''}，${labFlagLabel(result.flag)}，参考 ${result.referenceDisplay}，${DateFormat('yyyy-MM-dd').format(date)}。查看详情',
+          '${result.testName}，${result.displayValue} ${result.unit ?? ''}，${labFlagLabel(result.flag)}，参考 ${result.referenceDisplay}，${AppFormat.fullDate(date)}。查看详情',
       excludeSemantics: true,
       child: Material(
         color: filled ? colors.softTint : Colors.transparent,
@@ -253,8 +256,16 @@ class HealthMetricRow extends StatelessWidget {
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(result.testName, style: text.titleMedium),
             const SizedBox(height: AppSpacing.sm),
-            Text('${result.displayValue} ${result.unit ?? ''}',
-                style: text.titleLarge),
+            Wrap(
+                spacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.end,
+                children: [
+                  Text(result.displayValue, style: AppTypography.metric),
+                  if (result.unit?.isNotEmpty == true)
+                    Text(result.unit!,
+                        style: AppTypography.secondary
+                            .copyWith(color: colors.secondaryText))
+                ]),
             Text('${labFlagLabel(result.flag)} · 参考：${result.referenceDisplay}',
                 style: text.bodySmall
                     ?.copyWith(color: labFlagColor(colors, result.flag))),
@@ -287,24 +298,6 @@ class HealthSkeleton extends StatelessWidget {
   final bool compact;
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Semantics(
-      liveRegion: true,
-      label: label,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: AppSpacing.md),
-        for (final width in [1.0, .65, .85].take(compact ? 1 : 3)) ...[
-          FractionallySizedBox(
-              widthFactor: width,
-              child: Container(
-                  height: AppSpacing.lg,
-                  decoration: BoxDecoration(
-                      color: colors.elevatedSurface,
-                      borderRadius: BorderRadius.circular(AppRadius.small)))),
-          const SizedBox(height: AppSpacing.md),
-        ],
-      ]),
-    );
+    return LoadingState(inline: true, label: label);
   }
 }

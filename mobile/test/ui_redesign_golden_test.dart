@@ -25,6 +25,7 @@ import 'package:personal_health_os/features/profile/presentation/profile_screen.
 import 'package:personal_health_os/core/widgets/app_components.dart';
 import 'package:personal_health_os/features/nutrition/presentation/meal_analysis_screen.dart';
 import 'ui_rollout_fixtures.dart';
+import 'ui_shared_fixtures.dart';
 import 'ui_rollout_training_test.dart' show rolloutTraining;
 import 'ui_rollout_coach_test.dart' show rolloutCoachOverview, RolloutCoachChat;
 import 'ui_rollout_profile_test.dart'
@@ -122,6 +123,18 @@ void main() {
     ('nutrition-flow', true),
     ('meal-draft', false),
     ('meal-draft', true),
+    ('health-chat', false),
+    ('health-chat', true),
+    ('health-knowledge', false),
+    ('health-knowledge', true),
+    ('lab-draft', false),
+    ('lab-draft', true),
+    ('health-data-detail', false),
+    ('health-data-detail', true),
+    ('reports-empty', false),
+    ('reports-empty', true),
+    ('timeline-empty', false),
+    ('timeline-empty', true),
   ]) {
     final (name, dark) = entry;
     testWidgets('$name ${dark ? 'dark' : 'light'} themed golden',
@@ -144,6 +157,16 @@ void main() {
         'health-sync' => const HealthSyncScreen(),
         'notifications' => const NotificationSettingsScreen(),
         'privacy-data' => const PrivacyDataScreen(),
+        'health-chat' ||
+        'health-knowledge' ||
+        'health-data-detail' =>
+          const HealthScreen(),
+        'reports-empty' => const ReportsScreen(),
+        'timeline-empty' => const HealthTimelineScreen(),
+        'lab-draft' => LabReviewSheet(
+            report: sharedDraftReport,
+            onUpdate: (_, __) async => sharedDraftReport,
+            onConfirm: () async => sharedDraftReport),
         'nutrition-flow' => NutritionContent(
             data: rolloutNutrition,
             onRefresh: () async {},
@@ -169,6 +192,14 @@ void main() {
       final theme = dark ? AppTheme.dark : AppTheme.light;
       await tester.pumpWidget(ProviderScope(
         overrides: [
+          healthReportsProvider.overrideWith((ref) async => [sampleReport]),
+          labTrendProvider.overrideWith((ref, name) async => sampleTrend),
+          healthChatProvider.overrideWith(SharedHealthChat.new),
+          knowledgeSearchProvider.overrideWith(SharedKnowledge.new),
+          supervision.healthReportsProvider
+              .overrideWith((ref, type) async => []),
+          supervision.healthTimelineProvider
+              .overrideWith((ref, category) async => []),
           healthKitCapabilityProvider.overrideWith((ref) async => true),
           healthPermissionsProvider
               .overrideWith((ref) async => rolloutPermissions),
@@ -188,34 +219,42 @@ void main() {
           visionPrivacyProvider
               .overrideWith((ref) async => const VisionPrivacySettings())
         ],
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: theme.copyWith(
-              platform: TargetPlatform.iOS,
-              textTheme:
-                  theme.textTheme.apply(fontFamily: 'GoldenTestChinese')),
-          home: RepaintBoundary(
-              key: _frameKey,
-              child: Scaffold(
-                  appBar: name == 'meal-draft'
-                      ? DetailPageHeader(label: '核对餐食')
-                      : null,
-                  body: SafeArea(child: screen),
-                  bottomNavigationBar: name == 'meal-draft'
-                      ? BottomActionArea(
-                          child: FilledButton.icon(
-                              onPressed: () {},
-                              icon: const Icon(Icons.check_circle_outline),
-                              label: const Text('确认并计入今日营养')))
-                      : AppNavigationBar(
-                          index: switch (name) {
-                            'dashboard' => 0,
-                            'nutrition' => 1,
-                            'nutrition-flow' => 1,
-                            'training' || 'training-progress' => 2,
-                            _ => 4
-                          },
-                          onSelect: _ignoreSelection))),
+        child: RepaintBoundary(
+          key: name == 'health-data-detail' ? _frameKey : null,
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: theme.copyWith(
+                platform: TargetPlatform.iOS,
+                textTheme:
+                    theme.textTheme.apply(fontFamily: 'GoldenTestChinese')),
+            home: RepaintBoundary(
+                key: name == 'health-data-detail' ? null : _frameKey,
+                child: Scaffold(
+                    appBar: name == 'meal-draft'
+                        ? DetailPageHeader(label: '核对餐食')
+                        : null,
+                    body: SafeArea(child: screen),
+                    bottomNavigationBar: name == 'meal-draft'
+                        ? BottomActionArea(
+                            child: FilledButton.icon(
+                                onPressed: () {},
+                                icon: const Icon(Icons.check_circle_outline),
+                                label: const Text('确认并计入今日营养')))
+                        : AppNavigationBar(
+                            index: switch (name) {
+                              'dashboard' => 0,
+                              'nutrition' => 1,
+                              'nutrition-flow' => 1,
+                              'training' || 'training-progress' => 2,
+                              'health-chat' ||
+                              'health-knowledge' ||
+                              'health-data-detail' ||
+                              'lab-draft' =>
+                                3,
+                              _ => 4
+                            },
+                            onSelect: _ignoreSelection))),
+          ),
         ),
       ));
       await tester.pumpAndSettle();
@@ -226,6 +265,19 @@ void main() {
       if (name == 'coach-conversation') {
         await tester.drag(find.byType(ListView).first, const Offset(0, -650));
         await tester.pumpAndSettle();
+      }
+      if (name == 'health-chat' || name == 'health-knowledge') {
+        await tester.tap(find.text(name == 'health-chat' ? '健康 AI' : '健康知识'));
+        await tester.pumpAndSettle();
+        if (name == 'health-knowledge') {
+          await tester.tap(find.text(sharedEvidence.title));
+          await tester.pumpAndSettle();
+        }
+      }
+      if (name == 'health-data-detail') {
+        await tester.tap(find.byKey(const Key('lab-result-HBA1C')));
+        await tester.pumpAndSettle();
+        expect(find.byType(DataDetailHeader), findsOneWidget);
       }
       expect(tester.takeException(), isNull);
       await expectLater(find.byKey(_frameKey),

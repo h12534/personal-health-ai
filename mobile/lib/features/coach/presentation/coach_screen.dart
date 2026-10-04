@@ -23,6 +23,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   bool _acting = false;
   List<CoachBubble> _retained = const [];
   List<CoachBubble> _historyPrefix = const [];
+  final Set<CoachBubble> _hiddenFailedAttempts = {};
 
   @override
   void dispose() {
@@ -43,7 +44,9 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                       incoming[i].fromUser == _historyPrefix[i].fromUser)
               .every((same) => same);
       if (includesPrefix) _historyPrefix = const [];
-      _retained = [..._historyPrefix, ...incoming];
+      _retained = [..._historyPrefix, ...incoming]
+          .where((message) => !_hiddenFailedAttempts.contains(message))
+          .toList();
     }
     return Column(
       children: [
@@ -143,6 +146,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       if (_historyPrefix.isNotEmpty &&
           _historyPrefix.last.fromUser &&
           _historyPrefix.last.text == message) {
+        _hiddenFailedAttempts.add(_historyPrefix.last);
         _historyPrefix = _historyPrefix.sublist(0, _historyPrefix.length - 1);
       }
     }
@@ -392,9 +396,11 @@ class _QuickPrompts extends StatelessWidget {
         TextButton.icon(
           icon: const Icon(Icons.storefront_outlined, size: 18),
           label: const Text('打开食堂'),
-          onPressed: busy ? null : () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const CanteenScreen()),
-          ),
+          onPressed: busy
+              ? null
+              : () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const CanteenScreen()),
+                  ),
         ),
       ]);
 }

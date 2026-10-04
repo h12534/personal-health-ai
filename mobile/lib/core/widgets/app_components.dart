@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../network/api_exception.dart';
 import '../theme/app_tokens.dart';
@@ -34,8 +35,39 @@ class RootPageHeader extends StatelessWidget {
 }
 
 class DetailPageHeader extends AppBar {
-  DetailPageHeader({super.key, required String label, super.actions})
+  DetailPageHeader(
+      {super.key, required String label, super.actions, super.bottom})
       : super(title: Text(label), centerTitle: false);
+}
+
+class DataDetailHeader extends StatelessWidget {
+  const DataDetailHeader(
+      {super.key,
+      required this.title,
+      required this.value,
+      this.unit = '',
+      required this.status,
+      this.statusColor,
+      this.reference});
+  final String title, value, unit, status;
+  final Color? statusColor;
+  final String? reference;
+  @override
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Semantics(
+            header: true,
+            child: Text(title, style: AppTypography.sectionTitle)),
+        const SizedBox(height: 16),
+        MetricHero(label: '当前记录', value: value, unit: unit),
+        const SizedBox(height: 12),
+        Text(status,
+            style: AppTypography.secondary.copyWith(color: statusColor)),
+        if (reference != null)
+          Text(reference!,
+              style: AppTypography.caption
+                  .copyWith(color: AppColors.of(context).secondaryText)),
+      ]);
 }
 
 class AppSection extends StatelessWidget {
@@ -98,12 +130,26 @@ class MetricHero extends StatelessWidget {
 
 class MetricRow extends StatelessWidget {
   const MetricRow(
-      {super.key, required this.label, required this.value, this.detail});
-  final String label, value;
+      {super.key,
+      required this.label,
+      required this.value,
+      this.detail,
+      this.unit = ''});
+  final String label, value, unit;
   final String? detail;
   @override
   Widget build(BuildContext context) {
     final stacked = MediaQuery.textScalerOf(context).scale(17) > 25;
+    final valueWidget = unit.isEmpty
+        ? Text(value, style: AppTypography.metric)
+        : Text.rich(
+            TextSpan(text: value, children: [
+              TextSpan(
+                  text: ' $unit',
+                  style: AppTypography.secondary
+                      .copyWith(color: AppColors.of(context).secondaryText))
+            ]),
+            style: AppTypography.metric);
     final labelWidget =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: AppTypography.metricLabel),
@@ -115,15 +161,13 @@ class MetricRow extends StatelessWidget {
     return Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: stacked
-            ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                labelWidget,
-                const SizedBox(height: 4),
-                Text(value, style: AppTypography.metric)
-              ])
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [labelWidget, const SizedBox(height: 4), valueWidget])
             : Row(children: [
                 Expanded(child: labelWidget),
                 const SizedBox(width: 12),
-                Text(value, style: AppTypography.metric)
+                valueWidget
               ]));
   }
 }
@@ -358,10 +402,12 @@ class EmptyState extends StatelessWidget {
       required this.message,
       this.actionLabel,
       this.onAction,
+      this.actionWidget,
       this.icon = Icons.inbox_outlined});
   final String title, message;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final Widget? actionWidget;
   final IconData icon;
   @override
   Widget build(BuildContext context) => Padding(
@@ -378,53 +424,131 @@ class EmptyState extends StatelessWidget {
           const SizedBox(height: 12),
           TextButton(onPressed: onAction, child: Text(actionLabel!))
         ],
+        if (actionWidget != null) ...[
+          const SizedBox(height: 12),
+          actionWidget!
+        ],
       ]));
 }
 
 class ErrorState extends StatelessWidget {
   const ErrorState(
-      {super.key, required this.error, required this.onRetry, this.title});
+      {super.key,
+      required this.error,
+      required this.onRetry,
+      this.title,
+      this.actionLabel = '重试',
+      this.inline = false});
   final Object error;
   final VoidCallback onRetry;
   final String? title;
+  final String actionLabel;
+  final bool inline;
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-      padding: AppSpacing.pageInsets,
-      child: EmptyState(
-          title: title ?? UiFailure.title(error),
-          message: UiFailure.message(error),
-          actionLabel: '重试',
-          onAction: onRetry,
-          icon: Icons.info_outline));
+  Widget build(BuildContext context) {
+    final content = EmptyState(
+        title: title ?? UiFailure.title(error),
+        message: UiFailure.message(error),
+        actionLabel: actionLabel,
+        onAction: onRetry,
+        icon: Icons.info_outline);
+    return inline
+        ? content
+        : SingleChildScrollView(padding: AppSpacing.pageInsets, child: content);
+  }
 }
 
 /// Static skeleton deliberately avoids a forever-running shimmer / ticker.
 class LoadingState extends StatelessWidget {
-  const LoadingState({super.key, this.label = '正在读取记录'});
+  const LoadingState({super.key, this.label = '正在读取记录', this.inline = false});
   final String label;
+  final bool inline;
   @override
-  Widget build(BuildContext context) => Semantics(
-      label: label,
-      liveRegion: true,
-      child: ExcludeSemantics(
-          child: ListView(padding: AppSpacing.pageInsets, children: [
-        for (final height in [38.0, 18.0, 132.0, 18.0, 72.0, 72.0])
-          Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Container(
-                  height: height,
-                  decoration: BoxDecoration(
-                      color: AppColors.of(context).elevatedSurface,
-                      borderRadius: BorderRadius.circular(10)))),
-      ])));
+  Widget build(BuildContext context) {
+    final content = [
+      Text(label, style: AppTypography.caption),
+      const SizedBox(height: 12),
+      for (final height in (inline
+          ? [18.0, 38.0, 18.0]
+          : [38.0, 18.0, 132.0, 18.0, 72.0, 72.0]))
+        Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Container(
+                height: height,
+                decoration: BoxDecoration(
+                    color: AppColors.of(context).elevatedSurface,
+                    borderRadius: BorderRadius.circular(10))))
+    ];
+    return Semantics(
+        label: label,
+        liveRegion: true,
+        child: ExcludeSemantics(
+            child: inline
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: content)
+                : ListView(padding: AppSpacing.pageInsets, children: content)));
+  }
+}
+
+/// Await existing actions without owning API payloads or domain rules.
+class AsyncActionButton extends StatefulWidget {
+  const AsyncActionButton(
+      {super.key,
+      required this.label,
+      required this.onPressed,
+      this.icon = Icons.arrow_forward});
+  final String label;
+  final IconData icon;
+  final Future<void> Function() onPressed;
+  @override
+  State<AsyncActionButton> createState() => _AsyncActionButtonState();
+}
+
+class _AsyncActionButtonState extends State<AsyncActionButton> {
+  bool _busy = false;
+  Object? _error;
+  @override
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        FilledButton.tonalIcon(
+            onPressed: _busy ? null : _run,
+            icon: Icon(widget.icon),
+            label: Text(_busy ? '正在处理…' : widget.label)),
+        if (_error != null)
+          Semantics(
+              liveRegion: true,
+              child: Text('${UiFailure.title(_error!)}。请检查结果后重试。',
+                  style: AppTypography.secondary
+                      .copyWith(color: AppColors.of(context).danger))),
+      ]);
+  Future<void> _run() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.onPressed();
+    } on Object catch (error) {
+      if (mounted) setState(() => _error = error);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 }
 
 abstract final class UiFailure {
-  static String? _code(Object error) =>
-      error is ApiException ? error.code : null;
+  static String? _code(Object error) => error is ApiException
+      ? error.code
+      : error is PlatformException
+          ? error.code
+          : null;
   static bool _connection(Object error) =>
       error is ApiException && error.message == '无法连接服务器，请检查网络和 API 地址。';
   static String title(Object error) => switch (_code(error)) {
+        'camera_access_denied' || 'camera_access_restricted' => '相机权限不可用',
+        'photo_access_denied' || 'photo_access_restricted' => '相册权限不可用',
         'ai_not_configured' => 'AI 暂不可用',
         'not_authenticated' ||
         'invalid_access_token' ||
@@ -435,6 +559,11 @@ abstract final class UiFailure {
         _ => _connection(error) ? '连接暂不可用' : '暂时无法完成',
       };
   static String message(Object error) => switch (_code(error)) {
+        'camera_access_denied' => '请在 iPhone 设置中允许此 App 使用相机，或改从相册选择。',
+        'photo_access_denied' => '请在 iPhone 设置中允许此 App 访问照片，或改用相机。',
+        'camera_access_restricted' ||
+        'photo_access_restricted' =>
+          '系统限制了此访问。请检查设备限制，或选择其他记录方式。',
         'ai_not_configured' => '教练服务尚未配置。你的记录不会受影响，可以稍后重试。',
         'not_authenticated' ||
         'invalid_access_token' ||
@@ -457,6 +586,7 @@ abstract final class AppFormat {
   }
 
   static String date(DateTime value) => '${value.month}月${value.day}日';
+  static String fullDate(DateTime value) => '${value.year}年${date(value)}';
   static String time(DateTime value) =>
       '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
 }

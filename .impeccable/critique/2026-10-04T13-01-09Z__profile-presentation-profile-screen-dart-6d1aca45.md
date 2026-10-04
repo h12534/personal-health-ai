@@ -10,6 +10,7 @@ target_fingerprint: "sha256:cf64baacd9b66bb003fde790d12a2afff4b69954af0900ccf7b1
 target_path: "E:\\codex项目\\个人身体健康管理\\mobile\\lib\\features\\profile\\presentation\\profile_screen.dart"
 timestamp: 2026-10-04T13-01-09Z
 slug: profile-presentation-profile-screen-dart-6d1aca45
+closed: true
 ---
 # Profile / Settings baseline critique
 

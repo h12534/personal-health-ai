@@ -138,6 +138,14 @@ void main() {
     await tester.tap(find.byTooltip('发送'));
     await tester.pumpAndSettle();
     expect(chat.calls, 2);
+    expect(
+        tester
+            .widget<ListView>(find.byType(ListView).first)
+            .childrenDelegate
+            .estimatedChildCount,
+        4,
+        reason:
+            'Context, prior reply, one retried question and its reply; no duplicated failed attempt.');
     expect(find.text('之前的教练回复'), findsOneWidget);
     await tester.drag(find.byType(ListView).first, const Offset(0, -800));
     await tester.pumpAndSettle();

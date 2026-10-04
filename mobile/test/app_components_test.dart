@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:personal_health_os/core/network/api_exception.dart';
 import 'package:personal_health_os/core/theme/app_theme.dart';
@@ -17,6 +18,18 @@ void main() {
     expect(UiFailure.title(const ApiException('无法连接服务器，请检查网络和 API 地址。')),
         '连接暂不可用');
     expect(UiFailure.message(StateError('secret')), isNot(contains('secret')));
+    expect(
+        UiFailure.title(
+            PlatformException(code: 'camera_access_denied', message: 'secret')),
+        '相机权限不可用');
+    expect(
+        UiFailure.message(PlatformException(
+            code: 'photo_access_restricted', message: 'secret')),
+        contains('系统限制'));
+    expect(
+        UiFailure.message(
+            PlatformException(code: 'unknown', message: 'secret')),
+        isNot(contains('secret')));
   });
   test('dates and tabular display values use explicit decimal policy', () {
     expect(AppFormat.number(98.6, decimals: 1), '98.6');

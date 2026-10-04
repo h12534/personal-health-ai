@@ -94,7 +94,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('医疗边界：此回答不构成诊断或处方建议。'), findsOneWidget);
     expect(find.text('依据来源'), findsOneWidget);
-    expect(find.text('• NIDDK｜The A1C Test & Diabetes'), findsOneWidget);
+    expect(find.text('NIDDK｜The A1C Test & Diabetes'), findsNothing);
+    await tester.ensureVisible(find.text('依据来源'));
+    await tester.tap(find.text('依据来源'));
+    await tester.pumpAndSettle();
+    expect(find.text('NIDDK｜The A1C Test & Diabetes'), findsOneWidget);
+    expect(find.text('2026 年'), findsOneWidget);
+    expect(
+        find.text('A1C reflects average glucose over time.'), findsOneWidget);
   });
 
   testWidgets('knowledge search results hide internal score and chunk ids',
