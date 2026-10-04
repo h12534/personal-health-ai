@@ -13,7 +13,8 @@ The user requires sequential page gates: analyze → whole test suite → real F
 | AI Coach | Complete: analyze clean, 120 whole-suite tests pass; four actual L/D captures reviewed; A/B original priorities closed |
 | Profile / Settings | Complete: analyzer clean, 136 whole-suite tests pass; eight actual L/D captures manually reviewed; A/B original priorities closed |
 | Shared States | Complete: analyzer clean, 160 whole-suite tests pass; twelve new L/D actual captures plus six intentional existing changes reviewed; A34/40 and independent B original P1 closed |
-| Dark / Accessibility / Polish | Per-page checks plus final consolidated gate |
+| Dark Mode | Complete: analyzer clean, 166 whole-suite tests pass; A/B finish confirms semantic surfaces, actual dialog L/D and contrast |
+| Accessibility / Polish | Per-page checks complete; consolidated gates next |
 
 ## Navigation review
 
@@ -58,5 +59,7 @@ Baseline22/40; A finish34/40, A/B original P1 closed. Existing actual overview o
 Historical24/40 → independent A finish34/40, B original priorities closed. Real routes grouped; inert placeholders removed, no fake profile/goals function. App lock and data, four independent Health choices/unknown permission, natural reminder modes with server-only limits, image privacy and folded diagnostic entry. UI operations await and preserve confirmation/recovery; existing controllers/consent/payload/auth sequence untouched. A caught actual saved-toggle→sync failure before refresh; UI-only re-read and precise regression close it. Ten new tests, eight actual L/D reviewed images; complete136 pass/analyzer clean. Only intentional reminder label expectations changed in existing tests. Native actual permission/VoiceOver/keyboard remain device checks.
 
 ## Shared States
+
+Dark gate: no palette replacement. Explicit shared dialog surface/flat elevation/radius and input hint color. Four new tests check all ordinary text/status colors at4.5 across four surfaces in both themes, accent icons at3, button pairs and actual failed-dialog recovery. Two actual production WeightEntryDialog L/D captures include overlay and real helper text, manually viewed by main/A/B. First fixture used generic quantity component; corrected to the actual production dialog rather than mislabeling evidence. Complete166 pass, analyzer clean; existing40 captures unchanged. Not device evidence.
 
 Historical24/40 → A34/40 and B original priorities closed. Root/detail/data-detail patterns, shared static skeleton/safe recovery/awaited button, one dated chart with clinical adapter. Health chat and knowledge have distinct honest states, input-preserving guarded retries, explicit roles/risk/medical boundary and folded actual evidence. Lab edits await inside the dialog; only nonempty invalid/nonfinite values rejected, signed finite and raw precision retained. Report/followup/task UI guards preserve existing operations. Timeline date includes year. Strict four-item retry regression caught and fixed specific failed-object duplication in both coaches. 160 whole-suite pass, analyzer clean; only explicit changed goldens refreshed after image review. New modal golden boundary corrected and actual overlay verified. Clinical summaries retain original model three-decimal policy, chart/editor raw precision separately preserved. No business files changed; native limitations remain.

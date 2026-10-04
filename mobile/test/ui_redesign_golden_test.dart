@@ -135,6 +135,8 @@ void main() {
     ('reports-empty', true),
     ('timeline-empty', false),
     ('timeline-empty', true),
+    ('weight-editor', false),
+    ('weight-editor', true),
   ]) {
     final (name, dark) = entry;
     testWidgets('$name ${dark ? 'dark' : 'light'} themed golden',
@@ -163,6 +165,12 @@ void main() {
           const HealthScreen(),
         'reports-empty' => const ReportsScreen(),
         'timeline-empty' => const HealthTimelineScreen(),
+        'weight-editor' => Builder(
+            builder: (context) => DashboardContent(
+                data: _dashboard,
+                onAddWeight: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => WeightEntryDialog(onSave: (_) async {})))),
         'lab-draft' => LabReviewSheet(
             report: sharedDraftReport,
             onUpdate: (_, __) async => sharedDraftReport,
@@ -220,7 +228,9 @@ void main() {
               .overrideWith((ref) async => const VisionPrivacySettings())
         ],
         child: RepaintBoundary(
-          key: name == 'health-data-detail' ? _frameKey : null,
+          key: name == 'health-data-detail' || name == 'weight-editor'
+              ? _frameKey
+              : null,
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
             theme: theme.copyWith(
@@ -228,7 +238,9 @@ void main() {
                 textTheme:
                     theme.textTheme.apply(fontFamily: 'GoldenTestChinese')),
             home: RepaintBoundary(
-                key: name == 'health-data-detail' ? null : _frameKey,
+                key: name == 'health-data-detail' || name == 'weight-editor'
+                    ? null
+                    : _frameKey,
                 child: Scaffold(
                     appBar: name == 'meal-draft'
                         ? DetailPageHeader(label: '核对餐食')
@@ -242,7 +254,7 @@ void main() {
                                 label: const Text('确认并计入今日营养')))
                         : AppNavigationBar(
                             index: switch (name) {
-                              'dashboard' => 0,
+                              'dashboard' || 'weight-editor' => 0,
                               'nutrition' => 1,
                               'nutrition-flow' => 1,
                               'training' || 'training-progress' => 2,
@@ -278,6 +290,13 @@ void main() {
         await tester.tap(find.byKey(const Key('lab-result-HBA1C')));
         await tester.pumpAndSettle();
         expect(find.byType(DataDetailHeader), findsOneWidget);
+      }
+      if (name == 'weight-editor') {
+        await tester.tap(find.text('晨重'));
+        await tester.pumpAndSettle();
+        expect(find.byType(WeightEntryDialog), findsOneWidget);
+        await tester.enterText(find.byType(TextFormField), '98.6');
+        await tester.pumpAndSettle();
       }
       expect(tester.takeException(), isNull);
       await expectLater(find.byKey(_frameKey),

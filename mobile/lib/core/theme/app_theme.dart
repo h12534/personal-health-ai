@@ -48,6 +48,12 @@ class AppTheme {
         shape: rounded,
         margin: EdgeInsets.zero,
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: colors.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: AppElevation.flat,
+        shape: rounded,
+      ),
       appBarTheme: AppBarTheme(
           backgroundColor: colors.background,
           foregroundColor: colors.primaryText,
@@ -78,6 +84,8 @@ class AppTheme {
           side: BorderSide.none,
           selectedColor: colors.softTint),
       inputDecorationTheme: InputDecorationTheme(
+        hintStyle:
+            AppTypography.secondary.copyWith(color: colors.secondaryText),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.medium),
             borderSide: BorderSide.none),
