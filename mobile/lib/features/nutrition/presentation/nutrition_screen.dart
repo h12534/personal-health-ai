@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../core/widgets/app_components.dart';
+import '../../../core/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -47,14 +50,11 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     ref.watch(connectivitySyncProvider);
     final nutrition = ref.watch(nutritionControllerProvider);
     return nutrition.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: FilledButton.tonal(
-          onPressed: () =>
-              ref.read(nutritionControllerProvider.notifier).refresh(),
-          child: const Text('重新加载饮食记录'),
-        ),
-      ),
+      loading: () => const LoadingState(label: '正在读取饮食记录'),
+      error: (error, stack) => ErrorState(
+          error: error,
+          onRetry: () =>
+              ref.read(nutritionControllerProvider.notifier).refresh()),
       data: (data) => NutritionContent(
         data: data,
         onRefresh: () =>
@@ -110,9 +110,15 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              error.toString().contains('permission')
+              error is PlatformException &&
+                      const {
+                        'camera_access_denied',
+                        'photo_access_denied',
+                        'camera_access_restricted',
+                        'photo_access_restricted'
+                      }.contains(error.code)
                   ? '无法访问相机或相册，请在系统设置中授予权限。'
-                  : error.toString(),
+                  : UiFailure.message(error),
             ),
           ),
         );
@@ -187,360 +193,243 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
             .deleteItem(meal, item);
         return;
       }
-      final controller = TextEditingController(
-        text: item.amount.toStringAsFixed(1),
-      );
-      final amount = await showDialog<double>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('修改 ${item.foodName}'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(labelText: '份量', suffixText: item.unit),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final value = double.tryParse(controller.text.trim());
-                if (value != null && value > 0) Navigator.pop(context, value);
-              },
-              child: const Text('保存'),
-            ),
-          ],
-        ),
-      );
-      controller.dispose();
-      if (amount != null) {
-        await ref
-            .read(nutritionControllerProvider.notifier)
-            .updateItem(meal, item, amount);
-      }
+      await showDialog<bool>(
+          context: context,
+          builder: (_) => NumberEntryDialog(
+              title: '修改 ${item.foodName}',
+              initialValue: item.amount.toStringAsFixed(1),
+              unit: item.unit,
+              onSave: (amount) => ref
+                  .read(nutritionControllerProvider.notifier)
+                  .updateItem(meal, item, amount)));
     } on Object catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.toString())));
+            .showSnackBar(SnackBar(content: Text(UiFailure.message(error))));
       }
     }
   }
 }
 
 class NutritionContent extends StatelessWidget {
-  const NutritionContent({
-    super.key,
-    required this.data,
-    required this.onRefresh,
-    required this.onAddFood,
-    required this.onEditItem,
-    this.onAnalyzePhoto,
-    this.onResumeVision,
-    this.onOpenCanteen,
-  });
-
+  const NutritionContent(
+      {super.key,
+      required this.data,
+      required this.onRefresh,
+      required this.onAddFood,
+      required this.onEditItem,
+      this.onAnalyzePhoto,
+      this.onResumeVision,
+      this.onOpenCanteen});
   final NutritionViewState data;
   final Future<void> Function() onRefresh;
-  final void Function(String mealType) onAddFood;
-  final void Function(MealModel meal, MealItemModel item) onEditItem;
-  final VoidCallback? onAnalyzePhoto;
-  final void Function(VisionTaskRecord task)? onResumeVision;
-  final VoidCallback? onOpenCanteen;
+  final void Function(String) onAddFood;
+  final void Function(MealModel, MealItemModel) onEditItem;
+  final VoidCallback? onAnalyzePhoto, onOpenCanteen;
+  final void Function(VisionTaskRecord)? onResumeVision;
 
   @override
   Widget build(BuildContext context) {
     final totals = data.daily.totals;
     final goal = data.goal;
+    String ratio(double value, double? target, String unit) =>
+        target != null && target > 0
+            ? '${AppFormat.number(value)} / ${AppFormat.number(target)} $unit'
+            : '${AppFormat.number(value)} $unit';
     return RefreshIndicator(
-      onRefresh: onRefresh,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
-        children: [
-          Row(
+        onRefresh: onRefresh,
+        child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: AppSpacing.pageInsets,
             children: [
-              Expanded(
-                child: Text(
-                  '今日饮食',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-              ),
-              if (data.offline) const Chip(label: Text('离线模式')),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${data.daily.date.year}年${data.daily.date.month}月${data.daily.date.day}日 · '
-            '按实际份量记录，营养值会自动换算。',
-          ),
-          const SizedBox(height: 18),
-          Card(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.document_scanner_outlined),
-                      const SizedBox(width: 8),
-                      Text(
-                        '拍照识别一餐',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  const Text('识别菜品和份量后先生成草稿，由你修改确认后才会计入营养。'),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: onAnalyzePhoto,
-                    icon: const Icon(Icons.camera_alt_outlined),
-                    label: const Text('拍照或选择图片'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (data.visionTasks.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text('待完成的照片草稿', style: Theme.of(context).textTheme.titleSmall),
-            for (final task in data.visionTasks)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.cloud_upload_outlined),
-                title: Text(_visionStatus(task.status)),
-                subtitle: Text(task.lastError ?? '照片已保存在本机'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap:
-                    onResumeVision == null ? null : () => onResumeVision!(task),
-              ),
-          ],
-          if (data.nextMeal case final plan?) ...[
-            const SizedBox(height: 14),
-            Card(
-              color: Theme.of(context).colorScheme.secondaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.next_plan_outlined),
-                        const SizedBox(width: 8),
-                        Text(
-                          '下一餐 · ${plan.mealLabel}',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${plan.target.caloriesMin}–${plan.target.caloriesMax} kcal · '
-                      '蛋白质 ${plan.target.proteinMin.toStringAsFixed(0)}–'
-                      '${plan.target.proteinMax.toStringAsFixed(0)} g',
-                    ),
-                    const SizedBox(height: 6),
-                    Text(plan.strategy.first),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      onPressed: onOpenCanteen,
-                      icon: const Icon(Icons.storefront_outlined),
-                      label: const Text('按食堂菜品推荐'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 18),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('今日营养', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 14),
-                  _ProgressMetric(
+              // Bounded daily summary together; meal sections remain lazy.
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                RootPageHeader(
+                    title: '今日饮食',
+                    subtitle: '${AppFormat.date(data.daily.date)} · 按实际份量记录。',
+                    action: data.offline
+                        ? const Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: Text('离线模式', style: AppTypography.caption))
+                        : null),
+                if (data.offline)
+                  Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text('离线记录中 · 当前仅显示本机待同步记录',
+                          style: AppTypography.caption.copyWith(
+                              color: AppColors.of(context).secondaryText))),
+                Semantics(
+                    header: true,
+                    child:
+                        const Text('今日营养', style: AppTypography.sectionTitle)),
+                ProgressMetric(
                     label: '热量',
-                    value: totals.calories,
+                    value: ratio(
+                        totals.calories, goal?.calories.toDouble(), 'kcal'),
+                    amount: totals.calories,
                     target: goal?.calories.toDouble(),
-                    unit: 'kcal',
-                  ),
-                  _ProgressMetric(
+                    unit: 'kcal'),
+                ProgressMetric(
                     label: '蛋白质',
-                    value: totals.protein,
+                    value: ratio(totals.protein, goal?.protein, 'g'),
+                    amount: totals.protein,
                     target: goal?.protein,
-                    unit: 'g',
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 18,
-                    runSpacing: 8,
+                    unit: 'g'),
+                ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    title: const Text('碳水、脂肪与纤维'),
                     children: [
-                      Text('碳水 ${totals.carbs.toStringAsFixed(1)} g'),
-                      Text('脂肪 ${totals.fat.toStringAsFixed(1)} g'),
-                      Text('纤维 ${totals.fiber.toStringAsFixed(1)} g'),
-                    ],
-                  ),
+                      MetricRow(
+                          label: '碳水',
+                          value:
+                              '${AppFormat.number(totals.carbs, decimals: 1)} g'),
+                      MetricRow(
+                          label: '脂肪',
+                          value:
+                              '${AppFormat.number(totals.fat, decimals: 1)} g'),
+                      MetricRow(
+                          label: '膳食纤维',
+                          value:
+                              '${AppFormat.number(totals.fiber, decimals: 1)} g',
+                          detail: goal == null
+                              ? '目标待设置'
+                              : '目标 ${AppFormat.number(goal.fiber)} g'),
+                    ]),
+                if (data.nextMeal case final plan?) ...[
+                  const SizedBox(height: 20),
+                  InsightBlock(
+                      title: '下一餐 · ${plan.mealLabel}',
+                      prominent: true,
+                      message:
+                          '${plan.target.caloriesMin}–${plan.target.caloriesMax} kcal · 蛋白质 ${AppFormat.number(plan.target.proteinMin)}–${AppFormat.number(plan.target.proteinMax)} g'
+                          '${plan.strategy.isNotEmpty ? '\n${plan.strategy.first}' : plan.message.isNotEmpty ? '\n${plan.message}' : ''}',
+                      action: TextButton.icon(
+                          onPressed: onOpenCanteen,
+                          icon: const Icon(Icons.storefront_outlined, size: 20),
+                          label: const Text('按食堂菜品推荐'))),
                 ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          for (final type in const [
-            'breakfast',
-            'lunch',
-            'dinner',
-            'snack',
-          ]) ...[
-            _MealSection(
-              mealType: type,
-              meals: data.meals.where((meal) => meal.mealType == type).toList(),
-              onAdd: () => onAddFood(type),
-              onEditItem: onEditItem,
-            ),
-            const SizedBox(height: 12),
-          ],
-        ],
-      ),
-    );
+                AppSection(
+                    title: '拍照识别一餐',
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('先生成可编辑草稿，确认后才计入营养。',
+                              style: AppTypography.secondary),
+                          const SizedBox(height: 12),
+                          FilledButton.icon(
+                              onPressed: onAnalyzePhoto,
+                              icon: const Icon(Icons.camera_alt_outlined),
+                              label: const Text('拍照记饮食')),
+                        ])),
+                if (data.visionTasks.isNotEmpty)
+                  AppSection(
+                      title: '照片草稿',
+                      child: Column(children: [
+                        for (final task in data.visionTasks)
+                          ListRow(
+                              title: _visionStatus(task.status),
+                              subtitle: task.lastError == null
+                                  ? '照片已保存在本机'
+                                  : '暂未完成，打开草稿查看恢复选项',
+                              icon: Icons.document_scanner_outlined,
+                              onTap: onResumeVision == null
+                                  ? null
+                                  : () => onResumeVision!(task)),
+                      ])),
+              ]),
+              for (final type in const [
+                'breakfast',
+                'lunch',
+                'dinner',
+                'snack'
+              ])
+                _MealSection(
+                    mealType: type,
+                    meals: data.meals
+                        .where((meal) => meal.mealType == type)
+                        .toList(),
+                    aggregate: data.daily.meals[type],
+                    knownCount: data.daily.mealCounts[type] ?? 0,
+                    onAdd: () => onAddFood(type),
+                    onEditItem: onEditItem),
+            ]));
   }
 
   static String _visionStatus(String status) => switch (status) {
         'uploading' => '正在上传的照片',
         'pending' || 'processing' => '正在识别的照片',
         'completed' => '待确认的识别草稿',
-        'failed' => '识别失败，可重试',
-        _ => '等待联网识别的照片',
+        'confirmed' => '已经保存的餐食',
+        'failed' => '识别未完成，可重试',
+        'waiting_network' => '等待联网识别',
+        _ => '草稿状态待确认',
       };
 }
 
-class _ProgressMetric extends StatelessWidget {
-  const _ProgressMetric({
-    required this.label,
-    required this.value,
-    required this.target,
-    required this.unit,
-  });
-
-  final String label;
-  final double value;
-  final double? target;
-  final String unit;
-
-  @override
-  Widget build(BuildContext context) {
-    final progress = target == null || target == 0
-        ? 0.0
-        : (value / target!).clamp(0.0, 1.0).toDouble();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(child: Text(label)),
-              Text(
-                target == null
-                    ? '${value.toStringAsFixed(0)} $unit'
-                    : '${value.toStringAsFixed(0)} / ${target!.toStringAsFixed(0)} $unit',
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          LinearProgressIndicator(value: progress),
-        ],
-      ),
-    );
-  }
-}
-
 class _MealSection extends StatelessWidget {
-  const _MealSection({
-    required this.mealType,
-    required this.meals,
-    required this.onAdd,
-    required this.onEditItem,
-  });
-
+  const _MealSection(
+      {required this.mealType,
+      required this.meals,
+      required this.onAdd,
+      required this.onEditItem,
+      required this.knownCount,
+      this.aggregate});
   final String mealType;
   final List<MealModel> meals;
+  final NutritionTotals? aggregate;
+  final int knownCount;
   final VoidCallback onAdd;
-  final void Function(MealModel meal, MealItemModel item) onEditItem;
-
+  final void Function(MealModel, MealItemModel) onEditItem;
   @override
   Widget build(BuildContext context) {
     final label = const {
       'breakfast': '早餐',
       'lunch': '午餐',
       'dinner': '晚餐',
-      'snack': '加餐',
+      'snack': '加餐'
     }[mealType]!;
-    final calories = meals.fold<double>(
-      0,
-      (sum, meal) => sum + meal.totals.calories,
-    );
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 10, 10, 12),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text('$label · ${calories.toStringAsFixed(0)} kcal'),
-                ),
-                IconButton(
-                  tooltip: '添加食物',
-                  onPressed: onAdd,
-                  icon: const Icon(Icons.add_circle_outline),
-                ),
-              ],
-            ),
-            if (meals.isEmpty)
-              const Align(alignment: Alignment.centerLeft, child: Text('尚未记录'))
-            else
-              for (final meal in meals)
-                for (final item in meal.items)
-                  ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: Row(
-                      children: [
-                        Expanded(child: Text(item.foodName)),
-                        if (meal.pending)
-                          const Icon(Icons.cloud_upload_outlined, size: 16),
-                      ],
-                    ),
-                    subtitle: Text(
-                      '${item.amount.toStringAsFixed(1)} ${item.unit}',
-                    ),
-                    trailing: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${item.nutrition.calories.toStringAsFixed(0)} kcal',
-                        ),
-                        Text(
-                          '蛋白质 ${item.nutrition.protein.toStringAsFixed(1)} g',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                    onTap: () => onEditItem(meal, item),
-                  ),
-          ],
-        ),
-      ),
-    );
+    final calories = aggregate?.calories ??
+        meals.fold<double>(0, (sum, meal) => sum + meal.totals.calories);
+    // Offline fallback pre-fills all four aggregates with zeros; existence
+    // alone is not evidence that a meal has been recorded.
+    final summary = aggregate;
+    final hasRecord = meals.isNotEmpty ||
+        knownCount > 0 ||
+        (summary != null &&
+            [
+              summary.calories,
+              summary.protein,
+              summary.carbs,
+              summary.fat,
+              summary.fiber
+            ].any((value) => value != 0));
+    return AppSection(
+        title:
+            hasRecord ? '$label · ${AppFormat.number(calories)} kcal' : label,
+        action: meals.isEmpty
+            ? null
+            : Semantics(
+                label: '添加$label食物',
+                child: TextButton(onPressed: onAdd, child: const Text('添加'))),
+        child: meals.isEmpty
+            ? EmptyState(
+                title: hasRecord ? '餐食明细暂不可用' : '尚未记录',
+                message: hasRecord ? '已有餐次汇总，刷新后再查看条目。' : '从这餐的第一项食物开始。',
+                actionLabel: '记录$label',
+                onAction: onAdd)
+            : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                for (final meal in meals) ...[
+                  if (meal.pending)
+                    Text('待同步 · 已保存在本机',
+                        style: AppTypography.caption.copyWith(
+                            color: AppColors.of(context).secondaryText)),
+                  for (final item in meal.items)
+                    ListRow(
+                        title: item.foodName,
+                        subtitle:
+                            '${AppFormat.number(item.amount, decimals: 1)} ${item.unit} · ${AppFormat.number(item.nutrition.calories)} kcal\n蛋白质 ${AppFormat.number(item.nutrition.protein, decimals: 1)} g',
+                        onTap: () => onEditItem(meal, item)),
+                ],
+              ]));
   }
 }

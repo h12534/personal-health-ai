@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/local_database.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_components.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import '../../dashboard/presentation/dashboard_controller.dart';
@@ -117,7 +119,11 @@ class _MealAnalysisScreenState extends ConsumerState<MealAnalysisScreen> {
       _analysis = value;
       _busy = false;
       _error = value.status == 'failed' ? _analysisFailure(value) : null;
-      _statusText = value.status == 'completed' ? '识别草稿已生成' : '识别未完成';
+      _statusText = switch (value.status) {
+        'completed' => '识别草稿已生成',
+        'confirmed' => '已保存到今日饮食',
+        _ => '识别未完成'
+      };
     });
   }
 
@@ -148,41 +154,20 @@ class _MealAnalysisScreenState extends ConsumerState<MealAnalysisScreen> {
   }
 
   Future<void> _editWeight(MealAnalysisItemModel item) async {
-    final controller = TextEditingController(
-      text: item.weightG.toStringAsFixed(0),
-    );
-    final weight = await showDialog<double>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('修改 ${item.foodName ?? item.name} 份量'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: '重量', suffixText: 'g'),
-          onSubmitted: (value) {
-            final parsed = double.tryParse(value.trim());
-            if (parsed != null && parsed > 0) Navigator.pop(context, parsed);
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final parsed = double.tryParse(controller.text.trim());
-              if (parsed != null && parsed > 0) Navigator.pop(context, parsed);
-            },
-            child: const Text('更新估算'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (weight == null || !mounted) return;
-    await _updateWeight(item, weight);
+    await showDialog<bool>(
+        context: context,
+        builder: (_) => NumberEntryDialog(
+            title: '修改 ${item.foodName ?? item.name} 份量',
+            initialValue: item.weightG.toStringAsFixed(0),
+            unit: 'g',
+            onSave: (next) => _mutate(
+                () => ref.read(apiClientProvider).updateMealAnalysisItem(
+                    analysisId: _analysis!.id,
+                    itemId: item.id,
+                    weightG: next,
+                    minWeightG: max(1, next * 0.75).toDouble(),
+                    maxWeightG: next * 1.25),
+                retainError: true)));
   }
 
   Future<void> _updateWeight(MealAnalysisItemModel item, double next) async {
@@ -203,12 +188,14 @@ class _MealAnalysisScreenState extends ConsumerState<MealAnalysisScreen> {
             .deleteMealAnalysisItem(_analysis!.id, item.id),
       );
 
-  Future<void> _mutate(Future<MealAnalysisModel> Function() action) async {
+  Future<void> _mutate(Future<MealAnalysisModel> Function() action,
+      {bool retainError = false}) async {
     setState(() => _busy = true);
     try {
       final result = await action();
       if (mounted) setState(() => _analysis = result);
     } on Object catch (error) {
+      if (retainError) rethrow;
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(_friendlyError(error))));
@@ -360,10 +347,10 @@ class _MealAnalysisScreenState extends ConsumerState<MealAnalysisScreen> {
         'vision_timeout' => '识别超时，照片已保留，可直接重试。',
         'vision_daily_limit_reached' => '今日识别次数已用完，可改用手工记录。',
         'no_food_detected' => '没有识别到食物，请换一张更清晰、光线更好的照片。',
-        _ => error.message,
+        _ => UiFailure.message(error),
       };
     }
-    return '网络暂不可用，照片已保留在本机。';
+    return '暂时无法完成识别。照片已保留在本机，可重试或手工记录。';
   }
 
   String _analysisFailure(MealAnalysisModel analysis) =>
@@ -379,323 +366,264 @@ class _MealAnalysisScreenState extends ConsumerState<MealAnalysisScreen> {
   Widget build(BuildContext context) {
     final analysis = _analysis;
     return Scaffold(
-      appBar: AppBar(title: const Text('拍照识别一餐')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: Image.file(
-              File(widget.task.imagePath),
-              height: 210,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const SizedBox(
-                height: 160,
-                child: Center(child: Text('本地照片不可用')),
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          _StatusCard(
-            text: _statusText,
-            busy: _busy,
-            progress: _progress,
-            error: _error,
-            onRetry: _retry,
-            onManual: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => FoodSearchScreen(mealType: _mealType),
-              ),
-            ),
-          ),
-          if (analysis != null && analysis.editable) ...[
-            const SizedBox(height: 14),
-            _SummaryCard(analysis: analysis),
-            for (final warning in analysis.warnings)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text('提示：$warning'),
-              ),
-            const SizedBox(height: 12),
-            for (final item in analysis.items)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _AnalysisItemCard(
-                  item: item,
-                  enabled: !_busy,
-                  onAdjust: (delta) => _adjust(item, delta),
-                  onEditWeight: () => _editWeight(item),
-                  onReplace: () => _chooseFood(replace: item),
-                  onDelete: () => _deleteItem(item),
-                ),
-              ),
-            OutlinedButton.icon(
-              onPressed: _busy ? null : () => _chooseFood(),
-              icon: const Icon(Icons.add),
-              label: const Text('补充遗漏食物'),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _mealType,
-              decoration: const InputDecoration(labelText: '餐次'),
-              items: const [
-                DropdownMenuItem(value: 'breakfast', child: Text('早餐')),
-                DropdownMenuItem(value: 'lunch', child: Text('午餐')),
-                DropdownMenuItem(value: 'dinner', child: Text('晚餐')),
-                DropdownMenuItem(value: 'snack', child: Text('加餐')),
-              ],
-              onChanged:
-                  _busy ? null : (value) => setState(() => _mealType = value!),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _noteController,
-              maxLength: 400,
-              decoration: const InputDecoration(labelText: '备注（可选）'),
-            ),
-            const Text('AI 结果只是可编辑草稿。营养值由食物库按确认份量计算，保存前请核对菜品、份量和隐藏用油。'),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _busy ? null : _confirm,
-              icon: const Icon(Icons.check_circle_outline),
-              label: Text(_busy ? '处理中' : '确认并计入今日营养'),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusCard extends StatelessWidget {
-  const _StatusCard({
-    required this.text,
-    required this.busy,
-    required this.progress,
-    required this.error,
-    required this.onRetry,
-    required this.onManual,
-  });
-
-  final String text;
-  final bool busy;
-  final double progress;
-  final String? error;
-  final VoidCallback onRetry;
-  final VoidCallback onManual;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        color: error == null
-            ? Theme.of(context).colorScheme.primaryContainer
-            : Theme.of(context).colorScheme.errorContainer,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(error == null ? Icons.auto_awesome : Icons.cloud_off),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      text,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                ],
-              ),
-              if (busy) ...[
-                const SizedBox(height: 12),
-                LinearProgressIndicator(
-                  value: progress > 0 && progress < 1 ? progress : null,
-                ),
-              ],
-              if (error != null) ...[
-                const SizedBox(height: 8),
-                Text(error!),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    FilledButton.tonal(
-                      onPressed: onRetry,
-                      child: const Text('继续识别'),
-                    ),
-                    TextButton(
-                        onPressed: onManual, child: const Text('改用手工记录')),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-      );
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.analysis});
-
-  final MealAnalysisModel analysis;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
+        appBar: DetailPageHeader(label: '核对餐食'),
+        bottomNavigationBar: analysis != null && analysis.editable
+            ? BottomActionArea(
+                child: FilledButton.icon(
+                    onPressed: _busy ? null : _confirm,
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: Text(_busy ? '处理中…' : '确认并计入今日营养')))
+            : null,
+        body: ListView(padding: AppSpacing.pageInsets, children: [
+          if (analysis != null && analysis.editable)
+            MealDraftReview(
+                analysis: analysis,
+                busy: _busy,
+                mealType: _mealType,
+                noteController: _noteController,
+                onMealTypeChanged: (value) => setState(() => _mealType = value),
+                onAdjust: _adjust,
+                onEditWeight: _editWeight,
+                onReplace: (item) => _chooseFood(replace: item),
+                onDelete: _deleteItem,
+                onAdd: () => _chooseFood()),
+          Semantics(
+              liveRegion: true,
+              child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('本餐估算',
-                        style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${analysis.totals.center.calories.toStringAsFixed(0)} kcal '
-                      '（${analysis.totals.minCalories.toStringAsFixed(0)}–'
-                      '${analysis.totals.maxCalories.toStringAsFixed(0)}）',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    Text(
-                      '蛋白质 ${analysis.totals.center.protein.toStringAsFixed(1)} g · '
-                      '碳水 ${analysis.totals.center.carbs.toStringAsFixed(1)} g · '
-                      '脂肪 ${analysis.totals.center.fat.toStringAsFixed(1)} g',
-                    ),
-                  ],
-                ),
-              ),
-              _ConfidenceChip(label: analysis.confidenceLabel ?? 'low'),
-            ],
-          ),
-        ),
-      );
+                    const SizedBox(height: 16),
+                    Text(_statusText, style: AppTypography.secondary),
+                    if (_busy) ...[
+                      const SizedBox(height: 12),
+                      LinearProgressIndicator(
+                          value: _progress > 0 && _progress < 1
+                              ? _progress
+                              : MediaQuery.disableAnimationsOf(context)
+                                  ? 0
+                                  : null,
+                          minHeight: 3,
+                          semanticsLabel: _statusText)
+                    ],
+                    if (_error != null) ...[
+                      const SizedBox(height: 8),
+                      Text(_error!),
+                      const SizedBox(height: 12),
+                      Wrap(spacing: 12, runSpacing: 8, children: [
+                        TextButton(
+                            onPressed: _retry, child: const Text('继续识别')),
+                        TextButton(
+                            onPressed: () => Navigator.of(context)
+                                .pushReplacement(MaterialPageRoute(
+                                    builder: (_) =>
+                                        FoodSearchScreen(mealType: _mealType))),
+                            child: const Text('改用手工记录')),
+                      ])
+                    ],
+                    if (analysis?.status == 'confirmed')
+                      TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('返回饮食记录')),
+                  ])),
+          ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text('查看原照片'),
+              children: [
+                ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.large),
+                    child: Image.file(File(widget.task.imagePath),
+                        height: 210,
+                        fit: BoxFit.cover,
+                        semanticLabel: '用于核对餐食份量的原照片',
+                        errorBuilder: (_, __, ___) => const Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Text('本地照片不可用，草稿数据仍可核对')))),
+              ]),
+        ]));
+  }
 }
 
-class _AnalysisItemCard extends StatelessWidget {
-  const _AnalysisItemCard({
-    required this.item,
-    required this.enabled,
-    required this.onAdjust,
-    required this.onEditWeight,
-    required this.onReplace,
-    required this.onDelete,
-  });
+/// Pure draft presentation; all estimates, warnings and edit actions come from the existing model.
+class MealDraftReview extends StatelessWidget {
+  const MealDraftReview(
+      {super.key,
+      required this.analysis,
+      required this.busy,
+      required this.mealType,
+      required this.noteController,
+      required this.onMealTypeChanged,
+      required this.onAdjust,
+      required this.onEditWeight,
+      required this.onReplace,
+      required this.onDelete,
+      required this.onAdd});
+  final MealAnalysisModel analysis;
+  final bool busy;
+  final String mealType;
+  final TextEditingController noteController;
+  final void Function(String) onMealTypeChanged;
+  final void Function(MealAnalysisItemModel, double) onAdjust;
+  final void Function(MealAnalysisItemModel) onEditWeight, onReplace, onDelete;
+  final VoidCallback onAdd;
+  @override
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        MetricHero(
+            label: '本餐估算',
+            value: AppFormat.number(analysis.totals.center.calories),
+            unit: 'kcal',
+            detail:
+                '估计范围 ${AppFormat.number(analysis.totals.minCalories)}–${AppFormat.number(analysis.totals.maxCalories)} kcal'),
+        const SizedBox(height: 12),
+        Text(
+            '蛋白质 ${AppFormat.number(analysis.totals.center.protein, decimals: 1)} g · 碳水 ${AppFormat.number(analysis.totals.center.carbs, decimals: 1)} g · 脂肪 ${AppFormat.number(analysis.totals.center.fat, decimals: 1)} g',
+            style: AppTypography.secondary),
+        const SizedBox(height: 12),
+        const Text('这是可编辑草稿，尚未计入今日营养。请核对菜品、份量和隐藏用油。',
+            style: AppTypography.secondary),
+        for (final warning in analysis.warnings)
+          Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text('提示：$warning',
+                  style: AppTypography.secondary
+                      .copyWith(color: AppColors.of(context).attention))),
+        if (analysis.items.isEmpty)
+          EmptyState(
+              title: '草稿暂无食物',
+              message: '请补充食物后再确认。',
+              actionLabel: '补充食物',
+              onAction: busy ? null : onAdd)
+        else
+          for (final item in analysis.items)
+            _DraftItem(
+                item: item,
+                enabled: !busy,
+                onAdjust: (delta) => onAdjust(item, delta),
+                onEdit: () => onEditWeight(item),
+                onReplace: () => onReplace(item),
+                onDelete: () => onDelete(item)),
+        TextButton.icon(
+            onPressed: busy ? null : onAdd,
+            icon: const Icon(Icons.add),
+            label: const Text('补充遗漏食物')),
+        AppSection(
+            title: '记录到哪一餐',
+            child: Column(children: [
+              DropdownButtonFormField<String>(
+                  initialValue: mealType,
+                  isExpanded: true,
+                  itemHeight: null,
+                  decoration: const InputDecoration(labelText: '餐次'),
+                  items: const [
+                    DropdownMenuItem(value: 'breakfast', child: Text('早餐')),
+                    DropdownMenuItem(value: 'lunch', child: Text('午餐')),
+                    DropdownMenuItem(value: 'dinner', child: Text('晚餐')),
+                    DropdownMenuItem(value: 'snack', child: Text('加餐')),
+                  ],
+                  onChanged: busy
+                      ? null
+                      : (value) {
+                          if (value != null) onMealTypeChanged(value);
+                        }),
+              const SizedBox(height: 16),
+              TextField(
+                  controller: noteController,
+                  enabled: !busy,
+                  maxLength: 400,
+                  minLines: 1,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: '备注（可选）')),
+            ])),
+        ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: const Text('识别与估计详情'),
+            children: [
+              ListRow(
+                  title: _confidence(analysis.confidenceLabel),
+                  subtitle: '提供方 ${analysis.provider} · 模型 ${analysis.model}'),
+            ]),
+      ]);
+  static String _confidence(String? value) => switch (value) {
+        'high' => '估计把握较高',
+        'medium' => '估计把握中等',
+        'low' => '估计把握较低，请认真核对',
+        _ => '估计把握未提供',
+      };
+}
 
+class _DraftItem extends StatelessWidget {
+  const _DraftItem(
+      {required this.item,
+      required this.enabled,
+      required this.onAdjust,
+      required this.onEdit,
+      required this.onReplace,
+      required this.onDelete});
   final MealAnalysisItemModel item;
   final bool enabled;
-  final void Function(double delta) onAdjust;
-  final VoidCallback onEditWeight;
-  final VoidCallback onReplace;
-  final VoidCallback onDelete;
-
+  final void Function(double) onAdjust;
+  final VoidCallback onEdit, onReplace, onDelete;
   @override
-  Widget build(BuildContext context) {
-    final unmatched = item.foodId == null;
-    return Card(
-      color: unmatched ? Theme.of(context).colorScheme.errorContainer : null,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 10, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                if (item.hiddenIngredient)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 6),
-                    child: Icon(Icons.opacity, size: 18),
-                  ),
-                Expanded(
-                  child: Text(
-                    item.foodName ?? item.name,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                _ConfidenceChip(label: item.confidenceLabel),
-                PopupMenuButton<String>(
-                  enabled: enabled,
-                  onSelected: (value) =>
-                      value == 'replace' ? onReplace() : onDelete(),
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'replace', child: Text('更换食物匹配')),
-                    PopupMenuItem(value: 'delete', child: Text('删除条目')),
-                  ],
-                ),
-              ],
-            ),
-            if (unmatched)
-              const Text('未匹配食物库，确认前必须手动选择。')
-            else if (item.foodName != item.name)
-              Text('识别为 ${item.name} · ${_matchLabel(item.matchType)}'),
-            const SizedBox(height: 8),
-            Text(
-              '${item.weightG.toStringAsFixed(0)} g '
-              '（${item.minWeightG.toStringAsFixed(0)}–${item.maxWeightG.toStringAsFixed(0)} g）',
-            ),
-            Text(
-              '${item.calories.toStringAsFixed(0)} kcal '
-              '（${item.minCalories.toStringAsFixed(0)}–${item.maxCalories.toStringAsFixed(0)}）',
-            ),
-            if (item.cookingMethod != null || item.portionDescription != null)
-              Text(
-                [
-                  item.cookingMethod,
-                  item.portionDescription,
-                ].whereType<String>().join(' · '),
-              ),
-            if (item.hiddenIngredients.isNotEmpty)
-              Text('可能隐藏：${item.hiddenIngredients.join('、')}'),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final delta in const [-50.0, -25.0, 25.0, 50.0])
-                  ActionChip(
-                    onPressed: enabled ? () => onAdjust(delta) : null,
-                    label: Text('${delta > 0 ? '+' : ''}${delta.toInt()}g'),
-                  ),
-                ActionChip(
-                  avatar: const Icon(Icons.edit_outlined, size: 18),
-                  onPressed: enabled ? onEditWeight : null,
-                  label: const Text('直接输入'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
+  Widget build(BuildContext context) => AppSection(
+      title: item.foodName ?? item.name,
+      action: PopupMenuButton<String>(
+          tooltip: '更多：${item.foodName ?? item.name}',
+          enabled: enabled,
+          onSelected: (value) => value == 'replace' ? onReplace() : onDelete(),
+          itemBuilder: (_) => const [
+                PopupMenuItem(value: 'replace', child: Text('更换食物匹配')),
+                PopupMenuItem(value: 'delete', child: Text('删除条目'))
+              ]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (item.foodId == null)
+          Text('未匹配食物库，确认前请手动选择。',
+              style: AppTypography.secondary
+                  .copyWith(color: AppColors.of(context).warning)),
+        if (item.hiddenIngredient)
+          const Text('隐藏配料估计', style: AppTypography.caption),
+        Text(
+            '${AppFormat.number(item.weightG)} g · ${AppFormat.number(item.calories)} kcal',
+            style: AppTypography.metric),
+        Text(
+            '估计范围 ${AppFormat.number(item.minWeightG)}–${AppFormat.number(item.maxWeightG)} g · ${AppFormat.number(item.minCalories)}–${AppFormat.number(item.maxCalories)} kcal',
+            style: AppTypography.caption
+                .copyWith(color: AppColors.of(context).secondaryText)),
+        if (item.hiddenIngredients.isNotEmpty)
+          Text('可能隐藏：${item.hiddenIngredients.join('、')}',
+              style: AppTypography.secondary),
+        Wrap(spacing: 6, runSpacing: 6, children: [
+          for (final delta in const [-50.0, -25.0, 25.0, 50.0])
+            TextButton(
+                onPressed: enabled ? () => onAdjust(delta) : null,
+                child: Text('${delta > 0 ? '+' : ''}${delta.toInt()}g')),
+          TextButton.icon(
+              onPressed: enabled ? onEdit : null,
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('直接输入')),
+        ]),
+        ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: const Text('核对匹配详情'),
+            children: [
+              ListRow(
+                  title: MealDraftReview._confidence(item.confidenceLabel),
+                  subtitle:
+                      '识别为 ${item.name} · ${_matchLabel(item.matchType)}'),
+              if (item.cookingMethod != null || item.portionDescription != null)
+                Text(
+                    [item.cookingMethod, item.portionDescription]
+                        .whereType<String>()
+                        .join(' · '),
+                    style: AppTypography.secondary),
+            ]),
+      ]));
   static String _matchLabel(String value) => switch (value) {
         'personal_memory' => '来自个人纠正记忆',
         'custom_exact' => '匹配自定义食物',
         'alias' => '别名匹配',
         'fuzzy' => '相似匹配，请核对',
         'manual' => '已手动选择',
-        _ => '食物库精确匹配',
+        'exact' => '食物库精确匹配',
+        _ => '匹配方式待核对',
       };
-}
-
-class _ConfidenceChip extends StatelessWidget {
-  const _ConfidenceChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final (text, color) = switch (label) {
-      'high' => ('高置信度', Colors.green),
-      'medium' => ('中置信度', Colors.orange),
-      _ => ('低置信度', Colors.red),
-    };
-    return Chip(
-      visualDensity: VisualDensity.compact,
-      label: Text(text),
-      side: BorderSide(color: color),
-    );
-  }
 }

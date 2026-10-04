@@ -144,6 +144,7 @@ class ProgressMetric extends StatelessWidget {
     final validTarget = target != null && target!.isFinite && target! > 0;
     final hasAmount = amount != null && amount!.isFinite;
     final valueIncludesUnit = unit.isNotEmpty && value.endsWith(' $unit');
+    final ratioParts = value.split(' / ');
     return Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -153,7 +154,16 @@ class ProgressMetric extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               spacing: 6,
               children: [
-                if (valueIncludesUnit)
+                if (ratioParts.length == 2)
+                  Text.rich(
+                      TextSpan(text: ratioParts.first, children: [
+                        TextSpan(
+                            text: ' / ${ratioParts.last}',
+                            style: AppTypography.secondary
+                                .copyWith(color: colors.secondaryText)),
+                      ]),
+                      style: AppTypography.metric)
+                else if (valueIncludesUnit)
                   Text.rich(
                       TextSpan(
                           text: value.substring(
@@ -173,12 +183,13 @@ class ProgressMetric extends StatelessWidget {
                           .copyWith(color: colors.secondaryText)),
               ]),
           const SizedBox(height: 6),
-          Text(
-              validTarget
-                  ? '目标 ${AppFormat.number(target!)}${unit.isEmpty ? '' : ' $unit'}'
-                  : '目标待设置',
-              style:
-                  AppTypography.caption.copyWith(color: colors.secondaryText)),
+          if (!validTarget || ratioParts.length != 2)
+            Text(
+                validTarget
+                    ? '目标 ${AppFormat.number(target!)}${unit.isEmpty ? '' : ' $unit'}'
+                    : '目标待设置',
+                style: AppTypography.caption
+                    .copyWith(color: colors.secondaryText)),
           if (validTarget && hasAmount) ...[
             const SizedBox(height: 10),
             Semantics(
@@ -213,6 +224,7 @@ class InsightBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.page),
       decoration: BoxDecoration(
           color: prominent ? colors.softTint : colors.surface,
@@ -447,4 +459,98 @@ abstract final class AppFormat {
   static String date(DateTime value) => '${value.month}月${value.day}日';
   static String time(DateTime value) =>
       '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
+}
+
+/// A focused quantity editor. The supplied existing action owns persistence.
+class NumberEntryDialog extends StatefulWidget {
+  const NumberEntryDialog(
+      {super.key,
+      required this.title,
+      required this.initialValue,
+      required this.unit,
+      required this.onSave});
+  final String title, initialValue, unit;
+  final Future<void> Function(double) onSave;
+  @override
+  State<NumberEntryDialog> createState() => _NumberEntryDialogState();
+}
+
+class _NumberEntryDialogState extends State<NumberEntryDialog> {
+  late final _input = TextEditingController(text: widget.initialValue);
+  final _form = GlobalKey<FormState>();
+  bool _saving = false;
+  Object? _error;
+  @override
+  void dispose() {
+    _input.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_saving || !_form.currentState!.validate()) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.onSave(double.parse(_input.text.trim()));
+      if (mounted) Navigator.pop(context, true);
+    } on Object catch (error) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = error;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+      canPop: !_saving,
+      child: AlertDialog(
+          scrollable: true,
+          title: Text(widget.title),
+          content: Form(
+              key: _form,
+              child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                        controller: _input,
+                        enabled: !_saving,
+                        autofocus: true,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        decoration: InputDecoration(
+                            labelText: '份量', suffixText: widget.unit),
+                        validator: (text) {
+                          final value = double.tryParse(text?.trim() ?? '');
+                          return value == null || !value.isFinite || value <= 0
+                              ? '请输入大于 0 的有效数值'
+                              : null;
+                        },
+                        onFieldSubmitted: (_) => _save()),
+                    if (_error != null) ...[
+                      const SizedBox(height: 12),
+                      Semantics(
+                          liveRegion: true,
+                          child: Text('${UiFailure.title(_error!)}。输入已保留，请重试。',
+                              style: AppTypography.secondary.copyWith(
+                                  color: AppColors.of(context).danger)))
+                    ],
+                  ])),
+          actions: [
+            TextButton(
+                onPressed: _saving ? null : () => Navigator.pop(context),
+                child: const Text('取消')),
+            FilledButton(
+                onPressed: _saving ? null : _save,
+                child: Text(_saving
+                    ? '正在保存…'
+                    : _error == null
+                        ? '保存'
+                        : '重试保存')),
+          ]));
 }

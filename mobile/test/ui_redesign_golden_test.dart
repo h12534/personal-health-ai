@@ -17,6 +17,14 @@ import 'package:personal_health_os/features/health/data/health_models.dart';
 import 'package:personal_health_os/features/health/presentation/health_controller.dart';
 import 'package:personal_health_os/features/health/presentation/health_screen.dart';
 import 'package:personal_health_os/features/health/presentation/health_overview_content.dart';
+import 'package:personal_health_os/core/network/api_client.dart';
+import 'package:personal_health_os/features/coach/data/coach_models.dart';
+import 'package:personal_health_os/features/coach/presentation/coach_controller.dart';
+import 'package:personal_health_os/features/coach/presentation/coach_screen.dart';
+import 'package:personal_health_os/features/profile/presentation/profile_screen.dart';
+import 'package:personal_health_os/core/widgets/app_components.dart';
+import 'package:personal_health_os/features/nutrition/presentation/meal_analysis_screen.dart';
+import 'ui_rollout_fixtures.dart';
 
 const _frameKey = Key('golden-frame');
 
@@ -87,6 +95,14 @@ void main() {
     ('nutrition', true),
     ('training', false),
     ('training', true),
+    ('coach', false),
+    ('coach', true),
+    ('profile', false),
+    ('profile', true),
+    ('nutrition-flow', false),
+    ('nutrition-flow', true),
+    ('meal-draft', false),
+    ('meal-draft', true),
   ]) {
     final (name, dark) = entry;
     testWidgets('$name ${dark ? 'dark' : 'light'} themed golden',
@@ -95,6 +111,8 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
+      final note = TextEditingController();
+      addTearDown(note.dispose);
       final Widget screen = switch (name) {
         'dashboard' => DashboardContent(data: _dashboard, onAddWeight: () {}),
         'nutrition' => NutritionContent(
@@ -102,12 +120,38 @@ void main() {
             onRefresh: () async {},
             onAddFood: (_) {},
             onEditItem: (_, __) {}),
+        'coach' => const CoachScreen(),
+        'profile' => const ProfileScreen(),
+        'nutrition-flow' => NutritionContent(
+            data: rolloutNutrition,
+            onRefresh: () async {},
+            onAddFood: (_) {},
+            onEditItem: (_, __) {},
+            onAnalyzePhoto: () {},
+            onOpenCanteen: () {}),
+        'meal-draft' => SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: MealDraftReview(
+                analysis: rolloutDraft,
+                busy: false,
+                mealType: 'lunch',
+                noteController: note,
+                onMealTypeChanged: (_) {},
+                onAdjust: (_, __) {},
+                onEditWeight: (_) {},
+                onReplace: (_) {},
+                onDelete: (_) {},
+                onAdd: () {})),
         _ => const TrainingScreen(),
       };
       final theme = dark ? AppTheme.dark : AppTheme.light;
       await tester.pumpWidget(ProviderScope(
         overrides: [
-          trainingHomeProvider.overrideWith((ref) async => _training)
+          trainingHomeProvider.overrideWith((ref) async => _training),
+          coachChatProvider.overrideWith(_GoldenCoachChat.new),
+          coachOverviewProvider.overrideWith((ref) async => _coachOverview),
+          visionPrivacyProvider
+              .overrideWith((ref) async => const VisionPrivacySettings())
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -118,11 +162,25 @@ void main() {
           home: RepaintBoundary(
               key: _frameKey,
               child: Scaffold(
+                  appBar: name == 'meal-draft'
+                      ? DetailPageHeader(label: '核对餐食')
+                      : null,
                   body: SafeArea(child: screen),
-                  bottomNavigationBar: AppNavigationBar(
-                      index:
-                          ['dashboard', 'nutrition', 'training'].indexOf(name),
-                      onSelect: _ignoreSelection))),
+                  bottomNavigationBar: name == 'meal-draft'
+                      ? BottomActionArea(
+                          child: FilledButton.icon(
+                              onPressed: () {},
+                              icon: const Icon(Icons.check_circle_outline),
+                              label: const Text('确认并计入今日营养')))
+                      : AppNavigationBar(
+                          index: switch (name) {
+                            'dashboard' => 0,
+                            'nutrition' => 1,
+                            'nutrition-flow' => 1,
+                            'training' => 2,
+                            _ => 4
+                          },
+                          onSelect: _ignoreSelection))),
         ),
       ));
       await tester.pumpAndSettle();
@@ -134,6 +192,21 @@ void main() {
 }
 
 void _ignoreSelection(int value) {}
+
+class _GoldenCoachChat extends CoachChatController {
+  @override
+  Future<List<CoachBubble>> build() async => const [];
+}
+
+const _coachOverview = CoachOverviewModel(
+    headline: '看趋势，不追逐单日波动。',
+    observations: ['记录完整'],
+    nextActions: ['继续执行'],
+    trend: WeightTrendModel(
+        direction: 'stable',
+        plateau: false,
+        plateauEligible: false,
+        note: '数据不足，不判断平台期。'));
 
 final _dashboard = DashboardModel(
   date: DateTime(2026, 9, 29),
