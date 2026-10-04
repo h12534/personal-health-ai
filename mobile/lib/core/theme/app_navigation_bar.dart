@@ -9,17 +9,30 @@ class AppNavigationBar extends StatelessWidget {
   final int index;
   final ValueChanged<int> onSelect;
   @override
-  Widget build(BuildContext context) => BottomNavigationBar(
+  Widget build(BuildContext context) {
+    // The framework clamps its internal label scaler; scale the base role here.
+    final labelSize =
+        MediaQuery.textScalerOf(context).scale(AppTypography.caption.fontSize!);
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      label: '主导航',
+      child: BottomNavigationBar(
         currentIndex: index,
         type: BottomNavigationBarType.fixed,
         elevation: AppElevation.flat,
         backgroundColor: AppColors.of(context).surface,
         selectedItemColor: AppColors.of(context).primary,
         unselectedItemColor: AppColors.of(context).secondaryText,
-        selectedFontSize: AppTypography.caption.fontSize!,
-        unselectedFontSize: AppTypography.caption.fontSize!,
+        selectedFontSize: labelSize,
+        unselectedFontSize: labelSize,
+        selectedLabelStyle: AppTypography.caption
+            .copyWith(fontSize: labelSize, fontWeight: FontWeight.w600),
+        unselectedLabelStyle:
+            AppTypography.caption.copyWith(fontSize: labelSize),
         iconSize: AppIconSize.navigation,
         onTap: onSelect,
+        enableFeedback: false,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: '首页'),
           BottomNavigationBarItem(
@@ -31,5 +44,7 @@ class AppNavigationBar extends StatelessWidget {
           BottomNavigationBarItem(
               icon: Icon(Icons.person_outline), label: '我的'),
         ],
-      );
+      ),
+    );
+  }
 }
