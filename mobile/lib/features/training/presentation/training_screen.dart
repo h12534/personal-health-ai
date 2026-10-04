@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/local_database.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_components.dart';
+import '../../../core/widgets/app_trend_chart.dart';
 import '../data/offline_workout_repository.dart';
 import '../data/training_models.dart';
 import 'training_controller.dart';
@@ -29,21 +32,13 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 18, 12, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '训练',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-              ),
-              IconButton(
+          child: RootPageHeader(
+              title: '训练',
+              action: IconButton(
                 tooltip: 'AI 私教',
                 onPressed: () => _showCoach(context),
-                icon: const Icon(Icons.auto_awesome),
-              ),
-            ],
-          ),
+                icon: const Icon(Icons.chat_bubble_outline),
+              )),
         ),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -65,20 +60,19 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         const SizedBox(height: 8),
         Expanded(
           child: data.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(
-              child: FilledButton.tonal(
-                onPressed: () => ref.invalidate(trainingHomeProvider),
-                child: const Text('训练数据加载失败 · 重试'),
-              ),
-            ),
-            data: (value) => switch (_section) {
-              0 => _TodayTraining(data: value),
-              1 => _PlanView(data: value),
-              2 => _HistoryView(data: value),
-              3 => _ExerciseLibrary(data: value),
-              _ => _ProgressView(data: value),
-            },
+            loading: () => const LoadingState(label: '正在读取训练记录'),
+            error: (error, _) => ErrorState(
+                error: error,
+                onRetry: () => ref.invalidate(trainingHomeProvider)),
+            data: (value) => IndexedStack(index: _section, children: [
+              TickerMode(
+                  enabled: _section == 0, child: _TodayTraining(data: value)),
+              _PlanView(data: value),
+              _HistoryView(
+                  data: value, onToday: () => setState(() => _section = 0)),
+              _ExerciseLibrary(data: value),
+              _ProgressView(data: value),
+            ]),
           ),
         ),
       ],
@@ -110,6 +104,8 @@ class _TodayTrainingState extends ConsumerState<_TodayTraining> {
   final Map<String, List<LocalWorkoutSetRecord>> _sets = {};
   Timer? _timer;
   int _restRemaining = 0;
+  String? _restExercise;
+  bool _operating = false;
 
   @override
   void dispose() {
@@ -124,86 +120,63 @@ class _TodayTrainingState extends ConsumerState<_TodayTraining> {
       return ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Icon(Icons.fitness_center, size: 56),
-          const SizedBox(height: 16),
-          Text(
-            '先建立第一套训练计划',
-            style: Theme.of(context).textTheme.headlineSmall,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '默认生成每周 3 次全身力量训练，优先器械、哑铃和低冲击活动。',
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          FilledButton(
-            onPressed: () => TrainingPlanController(ref).generateDefault(),
-            child: const Text('生成初学者计划'),
-          ),
+          EmptyState(
+              title: '先建立第一套训练计划',
+              message: '每周 3 次全身力量训练，优先器械、哑铃和低冲击活动。',
+              actionLabel: _operating ? '正在生成…' : '生成初学者计划',
+              onAction: _operating ? null : _generate),
         ],
       );
     }
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
       children: [
-        Card(
-          color: Theme.of(context).colorScheme.primaryContainer,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(day.name,
-                    style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 4),
-                Text('${day.focus} · 约 ${day.estimatedDurationMin} 分钟'),
-                const SizedBox(height: 8),
-                const Text('今天状态：按计划；工作组默认保留 2–3 次余力。'),
-                const SizedBox(height: 14),
-                if (_session == null)
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      key: const Key('start-workout'),
-                      onPressed: () => _start(day.id),
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text('开始训练'),
-                    ),
-                  )
-                else
-                  const Row(
-                    children: [
-                      Icon(Icons.offline_bolt_outlined),
-                      SizedBox(width: 8),
-                      Text('训练中 · 已先保存到本机'),
-                    ],
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(day.name, style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 4),
+              Text('${day.focus} · 约 ${day.estimatedDurationMin} 分钟'),
+              const SizedBox(height: 8),
+              const Text('按下方计划逐组记录。建议重量和余力以各动作目标为准。'),
+              const SizedBox(height: 14),
+              if (_session == null)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    key: const Key('start-workout'),
+                    onPressed: _operating ? null : () => _start(day.id),
+                    icon: const Icon(Icons.play_arrow),
+                    label: Text(_operating ? '正在保存…' : '开始训练'),
                   ),
-              ],
-            ),
+                )
+              else
+                const Text('训练中 · 已先保存到本机'),
+            ],
           ),
         ),
         if (_restRemaining > 0)
-          Card(
+          InsightBlock(
             key: const Key('rest-timer'),
-            child: ListTile(
-              leading: const Icon(Icons.timer_outlined),
-              title: Text('组间休息  $_restRemaining 秒'),
-              subtitle: const Text('计时完全在本机运行'),
-              trailing: IconButton(
-                onPressed: () {
-                  _timer?.cancel();
-                  setState(() => _restRemaining = 0);
-                },
-                icon: const Icon(Icons.close),
-              ),
+            title: '组间休息 · ${_restExercise ?? "当前动作"}',
+            message:
+                '${(_restRemaining ~/ 60).toString().padLeft(2, "0")}:${(_restRemaining % 60).toString().padLeft(2, "0")} · 前台本机计时',
+            action: TextButton(
+              onPressed: () {
+                _timer?.cancel();
+                setState(() => _restRemaining = 0);
+              },
+              child: const Text('结束休息'),
             ),
           ),
         const SizedBox(height: 6),
         for (final exercise in day.exercises)
-          _ExerciseSetCard(
+          WorkoutSetEditor(
+            key: ValueKey(exercise.id),
             item: exercise,
-            enabled: _session != null,
+            enabled: _session != null && !_operating,
             previous: _latestSet(exercise.exercise.id),
             completed: _sets[exercise.exercise.id] ?? const [],
             onRecord: (weight, reps, rir) => _record(
@@ -215,13 +188,10 @@ class _TodayTrainingState extends ConsumerState<_TodayTraining> {
           ),
         if (_session != null) ...[
           const SizedBox(height: 8),
-          SizedBox(
-            height: 52,
-            child: FilledButton.tonalIcon(
-              onPressed: _finish,
-              icon: const Icon(Icons.flag_outlined),
-              label: const Text('完成训练并查看总结'),
-            ),
+          FilledButton.tonalIcon(
+            onPressed: _operating ? null : _finish,
+            icon: const Icon(Icons.flag_outlined),
+            label: Text(_operating ? '正在保存…' : '完成训练并查看总结'),
           ),
         ],
       ],
@@ -240,12 +210,39 @@ class _TodayTrainingState extends ConsumerState<_TodayTraining> {
   }
 
   Future<void> _start(String trainingDayId) async {
-    final session = await ref
-        .read(offlineWorkoutRepositoryProvider)
-        .start(trainingDayId: trainingDayId);
-    if (!mounted) return;
-    setState(() => _session = session);
-    unawaited(ref.read(workoutSyncTriggerProvider)());
+    if (_operating) return;
+    setState(() => _operating = true);
+    try {
+      final session = await ref
+          .read(offlineWorkoutRepositoryProvider)
+          .start(trainingDayId: trainingDayId);
+      if (!mounted) return;
+      setState(() => _session = session);
+      unawaited(ref.read(workoutSyncTriggerProvider)());
+    } on Object catch (error) {
+      _showFailure(error);
+    } finally {
+      if (mounted) setState(() => _operating = false);
+    }
+  }
+
+  Future<void> _generate() async {
+    if (_operating) return;
+    setState(() => _operating = true);
+    try {
+      await TrainingPlanController(ref).generateDefault();
+    } on Object catch (error) {
+      _showFailure(error);
+    } finally {
+      if (mounted) setState(() => _operating = false);
+    }
+  }
+
+  void _showFailure(Object error) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${UiFailure.title(error)}。请检查记录后重试。')));
+    }
   }
 
   Future<void> _record(
@@ -255,24 +252,32 @@ class _TodayTrainingState extends ConsumerState<_TodayTraining> {
     double rir,
   ) async {
     final session = _session;
-    if (session == null) return;
-    final existing = _sets[exercise.exercise.id] ?? const [];
-    final item = await ref.read(offlineWorkoutRepositoryProvider).recordSet(
-          sessionLocalId: session.localId,
-          exerciseId: exercise.exercise.id,
-          setNumber: existing.length + 1,
-          weightKg: weight,
-          reps: reps,
-          rir: rir,
-          restSeconds: exercise.restSeconds,
-        );
-    if (!mounted) return;
-    setState(() {
-      _sets[exercise.exercise.id] = [...existing, item];
-      _restRemaining = exercise.restSeconds;
-    });
-    _startTimer();
-    unawaited(ref.read(workoutSyncTriggerProvider)());
+    if (session == null || _operating) {
+      throw StateError('operation unavailable');
+    }
+    setState(() => _operating = true);
+    try {
+      final existing = _sets[exercise.exercise.id] ?? const [];
+      final item = await ref.read(offlineWorkoutRepositoryProvider).recordSet(
+            sessionLocalId: session.localId,
+            exerciseId: exercise.exercise.id,
+            setNumber: existing.length + 1,
+            weightKg: weight,
+            reps: reps,
+            rir: rir,
+            restSeconds: exercise.restSeconds,
+          );
+      if (!mounted) return;
+      setState(() {
+        _sets[exercise.exercise.id] = [...existing, item];
+        _restRemaining = exercise.restSeconds;
+        _restExercise = exercise.exercise.name;
+      });
+      _startTimer();
+      unawaited(ref.read(workoutSyncTriggerProvider)());
+    } finally {
+      if (mounted) setState(() => _operating = false);
+    }
   }
 
   void _startTimer() {
@@ -289,48 +294,61 @@ class _TodayTrainingState extends ConsumerState<_TodayTraining> {
 
   Future<void> _finish() async {
     final session = _session;
-    if (session == null) return;
-    _timer?.cancel();
-    await ref.read(offlineWorkoutRepositoryProvider).complete(session.localId);
-    unawaited(ref.read(workoutSyncTriggerProvider)());
-    final sets = _sets.values.expand((value) => value).toList();
-    final volume = sets.fold<double>(
-      0,
-      (total, item) => total + item.weightKg * item.reps,
-    );
-    if (!mounted) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('训练完成', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 12),
-            Text('有效组  ${sets.length}'),
-            Text('训练容量  ${volume.toStringAsFixed(0)} kg'),
-            const SizedBox(height: 8),
-            const Text('服务器同步完成后会检测最大重量、次数、e1RM 和单组容量 PR。'),
-          ],
-        ),
-      ),
-    );
-    ref.invalidate(trainingHomeProvider);
-    if (mounted) {
-      setState(() {
-        _session = null;
-        _sets.clear();
-        _restRemaining = 0;
-      });
+    if (session == null || _operating) return;
+    setState(() => _operating = true);
+    try {
+      await ref
+          .read(offlineWorkoutRepositoryProvider)
+          .complete(session.localId);
+      _timer?.cancel();
+      unawaited(ref.read(workoutSyncTriggerProvider)());
+      final sets = _sets.values.expand((value) => value).toList();
+      final volume = sets.fold<double>(
+        0,
+        (total, item) => total + item.weightKg * item.reps,
+      );
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        useSafeArea: true,
+        isScrollControlled: true,
+        builder: (context) => SingleChildScrollView(
+            child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('训练完成', style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 12),
+              Text('有效组  ${sets.length}'),
+              Text('训练容量  ${AppFormat.number(volume, grouped: true)} kg × 次'),
+              const SizedBox(height: 8),
+              const Text('服务器同步完成后会检测最大重量、次数、e1RM 和单组容量 PR。'),
+            ],
+          ),
+        )),
+      );
+      ref.invalidate(trainingHomeProvider);
+      if (mounted) {
+        setState(() {
+          _session = null;
+          _sets.clear();
+          _restRemaining = 0;
+        });
+      }
+    } on Object catch (error) {
+      _showFailure(error);
+    } finally {
+      if (mounted) setState(() => _operating = false);
     }
   }
 }
 
-class _ExerciseSetCard extends StatefulWidget {
-  const _ExerciseSetCard({
+class WorkoutSetEditor extends StatefulWidget {
+  const WorkoutSetEditor({
+    super.key,
     required this.item,
     required this.enabled,
     required this.completed,
@@ -342,13 +360,16 @@ class _ExerciseSetCard extends StatefulWidget {
   final bool enabled;
   final WorkoutSetModel? previous;
   final List<LocalWorkoutSetRecord> completed;
-  final void Function(double weight, int reps, double rir) onRecord;
+  final Future<void> Function(double weight, int reps, double rir) onRecord;
 
   @override
-  State<_ExerciseSetCard> createState() => _ExerciseSetCardState();
+  State<WorkoutSetEditor> createState() => _WorkoutSetEditorState();
 }
 
-class _ExerciseSetCardState extends State<_ExerciseSetCard> {
+class _WorkoutSetEditorState extends State<WorkoutSetEditor> {
+  final _form = GlobalKey<FormState>();
+  bool _saving = false;
+  Object? _error;
   late final TextEditingController _weight;
   late final TextEditingController _reps;
   late final TextEditingController _rir;
@@ -375,97 +396,143 @@ class _ExerciseSetCardState extends State<_ExerciseSetCard> {
   }
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.item.exercise.name,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                widget.previous == null
-                    ? '上次：暂无记录'
-                    : '上次：${widget.previous!.weightKg.toStringAsFixed(1)} kg × '
-                        '${widget.previous!.reps}，RIR ${widget.previous!.rir?.toStringAsFixed(0) ?? "--"}',
-              ),
-              Text(
-                '今天：${widget.item.targetSets} × '
-                '${widget.item.repMin}–${widget.item.repMax} · '
-                '休息 ${widget.item.restSeconds} 秒',
-              ),
-              if (widget.item.targetWeightKg case final weight?)
-                Text('已应用建议重量：${weight.toStringAsFixed(1)} kg'),
-              if (widget.completed.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6,
-                  children: widget.completed
-                      .map(
-                        (item) => Chip(
-                          label: Text(
-                            '${item.weightKg.toStringAsFixed(1)}×${item.reps} RIR${item.rir?.toStringAsFixed(0)}',
-                          ),
-                        ),
-                      )
-                      .toList(),
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Form(
+            key: _form,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.item.exercise.name,
+                  style: AppTypography.sectionTitle,
                 ),
-              ],
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(child: _numberField(_weight, 'kg', decimal: true)),
-                  const SizedBox(width: 8),
-                  Expanded(child: _numberField(_reps, '次数')),
-                  const SizedBox(width: 8),
-                  Expanded(child: _numberField(_rir, 'RIR')),
+                const SizedBox(height: 4),
+                Text(
+                  widget.previous == null
+                      ? '上次：暂无记录'
+                      : '上次：${widget.previous!.weightKg.toStringAsFixed(1)} kg × '
+                          '${widget.previous!.reps}，RIR ${widget.previous!.rir?.toStringAsFixed(0) ?? "--"}',
+                ),
+                Text(
+                  '今天：${widget.item.targetSets} × '
+                  '${widget.item.repMin}–${widget.item.repMax} · '
+                  '休息 ${widget.item.restSeconds} 秒',
+                ),
+                if (widget.item.targetWeightKg case final weight?)
+                  Text('已应用建议重量：${weight.toStringAsFixed(1)} kg'),
+                if (widget.item.targetRir case final target?)
+                  Text('目标余力 ${AppFormat.number(target, decimals: 1)} 次'),
+                if (widget.completed.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    children: widget.completed
+                        .map(
+                          (item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                '${item.weightKg.toStringAsFixed(1)}×${item.reps} RIR${item.rir?.toStringAsFixed(0)}',
+                              )),
+                        )
+                        .toList(),
+                  ),
                 ],
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: FilledButton.icon(
-                  key: const Key('record-set'),
-                  onPressed: widget.enabled
-                      ? () {
-                          final weight = double.tryParse(_weight.text);
-                          final reps = int.tryParse(_reps.text);
-                          final rir = double.tryParse(_rir.text);
-                          if (weight != null &&
-                              reps != null &&
-                              reps > 0 &&
-                              rir != null &&
-                              rir >= 0 &&
-                              rir <= 9) {
-                            widget.onRecord(weight, reps, rir);
-                          }
-                        }
-                      : null,
-                  icon: const Icon(Icons.check),
-                  label: Text(
-                    widget.enabled ? '完成这一组' : '开始训练后记录',
+                const SizedBox(height: 10),
+                LayoutBuilder(builder: (context, box) {
+                  final fields = [
+                    _numberField(_weight, '重量 kg', max: 1000, decimal: true),
+                    _numberField(_reps, '次数', min: 1, max: 500),
+                    _numberField(_rir, '余力 RIR', max: 9, decimal: true),
+                  ];
+                  if (MediaQuery.textScalerOf(context).scale(17) > 25 ||
+                      box.maxWidth < 280) {
+                    return Column(children: [
+                      for (final field in fields)
+                        Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: field)
+                    ]);
+                  }
+                  return Row(children: [
+                    for (var i = 0; i < fields.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 8),
+                      Expanded(flex: i == 0 ? 14 : 10, child: fields[i]),
+                    ]
+                  ]);
+                }),
+                Text('RIR 是这一组结束后，估计还能完成的次数。',
+                    style: AppTypography.caption
+                        .copyWith(color: AppColors.of(context).secondaryText)),
+                if (_error != null)
+                  Semantics(
+                      liveRegion: true,
+                      child: Text('${UiFailure.title(_error!)}。输入已保留，请重试。',
+                          style: AppTypography.secondary
+                              .copyWith(color: AppColors.of(context).danger))),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    key: const Key('record-set'),
+                    onPressed: widget.enabled && !_saving ? _save : null,
+                    icon: const Icon(Icons.check),
+                    label: Text(
+                      _saving
+                          ? '正在保存这一组…'
+                          : _error != null
+                              ? '重试保存这一组'
+                              : widget.enabled || widget.completed.isNotEmpty
+                                  ? '完成这一组'
+                                  : '开始训练后记录',
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
+              ],
+            )),
       );
 
   Widget _numberField(
     TextEditingController controller,
     String label, {
     bool decimal = false,
+    double min = 0,
+    required double max,
   }) =>
-      TextField(
+      TextFormField(
         controller: controller,
+        enabled: widget.enabled && !_saving,
+        style: AppTypography.metric.copyWith(fontSize: 26),
         keyboardType: TextInputType.numberWithOptions(decimal: decimal),
-        decoration: InputDecoration(labelText: label, isDense: true),
+        decoration: InputDecoration(labelText: label),
+        validator: (text) {
+          final value = double.tryParse(text?.trim() ?? '');
+          if (value == null ||
+              !value.isFinite ||
+              value < min ||
+              value > max ||
+              (!decimal && int.tryParse(text?.trim() ?? '') == null)) {
+            return '请输入 ${min.toInt()}–${max.toInt()} 的${decimal ? "数值" : "整数"}';
+          }
+          return null;
+        },
       );
+
+  Future<void> _save() async {
+    if (_saving || !widget.enabled || !_form.currentState!.validate()) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.onRecord(double.parse(_weight.text.trim()),
+          int.parse(_reps.text.trim()), double.parse(_rir.text.trim()));
+    } on Object catch (error) {
+      if (mounted) setState(() => _error = error);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 }
 
 class _PlanView extends ConsumerWidget {
@@ -487,26 +554,21 @@ class _PlanView extends ConsumerWidget {
       padding: const EdgeInsets.all(20),
       children: [
         for (final plan in data.plans)
-          Card(
-            child: ExpansionTile(
-              initiallyExpanded: plan.active,
-              title: Text(plan.name),
-              subtitle: Text(
-                '每周 ${plan.sessionsPerWeek} 次 · ${plan.difficulty}',
-              ),
-              children: [
-                for (final day in plan.days)
-                  ListTile(
-                    title: Text(day.name),
-                    subtitle: Text(
-                      day.exercises
-                          .map((value) => value.exercise.name)
-                          .join(' · '),
-                    ),
-                    trailing: Text('${day.estimatedDurationMin} 分'),
-                  ),
-              ],
+          ExpansionTile(
+            initiallyExpanded: plan.active,
+            title: Text(plan.name),
+            subtitle: Text(
+              '每周 ${plan.sessionsPerWeek} 次 · ${plan.difficulty}',
             ),
+            children: [
+              for (final day in plan.days)
+                ListTile(
+                  title: Text(day.name),
+                  subtitle: Text(
+                    '${day.estimatedDurationMin} 分钟 · ${day.exercises.map((value) => value.exercise.name).join(' · ')}',
+                  ),
+                ),
+            ],
           ),
       ],
     );
@@ -514,35 +576,38 @@ class _PlanView extends ConsumerWidget {
 }
 
 class _HistoryView extends StatelessWidget {
-  const _HistoryView({required this.data});
+  const _HistoryView({required this.data, required this.onToday});
 
   final TrainingHomeData data;
+  final VoidCallback onToday;
 
   @override
-  Widget build(BuildContext context) => ListView(
-        padding: const EdgeInsets.all(20),
-        children: data.workouts.isEmpty
-            ? [const Center(child: Text('完成训练后，历史会显示在这里。'))]
-            : data.workouts
-                .map(
-                  (workout) => Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.history),
-                      title: Text(
-                        workout.status == 'completed' ? '已完成训练' : '训练进行中',
-                      ),
-                      subtitle: Text(
-                        '${workout.startedAt.month}月${workout.startedAt.day}日 · '
-                        '${workout.sets.where((item) => item.setType != "warmup").length} 个有效组',
-                      ),
-                      trailing: workout.durationMin == null
-                          ? null
-                          : Text('${workout.durationMin} 分'),
-                    ),
-                  ),
-                )
-                .toList(),
-      );
+  Widget build(BuildContext context) {
+    if (data.workouts.isEmpty) {
+      return ListView(padding: AppSpacing.pageInsets, children: [
+        EmptyState(
+            title: '训练历史还未开始',
+            message: '完成并同步训练后，可以在这里回看。',
+            actionLabel: '回到今日训练',
+            onAction: onToday)
+      ]);
+    }
+    return ListView.builder(
+        padding: AppSpacing.pageInsets,
+        itemCount: data.workouts.length,
+        itemBuilder: (context, index) {
+          final workout = data.workouts[index];
+          return ListRow(
+              title: switch (workout.status) {
+                'completed' => '已完成训练',
+                'in_progress' => '训练进行中',
+                _ => '训练状态待确认'
+              },
+              subtitle:
+                  '${workout.startedAt.year}年${AppFormat.date(workout.startedAt)} · ${workout.sets.where((item) => item.setType != "warmup").length} 个有效组${workout.durationMin == null ? "" : " · ${workout.durationMin} 分钟"}',
+              icon: Icons.history_outlined);
+        });
+  }
 }
 
 class _ExerciseLibrary extends StatefulWidget {
@@ -577,22 +642,20 @@ class _ExerciseLibraryState extends State<_ExerciseLibrary> {
         ),
         const SizedBox(height: 12),
         for (final exercise in values)
-          Card(
-            child: ExpansionTile(
-              title: Text(exercise.name),
-              subtitle: Text(
-                '${exercise.movementPattern} · ${exercise.equipment.join("/")}',
-              ),
-              childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              expandedCrossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(exercise.instructions),
-                const SizedBox(height: 6),
-                Text('提示：${exercise.executionCues.join("；")}'),
-                if (exercise.safetyNotes.isNotEmpty)
-                  Text('安全：${exercise.safetyNotes.join("；")}'),
-              ],
+          ExpansionTile(
+            title: Text(exercise.name),
+            subtitle: Text(
+              '${exercise.movementPattern} · ${exercise.equipment.join("/")}',
             ),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            expandedCrossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(exercise.instructions),
+              const SizedBox(height: 6),
+              Text('提示：${exercise.executionCues.join("；")}'),
+              if (exercise.safetyNotes.isNotEmpty)
+                Text('安全：${exercise.safetyNotes.join("；")}'),
+            ],
           ),
       ],
     );
@@ -607,31 +670,75 @@ class _ProgressView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final exercises = {for (final item in data.exercises) item.id: item.name};
+    final completed =
+        data.workouts.where((w) => w.status == 'completed').toList();
+    final weeks = <DateTime, int>{};
+    for (final workout in completed) {
+      final d = workout.startedAt;
+      final monday = DateTime(d.year, d.month, d.day)
+          .subtract(Duration(days: d.weekday - 1));
+      weeks[monday] = (weeks[monday] ?? 0) + 1;
+    }
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Text('个人纪录', style: Theme.of(context).textTheme.titleLarge),
+        Text('个人纪录', style: AppTypography.sectionTitle),
         const SizedBox(height: 8),
         if (data.records.isEmpty)
-          const Card(
-            child: ListTile(
-              leading: Icon(Icons.emoji_events_outlined),
-              title: Text('还没有 PR'),
-              subtitle: Text('完成有效工作组后自动检测，不把热身组计入容量。'),
-            ),
-          ),
+          const EmptyState(
+              title: '还没有个人纪录', message: '完成并同步工作组后，服务器会检测个人纪录。热身组不计入。'),
         for (final record in data.records)
-          Card(
+          Padding(
             key: const Key('personal-record'),
-            child: ListTile(
-              leading: const Icon(Icons.emoji_events, color: Colors.amber),
-              title: Text(exercises[record.exerciseId] ?? '训练动作'),
-              subtitle: Text(_prLabel(record.type, record.confidence)),
-              trailing: Text(record.value.toStringAsFixed(1)),
-            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              MetricRow(
+                  label: exercises[record.exerciseId] ?? '训练动作',
+                  value:
+                      '${AppFormat.number(record.value, decimals: record.type == "max_reps" ? 0 : 1)} ${switch (record.type) {
+                    "max_weight" || "estimated_1rm" => "kg",
+                    "max_reps" => "次",
+                    "volume" || "max_volume" => "kg × 次",
+                    _ => "（单位待确认）"
+                  }}',
+                  detail:
+                      '${record.achievedAt.year}年${AppFormat.date(record.achievedAt)}'),
+              Text(_prLabel(record.type, record.confidence),
+                  style: AppTypography.caption),
+            ]),
           ),
         const SizedBox(height: 12),
-        const Text('最近 4 周趋势由服务端按重量、次数、e1RM 与训练容量分别计算。'),
+        const Text('下方仅展示已加载的历史，不代表完整训练档案。', style: AppTypography.caption),
+        AppSection(
+            title: '训练频率',
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (weeks.isEmpty) const Text('暂无已完成并同步的训练'),
+              for (final week
+                  in weeks.entries.toList()
+                    ..sort((a, b) => b.key.compareTo(a.key)))
+                MetricRow(
+                    label: '${AppFormat.date(week.key)}这一周',
+                    value: '${week.value} 次'),
+            ])),
+        for (final exercise in data.exercises.where((e) => completed.any((w) =>
+            w.sets.any((s) => s.exerciseId == e.id && s.setType != 'warmup'))))
+          AppSection(
+              title: '${exercise.name} · 单次最高工作组重量',
+              child: AppTrendChart(unit: 'kg', points: [
+                for (final workout in completed)
+                  if (workout.sets.any((s) =>
+                      s.exerciseId == exercise.id && s.setType != 'warmup'))
+                    AppTrendPoint(
+                        workout.startedAt,
+                        workout.sets
+                            .where((s) =>
+                                s.exerciseId == exercise.id &&
+                                s.setType != 'warmup')
+                            .map((s) => s.weightKg)
+                            .reduce((a, b) => a > b ? a : b)),
+              ])),
       ],
     );
   }
@@ -640,7 +747,8 @@ class _ProgressView extends StatelessWidget {
         'max_weight' => '最大重量 PR',
         'max_reps' => '最大次数 PR',
         'estimated_1rm' => '估算 1RM PR · 置信度 $confidence',
-        _ => '单组容量 PR',
+        'volume' || 'max_volume' => '单组容量 PR',
+        _ => '纪录类型待确认',
       };
 }
 
@@ -654,6 +762,8 @@ class _TrainingCoachSheet extends ConsumerStatefulWidget {
 
 class _TrainingCoachSheetState extends ConsumerState<_TrainingCoachSheet> {
   final _controller = TextEditingController();
+  bool _sending = false;
+  List<TrainingChatMessage> _retained = const [];
 
   @override
   void dispose() {
@@ -664,97 +774,95 @@ class _TrainingCoachSheetState extends ConsumerState<_TrainingCoachSheet> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(trainingChatProvider);
-    final values = state.valueOrNull ?? const <TrainingChatMessage>[];
+    if (state.valueOrNull != null) _retained = state.valueOrNull!;
+    final values = _retained;
     return Scaffold(
-      appBar: AppBar(title: const Text('AI 私人训练教练')),
+      appBar: DetailPageHeader(label: 'AI 私人训练教练'),
       body: Column(
         children: [
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const Card(
-                  child: ListTile(
-                    leading: Icon(Icons.shield_outlined),
-                    title: Text('重量和进阶由程序规则计算'),
-                    subtitle: Text('AI 负责解释；任何调整都需要你点击确认。'),
-                  ),
-                ),
+                const InsightBlock(
+                    title: '重量和进阶由程序规则计算', message: 'AI 负责解释；任何调整都需要你点击确认。'),
                 for (final message in values)
-                  Align(
-                    alignment: message.fromUser
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    child: Card(
-                      color: message.fromUser
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : null,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(message.text),
-                            if (message.safetyNotice case final notice?)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  notice,
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                                ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(message.fromUser ? '你' : '私人教练',
+                            style: AppTypography.caption),
+                        const SizedBox(height: 8),
+                        Text(message.text),
+                        if (message.safetyNotice case final notice?)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              notice,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
                               ),
-                            for (final action in message.actions.where(
-                              (value) => value['type'] == 'apply_progression',
-                            ))
-                              Padding(
-                                padding: const EdgeInsets.only(top: 10),
-                                child: FilledButton.tonalIcon(
-                                  key: const Key(
-                                    'apply-training-suggestion',
-                                  ),
-                                  onPressed: () async {
-                                    try {
-                                      await ref
-                                          .read(
-                                            trainingChatProvider.notifier,
-                                          )
-                                          .applySuggestion(action);
-                                      ref.invalidate(trainingHomeProvider);
-                                      if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            '建议已应用到当前训练计划',
-                                          ),
-                                        ),
-                                      );
-                                    } on Object {
-                                      if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            '应用失败，请稍后重试',
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(Icons.check_circle_outline),
-                                  label: Text(
-                                    action['label'] as String? ?? '应用建议',
-                                  ),
-                                ),
+                            ),
+                          ),
+                        for (final action in message.actions.where(
+                          (value) => value['type'] == 'apply_progression',
+                        ))
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: FilledButton.tonalIcon(
+                              key: const Key(
+                                'apply-training-suggestion',
                               ),
-                          ],
-                        ),
-                      ),
+                              onPressed: _sending
+                                  ? null
+                                  : () async {
+                                      setState(() => _sending = true);
+                                      try {
+                                        await ref
+                                            .read(
+                                              trainingChatProvider.notifier,
+                                            )
+                                            .applySuggestion(action);
+                                        ref.invalidate(trainingHomeProvider);
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              '建议已应用到当前训练计划',
+                                            ),
+                                          ),
+                                        );
+                                      } on Object {
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              '应用失败，请稍后重试',
+                                            ),
+                                          ),
+                                        );
+                                      } finally {
+                                        if (mounted) {
+                                          setState(() => _sending = false);
+                                        }
+                                      }
+                                    },
+                              icon: const Icon(Icons.check_circle_outline),
+                              label: Text(
+                                action['label'] as String? ?? '应用建议',
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                if (state.isLoading) const LinearProgressIndicator(),
+                if (_sending || state.isLoading) const Text('教练正在整理回复…'),
+                if (state.hasError)
+                  Text('${UiFailure.title(state.error!)}。问题已保留，请重试。'),
               ],
             ),
           ),
@@ -767,17 +875,18 @@ class _TrainingCoachSheetState extends ConsumerState<_TrainingCoachSheet> {
                   Expanded(
                     child: TextField(
                       controller: _controller,
+                      enabled: !_sending,
+                      minLines: 1,
+                      maxLines: 4,
                       decoration: const InputDecoration(
+                        labelText: '问私人教练',
                         hintText: '例如：明天还练吗？',
                       ),
                     ),
                   ),
                   IconButton.filled(
-                    onPressed: () {
-                      final value = _controller.text;
-                      _controller.clear();
-                      ref.read(trainingChatProvider.notifier).send(value);
-                    },
+                    tooltip: '发送问题',
+                    onPressed: _sending ? null : _send,
                     icon: const Icon(Icons.send),
                   ),
                 ],
@@ -787,5 +896,19 @@ class _TrainingCoachSheetState extends ConsumerState<_TrainingCoachSheet> {
         ],
       ),
     );
+  }
+
+  Future<void> _send() async {
+    final value = _controller.text.trim();
+    if (_sending || value.isEmpty) return;
+    setState(() => _sending = true);
+    try {
+      await ref.read(trainingChatProvider.notifier).send(value);
+      if (mounted && !ref.read(trainingChatProvider).hasError) {
+        _controller.clear();
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 }

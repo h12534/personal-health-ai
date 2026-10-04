@@ -25,6 +25,7 @@ import 'package:personal_health_os/features/profile/presentation/profile_screen.
 import 'package:personal_health_os/core/widgets/app_components.dart';
 import 'package:personal_health_os/features/nutrition/presentation/meal_analysis_screen.dart';
 import 'ui_rollout_fixtures.dart';
+import 'ui_rollout_training_test.dart' show rolloutTraining;
 
 const _frameKey = Key('golden-frame');
 
@@ -95,6 +96,8 @@ void main() {
     ('nutrition', true),
     ('training', false),
     ('training', true),
+    ('training-progress', false),
+    ('training-progress', true),
     ('coach', false),
     ('coach', true),
     ('profile', false),
@@ -147,7 +150,8 @@ void main() {
       final theme = dark ? AppTheme.dark : AppTheme.light;
       await tester.pumpWidget(ProviderScope(
         overrides: [
-          trainingHomeProvider.overrideWith((ref) async => _training),
+          trainingHomeProvider.overrideWith((ref) async =>
+              name == 'training-progress' ? rolloutTraining : _training),
           coachChatProvider.overrideWith(_GoldenCoachChat.new),
           coachOverviewProvider.overrideWith((ref) async => _coachOverview),
           visionPrivacyProvider
@@ -177,13 +181,17 @@ void main() {
                             'dashboard' => 0,
                             'nutrition' => 1,
                             'nutrition-flow' => 1,
-                            'training' => 2,
+                            'training' || 'training-progress' => 2,
                             _ => 4
                           },
                           onSelect: _ignoreSelection))),
         ),
       ));
       await tester.pumpAndSettle();
+      if (name == 'training-progress') {
+        await tester.tap(find.text('进度'));
+        await tester.pumpAndSettle();
+      }
       expect(tester.takeException(), isNull);
       await expectLater(find.byKey(_frameKey),
           matchesGoldenFile('goldens/$name-${dark ? 'dark' : 'light'}.png'));

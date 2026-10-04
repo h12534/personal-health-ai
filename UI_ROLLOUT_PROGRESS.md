@@ -9,7 +9,7 @@ The user requires sequential page gates: analyze → whole test suite → real F
 | Global Navigation | Complete: analyze clean, 69 whole-suite tests pass, seven actual captures manually reviewed; A/B finish confirmation; original priorities closed |
 | Home | Complete: analyze clean, 79 whole-suite tests pass; Light/Dark manually reviewed; A/B original P1 closed; target-unit P2 fixed |
 | Nutrition + Draft Review | Complete: analyze clean, 99 whole-suite tests pass; six actual Light/Dark captures reviewed; A/B priorities closed, including real four-zero offline regression |
-| Training | Not started |
+| Training | Complete: analyze clean, 109 whole-suite tests pass; four actual Light/Dark captures reviewed; A/B original priorities closed |
 | AI Coach | Not started |
 | Profile / Settings | Not started |
 | Shared States | Incremental extraction with first consumers, final audit later |
@@ -42,3 +42,9 @@ Historical baseline 25/40. Numbers lead, existing next-meal range/strategy follo
 Quantity editor validates finite positive values and retains failed input. Raw errors are hidden; unknown confidence/match is unknown. Offline explicitly means local pending data. B finish found a real controller shape not covered by the initial fixture: all four aggregate objects are zero-prefilled. Main fixed the presentation existence test and added an exact-shape regression; B confirmed closure. Six width/theme tests cover Nutrition and Draft at 200%, plus quantity recovery and empty-offline shape. Complete suite 99 passes; analyzer no issues.
 
 Six explicit page candidates were manually reviewed in two batches. Shared full-width InsightBlock also changed two Home images: actual failure images were inspected first, confirmed as intentional alignment, then only those two goldens refreshed; all other screens remained unchanged. No blanket Accept All. The default nutrition golden omits photo callback on purpose; production and nutrition-flow capture pass a real action. AI/Profile Before Light/Dark were captured before their UI changes, using unchanged fixtures.
+
+## Training
+
+Baseline 23/40; independent A finish 32/40, original two P1 categories closed by both A/B. Open plan and inline kg/reps/RIR with natural-height actions. Awaited presentation locks, validation and retained failed input; IndexedStack keeps today's UI session on section changes. Foreground-only rest timer labels the exercise. Original repository, UUID, sync, plan selection, progression and volume calculation remain unchanged. PR source dates/units/confidence are honest. The new display adapter charts the actual maximum non-warmup weight per loaded completed session; frequency is explicitly loaded history, not a complete dossier, and no e1RM formula was added.
+
+Original six tests plus eight new layout/recovery/state tests pass. Full suite 109 passes; analyzer clean. Four actual L/D images manually viewed. A found an evidence-only navigation index error in two progress fixtures; only these two were corrected/re-captured. B requested an explicit maximum-weight chart title; corrected. Windows tests are not actual iPhone keyboard, VoiceOver, background timer or device performance evidence.

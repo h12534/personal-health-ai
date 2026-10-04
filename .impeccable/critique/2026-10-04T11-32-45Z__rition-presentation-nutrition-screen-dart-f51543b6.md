@@ -4,12 +4,13 @@ total_score: 25
 max_score: 40
 na_heuristics: 
 p0_count: 0
-p1_count: 0
+p1_count: 2
 target_identity: "file:E:\\codex项目\\个人身体健康管理\\mobile\\lib\\features\\nutrition\\presentation\\nutrition_screen.dart"
 target_fingerprint: "sha256:61c1d428de42a00a49a9af0b73bae1fb12fd1bac7eb9ff18a1fd51039129c466"
 target_path: "E:\\codex项目\\个人身体健康管理\\mobile\\lib\\features\\nutrition\\presentation\\nutrition_screen.dart"
 timestamp: 2026-10-04T11-32-45Z
 slug: rition-presentation-nutrition-screen-dart-f51543b6
+closed: true
 ---
 # Nutrition + Draft baseline critique
 
