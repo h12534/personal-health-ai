@@ -10,7 +10,7 @@ The user requires sequential page gates: analyze → whole test suite → real F
 | Home | Complete: analyze clean, 79 whole-suite tests pass; Light/Dark manually reviewed; A/B original P1 closed; target-unit P2 fixed |
 | Nutrition + Draft Review | Complete: analyze clean, 99 whole-suite tests pass; six actual Light/Dark captures reviewed; A/B priorities closed, including real four-zero offline regression |
 | Training | Complete: analyze clean, 109 whole-suite tests pass; four actual Light/Dark captures reviewed; A/B original priorities closed |
-| AI Coach | Not started |
+| AI Coach | Complete: analyze clean, 120 whole-suite tests pass; four actual L/D captures reviewed; A/B original priorities closed |
 | Profile / Settings | Not started |
 | Shared States | Incremental extraction with first consumers, final audit later |
 | Dark / Accessibility / Polish | Per-page checks plus final consolidated gate |
@@ -48,3 +48,7 @@ Six explicit page candidates were manually reviewed in two batches. Shared full-
 Baseline 23/40; independent A finish 32/40, original two P1 categories closed by both A/B. Open plan and inline kg/reps/RIR with natural-height actions. Awaited presentation locks, validation and retained failed input; IndexedStack keeps today's UI session on section changes. Foreground-only rest timer labels the exercise. Original repository, UUID, sync, plan selection, progression and volume calculation remain unchanged. PR source dates/units/confidence are honest. The new display adapter charts the actual maximum non-warmup weight per loaded completed session; frequency is explicitly loaded history, not a complete dossier, and no e1RM formula was added.
 
 Original six tests plus eight new layout/recovery/state tests pass. Full suite 109 passes; analyzer clean. Four actual L/D images manually viewed. A found an evidence-only navigation index error in two progress fixtures; only these two were corrected/re-captured. B requested an explicit maximum-weight chart title; corrected. Windows tests are not actual iPhone keyboard, VoiceOver, background timer or device performance evidence.
+
+## AI Coach
+
+Baseline22/40; A finish34/40, A/B original P1 closed. Existing actual overview observations, nextActions and optional7/14day weights; no invented readiness, sleep or medical inference. Four question actions and separate canteen. Explicit user/coach typography, safe visible wait/error state near composer; lazy conversations. Presentation-only cache handles controller error values both with/without previous data, without changing conversation ID/request context. Slow retry regression caught duplicate history; corrected without loosening assertions. Hunger retains fields on failed save and closes only after success; original contexts/ranges/API unchanged. Adjustment pending decisions guarded; B's actual backend declined mapping corrected with regression. Busy action visuals unified. Complete120 tests pass/analyzer clean; four actual L/D captures reviewed. Existing golden standalone host's bottom nav is fixture context, not a new AI destination or installed iOS route. Native keyboard/VoiceOver and very long modal flows remain device checks.

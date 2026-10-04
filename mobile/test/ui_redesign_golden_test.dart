@@ -26,6 +26,7 @@ import 'package:personal_health_os/core/widgets/app_components.dart';
 import 'package:personal_health_os/features/nutrition/presentation/meal_analysis_screen.dart';
 import 'ui_rollout_fixtures.dart';
 import 'ui_rollout_training_test.dart' show rolloutTraining;
+import 'ui_rollout_coach_test.dart' show rolloutCoachOverview, RolloutCoachChat;
 
 const _frameKey = Key('golden-frame');
 
@@ -100,6 +101,8 @@ void main() {
     ('training-progress', true),
     ('coach', false),
     ('coach', true),
+    ('coach-conversation', false),
+    ('coach-conversation', true),
     ('profile', false),
     ('profile', true),
     ('nutrition-flow', false),
@@ -123,7 +126,7 @@ void main() {
             onRefresh: () async {},
             onAddFood: (_) {},
             onEditItem: (_, __) {}),
-        'coach' => const CoachScreen(),
+        'coach' || 'coach-conversation' => const CoachScreen(),
         'profile' => const ProfileScreen(),
         'nutrition-flow' => NutritionContent(
             data: rolloutNutrition,
@@ -152,8 +155,13 @@ void main() {
         overrides: [
           trainingHomeProvider.overrideWith((ref) async =>
               name == 'training-progress' ? rolloutTraining : _training),
-          coachChatProvider.overrideWith(_GoldenCoachChat.new),
-          coachOverviewProvider.overrideWith((ref) async => _coachOverview),
+          coachChatProvider.overrideWith(name == 'coach-conversation'
+              ? RolloutCoachChat.new
+              : _GoldenCoachChat.new),
+          coachOverviewProvider.overrideWith((ref) async =>
+              name == 'coach-conversation'
+                  ? rolloutCoachOverview
+                  : _coachOverview),
           visionPrivacyProvider
               .overrideWith((ref) async => const VisionPrivacySettings())
         ],
@@ -190,6 +198,10 @@ void main() {
       await tester.pumpAndSettle();
       if (name == 'training-progress') {
         await tester.tap(find.text('进度'));
+        await tester.pumpAndSettle();
+      }
+      if (name == 'coach-conversation') {
+        await tester.drag(find.byType(ListView).first, const Offset(0, -650));
         await tester.pumpAndSettle();
       }
       expect(tester.takeException(), isNull);

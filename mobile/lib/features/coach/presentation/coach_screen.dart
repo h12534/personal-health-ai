@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_components.dart';
+import 'hunger_entry_dialog.dart';
 import '../data/coach_models.dart';
 import 'canteen_screen.dart';
 import 'coach_controller.dart';
@@ -15,47 +18,88 @@ class CoachScreen extends ConsumerStatefulWidget {
 
 class _CoachScreenState extends ConsumerState<CoachScreen> {
   final _controller = TextEditingController();
+  final _inputFocus = FocusNode();
+  bool _sending = false;
+  bool _acting = false;
+  List<CoachBubble> _retained = const [];
+  List<CoachBubble> _historyPrefix = const [];
 
   @override
   void dispose() {
     _controller.dispose();
+    _inputFocus.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final chat = ref.watch(coachChatProvider);
+    if (chat.valueOrNull case final incoming?) {
+      final includesPrefix = incoming.length >= _historyPrefix.length &&
+          List.generate(
+                  _historyPrefix.length,
+                  (i) =>
+                      incoming[i].text == _historyPrefix[i].text &&
+                      incoming[i].fromUser == _historyPrefix[i].fromUser)
+              .every((same) => same);
+      if (includesPrefix) _historyPrefix = const [];
+      _retained = [..._historyPrefix, ...incoming];
+    }
     return Column(
       children: [
         Expanded(
-          child: ListView(
+          child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-            children: [
-              Text('AI 饮食教练',
-                  style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 4),
-              const Text('目标和趋势由程序计算，AI 负责把建议说清楚。'),
-              const SizedBox(height: 14),
-              _OverviewCard(onDecision: _decideAdjustment),
-              const SizedBox(height: 14),
-              const _QuickPrompts(),
-              const SizedBox(height: 14),
-              ...switch (chat) {
-                AsyncData(:final value) => value.map(
-                    (message) => _MessageBubble(
-                      message,
-                      onAction: _handleAction,
-                    ),
-                  ),
-                AsyncError(:final error) => [
-                    Text('发送失败：$error'),
-                    const SizedBox(height: 8),
-                  ],
-                _ => [const LinearProgressIndicator()],
-              },
-            ],
+            itemCount: _retained.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RootPageHeader(
+                          title: 'AI 饮食教练',
+                          subtitle: '你的私人教练。目标和趋势由程序计算，AI 负责把建议说清楚。',
+                          action: Navigator.canPop(context)
+                              ? IconButton(
+                                  tooltip: '返回',
+                                  onPressed: () => Navigator.maybePop(context),
+                                  icon: const Icon(Icons.arrow_back_ios_new))
+                              : null),
+                      _OverviewCard(
+                          onDecision: _decideAdjustment,
+                          busy: _acting || _sending),
+                      AppSection(
+                          title: '问你的教练',
+                          child: _QuickPrompts(
+                              onSend: _send, busy: _sending || _acting)),
+                      if (_retained.isEmpty &&
+                          !chat.isLoading &&
+                          !chat.hasError)
+                        EmptyState(
+                            title: '从一个问题开始',
+                            message: '可以聊下一餐、蛋白质或本周趋势。不需要重新解释已有背景。',
+                            actionLabel: '写下你的问题',
+                            onAction: _inputFocus.requestFocus),
+                    ]);
+              }
+              return _MessageBubble(_retained[index - 1],
+                  onAction: _handleAction, busy: _acting || _sending);
+            },
           ),
         ),
+        Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (_sending || chat.isLoading)
+                Semantics(liveRegion: true, child: const Text('教练正在整理回复…')),
+              if (chat.hasError)
+                Semantics(
+                    liveRegion: true,
+                    child: Text('${UiFailure.title(chat.error!)}。问题已保留，请重试。',
+                        style: AppTypography.secondary
+                            .copyWith(color: AppColors.of(context).danger))),
+            ])),
         SafeArea(
           top: false,
           child: Padding(
@@ -65,15 +109,19 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
+                    focusNode: _inputFocus,
+                    enabled: !_sending,
+                    minLines: 1,
+                    maxLines: 4,
                     textInputAction: TextInputAction.send,
-                    decoration:
-                        const InputDecoration(hintText: '问下一餐、食堂选择或本周趋势'),
+                    decoration: const InputDecoration(
+                        labelText: '写下你的问题', hintText: '问下一餐、食堂选择或本周趋势'),
                     onSubmitted: (_) => _send(),
                   ),
                 ),
                 IconButton.filled(
                   tooltip: '发送',
-                  onPressed: _send,
+                  onPressed: _sending || _acting ? null : _send,
                   icon: const Icon(Icons.send_outlined),
                 ),
               ],
@@ -84,13 +132,32 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     );
   }
 
-  void _send([String? prompt]) {
-    final message = prompt ?? _controller.text;
-    _controller.clear();
-    ref.read(coachChatProvider.notifier).send(message);
+  Future<void> _send([String? prompt]) async {
+    final message = (prompt ?? _controller.text).trim();
+    if (_sending || _acting || message.isEmpty) return;
+    if (prompt != null) _controller.text = prompt;
+    // Display history only; conversation ID and request context stay owned by
+    // the existing controller, whose AsyncError no longer contains old values.
+    if (ref.read(coachChatProvider).hasError) {
+      _historyPrefix = [..._retained];
+      if (_historyPrefix.isNotEmpty &&
+          _historyPrefix.last.fromUser &&
+          _historyPrefix.last.text == message) {
+        _historyPrefix = _historyPrefix.sublist(0, _historyPrefix.length - 1);
+      }
+    }
+    setState(() => _sending = true);
+    try {
+      await ref.read(coachChatProvider.notifier).send(message);
+      if (mounted && !ref.read(coachChatProvider).hasError) _controller.clear();
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   Future<void> _decideAdjustment(DietAdjustmentModel value, bool accept) async {
+    if (_acting || _sending) return;
+    setState(() => _acting = true);
     try {
       await AdjustmentController(ref).decide(value.id, accept);
       if (mounted) {
@@ -101,166 +168,103 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     } on Object catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.toString())),
+          SnackBar(content: Text('${UiFailure.title(error)}。请重新检查建议后重试。')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _acting = false);
     }
   }
 
   Future<void> _handleAction(CoachActionModel action) async {
-    switch (action.type) {
-      case 'open_canteen':
-        await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const CanteenScreen()),
-        );
-        return;
-      case 'open_next_meal':
-        try {
-          final plan = await ref.read(apiClientProvider).fetchNextMeal();
-          if (!mounted) return;
-          await showModalBottomSheet<void>(
-            context: context,
-            showDragHandle: true,
-            builder: (context) => SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${plan.mealLabel}建议',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      '${plan.target.caloriesMin}–${plan.target.caloriesMax} kcal · '
-                      '蛋白质至少 ${plan.target.proteinMin.toStringAsFixed(0)} g',
-                    ),
-                    const SizedBox(height: 8),
-                    for (final line in plan.strategy)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Text('• $line'),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+    if (_acting || _sending) return;
+    setState(() => _acting = true);
+    try {
+      switch (action.type) {
+        case 'open_canteen':
+          await Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const CanteenScreen()),
           );
-        } on Object catch (error) {
-          _showMessage(error.toString());
-        }
-        return;
-      case 'log_hunger':
-        await _showHungerDialog();
-        return;
-      case 'review_adjustment':
-        ref.invalidate(coachOverviewProvider);
-        _showMessage('已刷新本周趋势与调整建议。');
-        return;
-      case 'log_weight':
-        _showMessage('请回到首页的体重卡片记录晨重。');
-        return;
-      case 'none':
-        return;
-      default:
-        _showMessage('该操作暂不可用。');
-        return;
+          return;
+        case 'open_next_meal':
+          try {
+            final plan = await ref.read(apiClientProvider).fetchNextMeal();
+            if (!mounted) return;
+            await showModalBottomSheet<void>(
+              context: context,
+              showDragHandle: true,
+              isScrollControlled: true,
+              builder: (context) => SafeArea(
+                child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * .85),
+                    child: SingleChildScrollView(
+                        child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${plan.mealLabel}建议',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            '${plan.target.caloriesMin}–${plan.target.caloriesMax} kcal · '
+                            '蛋白质至少 ${plan.target.proteinMin.toStringAsFixed(0)} g',
+                          ),
+                          const SizedBox(height: 8),
+                          for (final line in plan.strategy)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text('• $line'),
+                            ),
+                        ],
+                      ),
+                    ))),
+              ),
+            );
+          } on Object catch (error) {
+            _showMessage('${UiFailure.title(error)}。请重试。');
+          }
+          return;
+        case 'log_hunger':
+          await _showHungerDialog();
+          return;
+        case 'review_adjustment':
+          ref.invalidate(coachOverviewProvider);
+          _showMessage('已刷新本周趋势与调整建议。');
+          return;
+        case 'log_weight':
+          _showMessage('请回到首页的体重卡片记录晨重。');
+          return;
+        case 'none':
+          return;
+        default:
+          _showMessage('该操作暂不可用。');
+          return;
+      }
+    } finally {
+      if (mounted) setState(() => _acting = false);
     }
   }
 
   Future<void> _showHungerDialog() async {
-    var hunger = 3.0;
-    var craving = 2.0;
-    var mealContext = 'before_dinner';
-    final note = TextEditingController();
     final save = await showDialog<bool>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('记录饥饿感'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('饥饿程度：${hunger.round()} / 5'),
-                Slider(
-                  value: hunger,
-                  min: 1,
-                  max: 5,
-                  divisions: 4,
-                  onChanged: (value) => setState(() => hunger = value),
-                ),
-                Text('想吃特定食物：${craving.round()} / 5'),
-                Slider(
-                  value: craving,
-                  min: 1,
-                  max: 5,
-                  divisions: 4,
-                  onChanged: (value) => setState(() => craving = value),
-                ),
-                DropdownButtonFormField<String>(
-                  initialValue: mealContext,
-                  decoration: const InputDecoration(labelText: '时间'),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'before_breakfast',
-                      child: Text('早餐前'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'before_lunch',
-                      child: Text('午餐前'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'before_dinner',
-                      child: Text('晚餐前'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'before_bed',
-                      child: Text('睡前'),
-                    ),
-                  ],
-                  onChanged: (value) =>
-                      setState(() => mealContext = value ?? mealContext),
-                ),
-                TextField(
-                  controller: note,
-                  decoration: const InputDecoration(
-                    labelText: '备注（压力、食堂选择、训练后等）',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('保存'),
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => HungerEntryDialog(
+          onSave: (hunger, craving, mealContext, note) => ref
+              .read(apiClientProvider)
+              .logHunger(
+                  hungerLevel: hunger,
+                  cravingLevel: craving,
+                  context: mealContext,
+                  note: note)),
     );
     if (save == true) {
-      try {
-        await ref.read(apiClientProvider).logHunger(
-              hungerLevel: hunger.round(),
-              cravingLevel: craving.round(),
-              context: mealContext,
-              note: note.text.trim().isEmpty ? null : note.text.trim(),
-            );
-        _showMessage('已记录，这会帮助判断计划是否过于激进。');
-      } on Object catch (error) {
-        _showMessage(error.toString());
-      }
+      _showMessage('已记录，这会帮助判断计划是否过于激进。');
     }
-    note.dispose();
   }
 
   void _showMessage(String message) {
@@ -272,150 +276,170 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
 }
 
 class _OverviewCard extends ConsumerWidget {
-  const _OverviewCard({required this.onDecision});
+  const _OverviewCard({required this.onDecision, required this.busy});
 
   final Future<void> Function(DietAdjustmentModel, bool) onDecision;
+  final bool busy;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final overview = ref.watch(coachOverviewProvider);
     return overview.when(
-      loading: () => const Card(child: LinearProgressIndicator()),
-      error: (error, stack) => Card(
-        child: ListTile(
-          leading: const Icon(Icons.insights_outlined),
-          title: const Text('周趋势数据暂不可用'),
-          subtitle: const Text('仍可继续与教练聊天。'),
-          trailing: IconButton(
-            onPressed: () => ref.invalidate(coachOverviewProvider),
-            icon: const Icon(Icons.refresh),
-          ),
-        ),
-      ),
-      data: (data) => Card(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      loading: () => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Text('正在读取本周背景…')),
+      error: (error, stack) => EmptyState(
+          title: '周趋势数据暂不可用',
+          message: '${UiFailure.message(error)} 仍可继续与教练聊天。',
+          actionLabel: '重新读取趋势',
+          onAction: () => ref.invalidate(coachOverviewProvider)),
+      data: (data) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('本周趋势', style: AppTypography.sectionTitle),
+          const SizedBox(height: 8),
+          Text(data.headline, style: AppTypography.cardTitle),
+          const SizedBox(height: 6),
+          Text(data.trend.note),
+          if (data.trend.average7d case final average?)
+            MetricRow(
+                label: '7 日平均体重',
+                value: '${AppFormat.number(average, decimals: 1)} kg'),
+          if (data.trend.change14d case final change?)
+            MetricRow(
+                label: '14 日体重变化',
+                value: '${AppFormat.number(change, decimals: 1)} kg'),
+          if (data.nextActions.isNotEmpty)
+            Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: InsightBlock(
+                    title: '下一步', message: data.nextActions.first)),
+          if (data.observations.isNotEmpty || data.nextActions.length > 1)
+            ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: const Text('已知背景与依据'),
                 children: [
-                  const Icon(Icons.insights_outlined),
-                  const SizedBox(width: 8),
-                  Text('本周趋势', style: Theme.of(context).textTheme.titleMedium),
+                  for (final line in [
+                    ...data.observations,
+                    ...data.nextActions.skip(1)
+                  ])
+                    Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Align(
+                            alignment: Alignment.centerLeft, child: Text(line)))
+                ]),
+          if (data.adjustment case final adjustment?) ...[
+            const Divider(height: 24),
+            Text(
+              '${adjustment.previousCalories} → ${adjustment.proposedCalories} kcal',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(adjustment.reason),
+            const SizedBox(height: 10),
+            if (adjustment.status == 'pending')
+              Wrap(
+                spacing: 8,
+                children: [
+                  FilledButton(
+                    onPressed: busy ? null : () => onDecision(adjustment, true),
+                    child: const Text('接受调整'),
+                  ),
+                  TextButton(
+                    onPressed:
+                        busy ? null : () => onDecision(adjustment, false),
+                    child: const Text('保持当前目标'),
+                  ),
                 ],
-              ),
-              const SizedBox(height: 8),
-              Text(data.headline),
-              const SizedBox(height: 6),
-              Text(data.trend.note),
-              if (data.adjustment case final adjustment?) ...[
-                const Divider(height: 24),
-                Text(
-                  '${adjustment.previousCalories} → ${adjustment.proposedCalories} kcal',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                Text(adjustment.reason),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    FilledButton(
-                      onPressed: () => onDecision(adjustment, true),
-                      child: const Text('接受调整'),
-                    ),
-                    TextButton(
-                      onPressed: () => onDecision(adjustment, false),
-                      child: const Text('保持当前目标'),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
+              )
+            else
+              Text(switch (adjustment.status) {
+                'accepted' => '已接受 · 新目标明天生效',
+                'declined' || 'rejected' => '已保持当前目标',
+                _ => '建议状态待确认'
+              }),
+            if (busy) const Text('请稍候再调整目标。'),
+          ],
+        ],
       ),
     );
   }
 }
 
-class _QuickPrompts extends ConsumerWidget {
-  const _QuickPrompts();
+class _QuickPrompts extends StatelessWidget {
+  const _QuickPrompts({required this.onSend, required this.busy});
+  final Future<void> Function(String) onSend;
+  final bool busy;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final prompt in const [
-            '今天吃什么？',
-            '晚餐怎么吃？',
-            '今天蛋白质够吗？',
-            '我的减脂速度怎么样？',
-            '食堂怎么选？',
-          ])
-            ActionChip(
-              label: Text(prompt),
-              onPressed: () =>
-                  ref.read(coachChatProvider.notifier).send(prompt),
-            ),
-          ActionChip(
-            avatar: const Icon(Icons.storefront_outlined, size: 18),
-            label: const Text('打开食堂'),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const CanteenScreen()),
-            ),
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final prompt in const [
+              '今天吃什么？',
+              '今天蛋白质够吗？',
+              '我的减脂速度怎么样？',
+              '食堂怎么选？',
+            ])
+              TextButton(
+                onPressed: busy ? null : () => onSend(prompt),
+                child: Text(prompt),
+              ),
+          ],
+        ),
+        TextButton.icon(
+          icon: const Icon(Icons.storefront_outlined, size: 18),
+          label: const Text('打开食堂'),
+          onPressed: busy ? null : () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const CanteenScreen()),
           ),
-        ],
-      );
+        ),
+      ]);
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble(this.message, {required this.onAction});
+  const _MessageBubble(this.message,
+      {required this.onAction, required this.busy});
 
   final CoachBubble message;
   final Future<void> Function(CoachActionModel) onAction;
+  final bool busy;
 
   @override
-  Widget build(BuildContext context) => Align(
-        alignment:
-            message.fromUser ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 520),
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: message.fromUser
-                ? Theme.of(context).colorScheme.primaryContainer
-                : Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(message.text),
-              if (message.safetyNotice case final notice?) ...[
-                const SizedBox(height: 8),
-                Text(notice, style: Theme.of(context).textTheme.bodySmall),
-              ],
-              if (!message.fromUser && message.actions.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    for (final action in message.actions)
-                      if (action.type != 'none')
-                        ActionChip(
-                          label: Text(action.label),
-                          onPressed: () => onAction(action),
-                        ),
-                  ],
-                ),
-              ],
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message.fromUser ? '你' : '私人教练',
+                style: AppTypography.caption
+                    .copyWith(color: AppColors.of(context).secondaryText)),
+            const SizedBox(height: 8),
+            SelectableText(message.text, style: AppTypography.body),
+            if (message.safetyNotice case final notice?) ...[
+              const SizedBox(height: 8),
+              Text(notice,
+                  style: AppTypography.secondary
+                      .copyWith(color: AppColors.of(context).attention)),
             ],
-          ),
+            if (!message.fromUser && message.actions.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  for (final action in message.actions)
+                    if (action.type != 'none')
+                      TextButton(
+                        onPressed: busy ? null : () => onAction(action),
+                        child: Text(action.label),
+                      ),
+                ],
+              ),
+            ],
+          ],
         ),
       );
 }
