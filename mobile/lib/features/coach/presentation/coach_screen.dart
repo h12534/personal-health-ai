@@ -48,91 +48,120 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
           .where((message) => !_hiddenFailedAttempts.contains(message))
           .toList();
     }
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-            itemCount: _retained.length + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RootPageHeader(
-                          title: 'AI 饮食教练',
-                          subtitle: '你的私人教练。目标和趋势由程序计算，AI 负责把建议说清楚。',
-                          action: Navigator.canPop(context)
-                              ? IconButton(
-                                  tooltip: '返回',
-                                  onPressed: () => Navigator.maybePop(context),
-                                  icon: const Icon(Icons.arrow_back_ios_new))
-                              : null),
-                      _OverviewCard(
-                          onDecision: _decideAdjustment,
-                          busy: _acting || _sending),
-                      AppSection(
-                          title: '问你的教练',
-                          child: _QuickPrompts(
-                              onSend: _send, busy: _sending || _acting)),
-                      if (_retained.isEmpty &&
-                          !chat.isLoading &&
-                          !chat.hasError)
-                        EmptyState(
-                            title: '从一个问题开始',
-                            message: '可以聊下一餐、蛋白质或本周趋势。不需要重新解释已有背景。',
-                            actionLabel: '写下你的问题',
-                            onAction: _inputFocus.requestFocus),
-                    ]);
-              }
-              return _MessageBubble(_retained[index - 1],
-                  onAction: _handleAction, busy: _acting || _sending);
-            },
-          ),
-        ),
-        Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (_sending || chat.isLoading)
-                Semantics(liveRegion: true, child: const Text('教练正在整理回复…')),
-              if (chat.hasError)
-                Semantics(
-                    liveRegion: true,
-                    child: Text('${UiFailure.title(chat.error!)}。问题已保留，请重试。',
-                        style: AppTypography.secondary
-                            .copyWith(color: AppColors.of(context).danger))),
-            ])),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 10, 10),
-            child: Row(
+    return LayoutBuilder(
+        builder: (context, space) => Column(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _inputFocus,
-                    enabled: !_sending,
-                    minLines: 1,
-                    maxLines: 4,
-                    textInputAction: TextInputAction.send,
-                    decoration: const InputDecoration(
-                        labelText: '写下你的问题', hintText: '问下一餐、食堂选择或本周趋势'),
-                    onSubmitted: (_) => _send(),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                    itemCount: _retained.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (space.maxHeight >= 400)
+                                RootPageHeader(
+                                    title: 'AI 饮食教练',
+                                    subtitle: '你的私人教练。目标和趋势由程序计算，AI 负责把建议说清楚。',
+                                    action: Navigator.canPop(context)
+                                        ? IconButton(
+                                            tooltip: '返回',
+                                            onPressed: () =>
+                                                Navigator.maybePop(context),
+                                            icon: const Icon(
+                                                Icons.arrow_back_ios_new))
+                                        : null),
+                              if (space.maxHeight < 400)
+                                Row(children: [
+                                  const Expanded(
+                                      child: Text('AI 饮食教练',
+                                          style: AppTypography.cardTitle)),
+                                  if (Navigator.canPop(context))
+                                    IconButton(
+                                        tooltip: '返回',
+                                        onPressed: () =>
+                                            Navigator.maybePop(context),
+                                        icon: const Icon(
+                                            Icons.arrow_back_ios_new))
+                                ]),
+                              _OverviewCard(
+                                  onDecision: _decideAdjustment,
+                                  busy: _acting || _sending),
+                              AppSection(
+                                  title: '问你的教练',
+                                  child: _QuickPrompts(
+                                      onSend: _send,
+                                      busy: _sending || _acting)),
+                              if (_retained.isEmpty &&
+                                  !chat.isLoading &&
+                                  !chat.hasError)
+                                EmptyState(
+                                    title: '从一个问题开始',
+                                    message: '可以聊下一餐、蛋白质或本周趋势。不需要重新解释已有背景。',
+                                    actionLabel: '写下你的问题',
+                                    onAction: _inputFocus.requestFocus),
+                            ]);
+                      }
+                      return _MessageBubble(_retained[index - 1],
+                          onAction: _handleAction, busy: _acting || _sending);
+                    },
                   ),
                 ),
-                IconButton.filled(
-                  tooltip: '发送',
-                  onPressed: _sending || _acting ? null : _send,
-                  icon: const Icon(Icons.send_outlined),
+                Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_sending || chat.isLoading)
+                            Semantics(
+                                liveRegion: true,
+                                child: const Text('教练正在整理回复…')),
+                          if (chat.hasError)
+                            Semantics(
+                                liveRegion: true,
+                                child: Text(
+                                    '${UiFailure.title(chat.error!)}。问题已保留，请重试。',
+                                    style: AppTypography.secondary.copyWith(
+                                        color: AppColors.of(context).danger))),
+                        ])),
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 10, 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            focusNode: _inputFocus,
+                            enabled: !_sending,
+                            minLines: 1,
+                            maxLines: ((space.maxHeight - 120) /
+                                    (MediaQuery.textScalerOf(context)
+                                            .scale(17) *
+                                        1.5))
+                                .floor()
+                                .clamp(1, 4),
+                            textInputAction: TextInputAction.send,
+                            decoration: const InputDecoration(
+                                labelText: '写下你的问题',
+                                hintText: '问下一餐、食堂选择或本周趋势',
+                                hintMaxLines: 1),
+                            onSubmitted: (_) => _send(),
+                          ),
+                        ),
+                        IconButton.filled(
+                          tooltip: '发送',
+                          onPressed: _sending || _acting ? null : _send,
+                          icon: const Icon(Icons.send_outlined),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
-            ),
-          ),
-        ),
-      ],
-    );
+            ));
   }
 
   Future<void> _send([String? prompt]) async {

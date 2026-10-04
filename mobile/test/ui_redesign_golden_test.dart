@@ -137,11 +137,17 @@ void main() {
     ('timeline-empty', true),
     ('weight-editor', false),
     ('weight-editor', true),
+    ('health-keyboard-small', false),
+    ('health-keyboard-small', true),
+    ('coach-keyboard-small', false),
+    ('coach-keyboard-small', true),
   ]) {
     final (name, dark) = entry;
     testWidgets('$name ${dark ? 'dark' : 'light'} themed golden',
         (tester) async {
-      tester.view.physicalSize = const Size(393, 852);
+      final smallKeyboard = name.endsWith('keyboard-small');
+      tester.view.physicalSize =
+          smallKeyboard ? const Size(320, 568) : const Size(393, 852);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -154,13 +160,17 @@ void main() {
             onRefresh: () async {},
             onAddFood: (_) {},
             onEditItem: (_, __) {}),
-        'coach' || 'coach-conversation' => const CoachScreen(),
+        'coach' ||
+        'coach-conversation' ||
+        'coach-keyboard-small' =>
+          const CoachScreen(),
         'profile' => const ProfileScreen(),
         'health-sync' => const HealthSyncScreen(),
         'notifications' => const NotificationSettingsScreen(),
         'privacy-data' => const PrivacyDataScreen(),
         'health-chat' ||
         'health-knowledge' ||
+        'health-keyboard-small' ||
         'health-data-detail' =>
           const HealthScreen(),
         'reports-empty' => const ReportsScreen(),
@@ -233,6 +243,14 @@ void main() {
               : null,
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
+            builder: (context, child) => smallKeyboard
+                ? MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                        viewInsets: const EdgeInsets.only(bottom: 300),
+                        textScaler: const TextScaler.linear(2),
+                        disableAnimations: true),
+                    child: child!)
+                : child!,
             theme: theme.copyWith(
                 platform: TargetPlatform.iOS,
                 textTheme:
@@ -240,12 +258,20 @@ void main() {
             home: RepaintBoundary(
                 key: name == 'health-data-detail' || name == 'weight-editor'
                     ? null
-                    : _frameKey,
+                    : smallKeyboard
+                        ? null
+                        : _frameKey,
                 child: Scaffold(
                     appBar: name == 'meal-draft'
                         ? DetailPageHeader(label: '核对餐食')
                         : null,
-                    body: SafeArea(child: screen),
+                    body: RepaintBoundary(
+                        key: smallKeyboard ? _frameKey : null,
+                        child: smallKeyboard
+                            ? Material(
+                                color: theme.scaffoldBackgroundColor,
+                                child: SafeArea(child: screen))
+                            : SafeArea(child: screen)),
                     bottomNavigationBar: name == 'meal-draft'
                         ? BottomActionArea(
                             child: FilledButton.icon(
@@ -296,6 +322,15 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(WeightEntryDialog), findsOneWidget);
         await tester.enterText(find.byType(TextFormField), '98.6');
+        await tester.pumpAndSettle();
+      }
+      if (smallKeyboard) {
+        if (name.startsWith('health')) {
+          await tester.ensureVisible(find.text('健康 AI'));
+          await tester.tap(find.text('健康 AI'));
+          await tester.pumpAndSettle();
+        }
+        await tester.enterText(find.byType(TextField).last, '这是用于键盘布局的合成中文问题。');
         await tester.pumpAndSettle();
       }
       expect(tester.takeException(), isNull);

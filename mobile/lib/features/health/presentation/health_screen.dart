@@ -46,76 +46,84 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      key: const Key('health-screen'),
-      children: [
-        if (AppConfig.appleHealthDisabled) const PersonalManualHealthNotice(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.page, AppSpacing.lg, AppSpacing.md, AppSpacing.sm),
-          child: RootPageHeader(
-              title: '健康',
-              subtitle: '你的记录，逐步看清。',
-              action: IconButton(
-                tooltip: 'AI 饮食教练',
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const Scaffold(
-                      body: SafeArea(child: CoachScreen()),
-                    ),
+    return LayoutBuilder(
+        builder: (context, space) => Column(
+              key: const Key('health-screen'),
+              children: [
+                if (AppConfig.appleHealthDisabled && space.maxHeight >= 400)
+                  const PersonalManualHealthNotice(),
+                if (space.maxHeight >= 400)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.page,
+                        AppSpacing.lg, AppSpacing.md, AppSpacing.sm),
+                    child: RootPageHeader(
+                        title: '健康',
+                        subtitle: space.maxHeight < 600 &&
+                                MediaQuery.textScalerOf(context).scale(17) > 25
+                            ? null
+                            : '你的记录，逐步看清。',
+                        action: IconButton(
+                          tooltip: 'AI 饮食教练',
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const Scaffold(
+                                body: SafeArea(child: CoachScreen()),
+                              ),
+                            ),
+                          ),
+                          icon: const Icon(Icons.restaurant_menu),
+                        )),
+                  ),
+                TabBar(
+                  controller: _tabs,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  dividerColor: Colors.transparent,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                      color: AppColors.of(context).softTint,
+                      borderRadius: BorderRadius.circular(AppRadius.small)),
+                  indicatorPadding:
+                      const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                  labelColor: AppColors.of(context).primary,
+                  unselectedLabelColor: AppColors.of(context).secondaryText,
+                  labelStyle: Theme.of(context).textTheme.labelMedium,
+                  tabs: const [
+                    Tab(text: '概览'),
+                    Tab(text: '体检报告'),
+                    Tab(text: '健康知识'),
+                    Tab(text: '健康 AI'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabs,
+                    children: [
+                      _OverviewTab(
+                          variant: widget.overviewVariant,
+                          onOpenReports: () => _tabs.animateTo(1,
+                              duration: AppMotion.duration(context)),
+                          onAsk: _ask),
+                      _ReportsTab(
+                        uploading: _uploading,
+                        onUpload: _chooseUpload,
+                        onAsk: _ask,
+                      ),
+                      const _KnowledgeTab(),
+                      _HealthChatTab(
+                          externalSending: _asking,
+                          prompt: _indicatorQuestion,
+                          promptVersion: _promptVersion,
+                          onBusyChanged: (busy) {
+                            if (mounted) setState(() => _asking = busy);
+                          }),
+                    ],
                   ),
                 ),
-                icon: const Icon(Icons.restaurant_menu),
-              )),
-        ),
-        TabBar(
-          controller: _tabs,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          dividerColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          indicatorSize: TabBarIndicatorSize.tab,
-          indicator: BoxDecoration(
-              color: AppColors.of(context).softTint,
-              borderRadius: BorderRadius.circular(AppRadius.small)),
-          indicatorPadding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-          labelColor: AppColors.of(context).primary,
-          unselectedLabelColor: AppColors.of(context).secondaryText,
-          labelStyle: Theme.of(context).textTheme.labelMedium,
-          tabs: const [
-            Tab(text: '概览'),
-            Tab(text: '体检报告'),
-            Tab(text: '健康知识'),
-            Tab(text: '健康 AI'),
-          ],
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _tabs,
-            children: [
-              _OverviewTab(
-                  variant: widget.overviewVariant,
-                  onOpenReports: () =>
-                      _tabs.animateTo(1, duration: AppMotion.duration(context)),
-                  onAsk: _ask),
-              _ReportsTab(
-                uploading: _uploading,
-                onUpload: _chooseUpload,
-                onAsk: _ask,
-              ),
-              const _KnowledgeTab(),
-              _HealthChatTab(
-                  externalSending: _asking,
-                  prompt: _indicatorQuestion,
-                  promptVersion: _promptVersion,
-                  onBusyChanged: (busy) {
-                    if (mounted) setState(() => _asking = busy);
-                  }),
-            ],
-          ),
-        ),
-      ],
-    );
+              ],
+            ));
   }
 
   void _ask(LabResultModel result) {
@@ -1194,69 +1202,85 @@ class _HealthChatTabState extends ConsumerState<_HealthChatTab>
           .toList();
     }
     final busy = _sending || widget.externalSending || chat.isLoading;
-    return Column(children: [
-      Expanded(
-          child: ListView.builder(
-              key: const Key('health-chat-history'),
-              padding: AppSpacing.pageInsets,
-              itemCount: _retained.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return Column(
+    return LayoutBuilder(
+        builder: (context, space) => Column(children: [
+              Expanded(
+                  child: ListView.builder(
+                      key: const Key('health-chat-history'),
+                      padding: AppSpacing.pageInsets,
+                      itemCount: _retained.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (space.maxHeight < 400)
+                                  const Text('没有足够依据时会明确说明；不能替代医生诊断或处方。',
+                                      style: AppTypography.caption),
+                                if (space.maxHeight >= 400)
+                                  const InsightBlock(
+                                      title: '结合记录，理解健康',
+                                      message: '没有足够依据时会明确说明；不能替代医生诊断或处方。'),
+                                if (_retained.isEmpty &&
+                                    !chat.isLoading &&
+                                    !chat.hasError)
+                                  EmptyState(
+                                      title: '从一个问题开始',
+                                      message: '可以询问指标含义、个人趋势或已有可靠证据。',
+                                      actionLabel: '写下健康问题',
+                                      onAction: _focus.requestFocus),
+                              ]);
+                        }
+                        return _HealthConversationRow(_retained[index - 1]);
+                      })),
+              Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const InsightBlock(
-                            title: '结合记录，理解健康',
-                            message: '没有足够依据时会明确说明；不能替代医生诊断或处方。'),
-                        if (_retained.isEmpty &&
-                            !chat.isLoading &&
-                            !chat.hasError)
-                          EmptyState(
-                              title: '从一个问题开始',
-                              message: '可以询问指标含义、个人趋势或已有可靠证据。',
-                              actionLabel: '写下健康问题',
-                              onAction: _focus.requestFocus),
-                      ]);
-                }
-                return _HealthConversationRow(_retained[index - 1]);
-              })),
-      Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (busy)
-              Semantics(liveRegion: true, child: const Text('正在结合记录与证据整理回复…')),
-            if (chat.hasError)
-              Semantics(
-                  liveRegion: true,
-                  child: Text('${UiFailure.title(chat.error!)}。问题已保留，请重试。',
-                      style: AppTypography.secondary
-                          .copyWith(color: AppColors.of(context).danger))),
-          ])),
-      SafeArea(
-          top: false,
-          child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 8, 12),
-              child: Row(children: [
-                Expanded(
-                    child: TextField(
-                        key: const Key('health-chat-input'),
-                        controller: _message,
-                        focusNode: _focus,
-                        enabled: !busy,
-                        minLines: 1,
-                        maxLines: 4,
-                        textInputAction: TextInputAction.send,
-                        decoration: const InputDecoration(
-                            labelText: '写下健康问题', hintText: '询问指标含义或个人趋势'),
-                        onSubmitted: (_) => _send())),
-                IconButton(
-                    key: const Key('send-health-chat'),
-                    tooltip: '发送健康问题',
-                    onPressed: busy ? null : _send,
-                    icon: const Icon(Icons.send_outlined)),
-              ]))),
-    ]);
+                        if (busy)
+                          Semantics(
+                              liveRegion: true,
+                              child: const Text('正在结合记录与证据整理回复…')),
+                        if (chat.hasError)
+                          Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                  '${UiFailure.title(chat.error!)}。问题已保留，请重试。',
+                                  style: AppTypography.secondary.copyWith(
+                                      color: AppColors.of(context).danger))),
+                      ])),
+              SafeArea(
+                  top: false,
+                  child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 8, 12),
+                      child: Row(children: [
+                        Expanded(
+                            child: TextField(
+                                key: const Key('health-chat-input'),
+                                controller: _message,
+                                focusNode: _focus,
+                                enabled: !busy,
+                                minLines: 1,
+                                maxLines: ((space.maxHeight - 120) /
+                                        (MediaQuery.textScalerOf(context)
+                                                .scale(17) *
+                                            1.5))
+                                    .floor()
+                                    .clamp(1, 4),
+                                textInputAction: TextInputAction.send,
+                                decoration: const InputDecoration(
+                                    labelText: '写下健康问题',
+                                    hintText: '询问指标含义或个人趋势',
+                                    hintMaxLines: 1),
+                                onSubmitted: (_) => _send())),
+                        IconButton(
+                            key: const Key('send-health-chat'),
+                            tooltip: '发送健康问题',
+                            onPressed: busy ? null : _send,
+                            icon: const Icon(Icons.send_outlined)),
+                      ]))),
+            ]));
   }
 
   Future<void> _send([String? prompt]) async {
