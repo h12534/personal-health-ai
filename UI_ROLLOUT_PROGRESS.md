@@ -7,7 +7,7 @@ The user requires sequential page gates: analyze → whole test suite → real F
 | Stage | Status |
 | --- | --- |
 | Global Navigation | Complete: analyze clean, 69 whole-suite tests pass, seven actual captures manually reviewed; A/B finish confirmation; original priorities closed |
-| Home | Source/baseline pre-review; not implemented |
+| Home | Complete: analyze clean, 79 whole-suite tests pass; Light/Dark manually reviewed; A/B original P1 closed; target-unit P2 fixed |
 | Nutrition + Draft Review | Not started |
 | Training | Not started |
 | AI Coach | Not started |
@@ -28,3 +28,9 @@ Six tests cover widths 320 / 393 / 430, light and dark, 200% text: actual text g
 > Codex native hook approval entry unavailable in current environment.
 
 No hook trust bypass/disable. Current evidence is Windows Flutter test-engine/source, not actual VoiceOver, iPhone gestures, haptics or physical performance. The owner needs no local Mac to continue this rollout.
+
+## Home review
+
+Baseline A score 24/40 (historical, not an invented post-fix score). Both aggregated P1 issues are resolved and A/B confirmed no blocking issues. Actual pending-only focus in server order; skipped remains skipped. Rule next-action text unchanged. Seven metrics remain reachable; carbs/fat/fiber/water are progressively disclosed. Working provider refresh, static accessible skeleton, safe retry state, input-preserving morning-weight dialog with validation and busy guard. Six light/dark 200% tests cover 320/393/430 widths plus one input failure/duplicate-save test. Existing tests unchanged. Final tiny unit correction includes the explicit protein goal unit without changing its value.
+
+Home is a bounded summary (at most six tasks); its scrollable Column keeps the complete summary in the tree. Unbounded history lists will remain lazy. Before Dark baselines for Home/Nutrition/Training were captured before their implementation changes; Light baselines remain from Phase 1. No fake zero, trend or task inference added.

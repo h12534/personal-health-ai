@@ -80,8 +80,17 @@ void main() {
     });
   }
 
-  for (final name in ['dashboard', 'nutrition', 'training']) {
-    testWidgets('$name themed golden', (tester) async {
+  for (final entry in [
+    ('dashboard', false),
+    ('dashboard', true),
+    ('nutrition', false),
+    ('nutrition', true),
+    ('training', false),
+    ('training', true),
+  ]) {
+    final (name, dark) = entry;
+    testWidgets('$name ${dark ? 'dark' : 'light'} themed golden',
+        (tester) async {
       tester.view.physicalSize = const Size(393, 852);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -95,7 +104,7 @@ void main() {
             onEditItem: (_, __) {}),
         _ => const TrainingScreen(),
       };
-      final theme = AppTheme.light;
+      final theme = dark ? AppTheme.dark : AppTheme.light;
       await tester.pumpWidget(ProviderScope(
         overrides: [
           trainingHomeProvider.overrideWith((ref) async => _training)
@@ -118,8 +127,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      await expectLater(
-          find.byKey(_frameKey), matchesGoldenFile('goldens/$name-light.png'));
+      await expectLater(find.byKey(_frameKey),
+          matchesGoldenFile('goldens/$name-${dark ? 'dark' : 'light'}.png'));
     });
   }
 }
