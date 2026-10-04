@@ -1,12 +1,12 @@
 # CI Audit
 
-验收日期：2026-10-03（Asia/Shanghai）。工作流文件为 `.github/workflows/ci.yml`。
+验收更新：2026-10-04（Asia/Shanghai）。工作流文件为 `.github/workflows/ci.yml`。
 
-**Real GitHub CI：PASS / CLOSED。** [实际全绿运行 37134206768](https://github.com/h12534/personal-health-ai/actions/runs/37134206768)，event `push`，attempt `1`，commit `af22faaab2b6694ff00808d07f7f8ad0edea4b48`，workflow conclusion `success`。
+**Real GitHub CI：PASS / CLOSED。** 最新代码证据为 [run 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992)，event `push`，attempt `1`，commit `df4a1e161dfe565787e3a59beed19c7d84bcff97`，workflow conclusion `success`。五个原有 Job 全部 SUCCESS；新增签名 Job **SKIPPED / NOT RUN**，不计作签名门禁通过。下方保留首次关闭门禁的历史证据。
 
 仓库 [h12534/personal-health-ai](https://github.com/h12534/personal-health-ai) 按所有者 2026-10-03 的明确决定使用 Public 开源。仅推送 `main`（Phase 1 基线 `25b026d`）和 `feature/release-candidate-beta`；未推送其他历史 feature refs。验收针对 RC 分支，未合并或替换 main 的基线。
 
-## 每个 Job 的实际结果
+## 首次关闭门禁：每个 Job 的实际结果（2026-10-03）
 
 | Job | 实际结果 | 耗时 | 可核验记录 |
 |---|---|---:|---|
@@ -72,10 +72,29 @@ flutter build ios --release --no-codesign \
 
 ## Cloud signing preparation（2026-10-04）
 
-- 当前 no-codesign 编译门禁最终证据仍为 [run 37135036631](https://github.com/h12534/personal-health-ai/actions/runs/37135036631)，commit `42bbd93baf73312167a32529fe7cb711018effb5`；五个既有 Job 全绿。
+- 本轮开始前 no-codesign 编译门禁证据为 [run 37135036631](https://github.com/h12534/personal-health-ai/actions/runs/37135036631)，commit `42bbd93baf73312167a32529fe7cb711018effb5`；五个既有 Job 全绿。最新代码复验见下表。
 - 新增 `mobile-ios-signed` 独立 opt-in Job：限制授权仓库 main/RC，不在 PR/fork 注入 Secrets；自动签名优先/手动 fallback，真实 IPA 命令、内部限定导出、API Key 上传、签名材料 always cleanup。
 - 代码回归本地：Backend 87 tests、Ruff、strict mypy 165 files；Flutter analyze、40 tests；签名基础设施 12 unittest guardrails，Release Audit PASS。Windows 中文路径 LSP 缺陷通过同一源码临时 ASCII 映射核验，无检查降级。
 - **没有执行 signed build / IPA / TestFlight**。所有者已确认 membership 未办理；2026-10-04 API 只读检查显示 repository secrets/variables 为空、`ios-beta` 未创建（404）。不读取/打印 Secret 值，不声称配置等于 PASS。环境配置后依然不启用发布开关。
 - 随后实际创建并 GET 复核 `ios-beta`：required reviewer 仅 `h12534`（允许 self-review，避免单人开发无法审批），custom branch policy 仅 main 与 RC；Secrets/Variables 为空、发布 opt-in 未启用。只改授权 GitHub 仓库，无 Apple 注册/付款/证书生成。
 - 本轮首推 [run 37138093960](https://github.com/h12534/personal-health-ai/actions/runs/37138093960) / commit `6f640620713dbc26bb8d33c99b29f1beb2c8859a` **FAIL** 于 workflow validation，没有 Job 启动。页面 annotation 明确 `(Line: 202, Col: 20): Unrecognized named-value: 'runner'`，对应 Job 级 env 引用 `runner.temp`。修复为脚本运行时解析 `RUNNER_TEMP/health-ios-signing`，新增目录解析与 workflow context 回归测试；没有删检查/测试或降低任何门禁。修复后的真实结果必须独立核验。
 - 修复后 [run 37138303764](https://github.com/h12534/personal-health-ai/actions/runs/37138303764) / commit `b51363cd104f6c025fb8a14048dcf6b960f2142f` 正常启动；Release Audit 和 PostgreSQL PASS，但 Backend 84 passed / 3 failed。实际日志 UTC `2026-10-03 16:51`、默认上海用户日期已是 `10-04`；三个旧测试使用 host `date.today()` 造数，却向按用户日期聚合的 Dashboard 断言。同步发现 Weight trends endpoint 使用 host date 而非用户时区。修复为复用既有用户 timezone 服务；相关测试按默认用户日期造数，新增上海/洛杉矶固定 UTC 跨日边界接口回归。所有原断言保留，未设置全局 TZ 或绕过时区检查，未重建/更改 Phase 架构。
+
+## Cloud preparation 后的真实复验（2026-10-04）
+
+[Run 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992)，commit `df4a1e161dfe565787e3a59beed19c7d84bcff97`，attempt `1`；API 与逐 Job 日志均已读取。运行 UTC `2026-10-03 17:02–17:11`，对应上海 `2026-10-04 01:02–01:11`。
+
+| Job | 实际结果 | 耗时 | 可核验记录 |
+|---|---|---:|---|
+| `release-audit` | SUCCESS | 7s | [111249575171](https://github.com/h12534/personal-health-ai/actions/runs/37139080992/job/111249575171)：静态发布审计、14 signing guardrail tests、Shell syntax |
+| `backend` | SUCCESS | 76s | [111249575376](https://github.com/h12534/personal-health-ai/actions/runs/37139080992/job/111249575376)：Ruff、203 files format、strict mypy 165 files、89 tests passed |
+| `backend-postgres` | SUCCESS | 68s | [111249575372](https://github.com/h12534/personal-health-ai/actions/runs/37139080992/job/111249575372)：PG 16.15 / Redis 7.4.11、7 integration tests、两次 Alembic check、完整升降级与 restore |
+| `mobile-ios-primary` | SUCCESS | 495s | [111249575335](https://github.com/h12534/personal-health-ai/actions/runs/37139080992/job/111249575335)：format/analyze、40 tests、release no-codesign，Runner.app 24.4MB |
+| `mobile-android-compat` | SUCCESS | 345s | [111249575485](https://github.com/h12534/personal-health-ai/actions/runs/37139080992/job/111249575485)：真实 Gradle debug APK |
+| `mobile-ios-signed` | **SKIPPED / NOT RUN** | — | [111251056298](https://github.com/h12534/personal-health-ai/actions/runs/37139080992/job/111251056298)：发布 opt-in 关闭；未运行 signing/IPA/upload，不是 PASS |
+
+PG 仍使用真实 `pgvector/pgvector:pg16`；0001→0007→0008 与 0008→0006→0007→0008 全部运行，未改为 SQLite。Restore 日志 `result=passed`、10 表 count/marker UUID、head `0008_release_candidate`；[本轮 restore artifact 11279688010](https://github.com/h12534/personal-health-ai/actions/runs/37139080992/artifacts/11279688010) 已上传，未把它混用为前述历史 artifact 的 SHA256。
+
+iOS 日志再次确认 macOS 26.6.2 arm64、Xcode 26.6 (17F113)、CocoaPods 1.17.0、Flutter 3.47.5 / Dart 3.13.4，SwiftPM 与 `pod install`、iOS 16 no-codesign 构建完成。编译仍使用 `.invalid` 占位 API，不能证明真机联网。
+
+本地复测：Backend **89 passed**（含两个固定 UTC 跨日边界接口用例）、Ruff、strict mypy 165 files、Flutter analyze / **40 passed**、signing guardrails **14 passed**、Release Audit。修复提交为 `df4a1e1`，签名目录修复为 `b51363c`；没有 skip/disable test、降 lint、删除失败检查或绕过数据库。实际 Apple membership/Secrets/API 尚缺，signed IPA、TestFlight processing 和 physical acceptance 仍 **NOT RUN**。

@@ -22,9 +22,9 @@
 
 ## 当前真实状态
 
-- Real GitHub CI / iOS no-codesign 编译：**PASS / CLOSED**，[run 37135036631](https://github.com/h12534/personal-health-ai/actions/runs/37135036631)，commit `42bbd93baf73312167a32529fe7cb711018effb5`，五个 Job SUCCESS。
+- Real GitHub CI / iOS no-codesign 编译：**PASS / CLOSED**，[run 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992)，commit `df4a1e161dfe565787e3a59beed19c7d84bcff97`，五个原有 Job SUCCESS（Backend 89 / Flutter 40 / PG integration 7 / signing guardrails 14 tests）。
 - 所有者：已确认有 iPhone；**尚未办理 Apple Developer Program**，iPhone 型号/iOS 版本未提供。
-- Cloud signed Job：仓库实现；**尚未签名执行**，默认不启用。
+- Cloud signed Job：仓库实现；最新真实 CI 状态 **SKIPPED / NOT RUN**，默认不启用；不是签名验收 PASS。
 - Distribution signing / signed IPA / App Store Connect upload / processing / TestFlight 安装 / physical acceptance：**NOT RUN**。
 - 真实 Staging HTTPS API：**未提供/未验**；`.invalid` 仅用于编译，不能用于 Beta 登录。
 - 不将“已配置”、Mock、单元测试、未签名 Runner.app 或上传命令成功记成 TestFlight 可安装。

@@ -1,8 +1,8 @@
 # iPhone / TestFlight Beta Readiness
 
-> 2026-10-04：Real GitHub CI 已关闭，[最终 run 37135036631](https://github.com/h12534/personal-health-ai/actions/runs/37135036631) 五个 Job 全部 SUCCESS。整体仍未 Beta Ready；下一门禁是 **Cloud macOS signing → IPA → TestFlight → physical iPhone acceptance**。**不要求拥有本地 Mac**。具体配置见 `CLOUD_IOS_RELEASE.md`。
+> 2026-10-04：Real GitHub CI 已关闭，[最新代码 run 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992) 五个原有 Job 全部 SUCCESS。新增签名 Job SKIPPED / NOT RUN，不能计作签名通过。整体仍未 Beta Ready；下一门禁是 **Cloud macOS signing → IPA → TestFlight → physical iPhone acceptance**。**不要求拥有本地 Mac**。具体配置见 `CLOUD_IOS_RELEASE.md`。
 
-实际全绿：[workflow 37134206768](https://github.com/h12534/personal-health-ai/actions/runs/37134206768)，commit `af22faaab2b6694ff00808d07f7f8ad0edea4b48`。Ruff、strict mypy、83 backend tests、7 PostgreSQL integration tests、Redis、迁移/恢复演练、Flutter analyze、37 Flutter tests、iOS no-codesign 和 Android secondary 均有 SUCCESS 证据。首轮 PostgreSQL 元数据漂移与 Android desugaring 失败已在该提交修复，未降低任何门禁。
+实际常规 CI 全绿：[workflow 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992)，commit `df4a1e161dfe565787e3a59beed19c7d84bcff97`。Ruff、strict mypy 165 files、89 backend tests、7 PostgreSQL integration tests、Redis、迁移/恢复演练、Flutter analyze、40 Flutter tests、14 signing guardrail tests、iOS no-codesign 和 Android secondary 均有 SUCCESS 证据。此前 PostgreSQL 元数据漂移/Android desugaring，以及本轮 workflow context / 用户时区跨日失败均已修复复验；失败运行与修复记录保留在 `CI_AUDIT.md`，未降低任何门禁。
 
 状态定义：“代码就绪”表示仓库中已实现；“外部门禁”表示需要 Apple 凭据、云 macOS/真机、域名或服务器才能证明，不伪造通过。所有者已确认有 iPhone，但尚未办理 Apple Developer Program；Team/Bundle/App record/API Key/真实 HTTPS API 尚未提供。
 
@@ -23,7 +23,7 @@
 | PostgreSQL / Redis / Restore | PASS（CI） | 真实 PostgreSQL 16.15/pgvector，7 integration tests，10 表恢复 count/UUID 核验与 artifact |
 | iOS no-codesign build | PASS（真实 macOS CI） | macOS 26.6.2 arm64、Xcode 26.6 (17F113)、CocoaPods 1.17.0；Runner.app 24.4MB；尚未签名/安装真机 |
 | Android secondary | PASS（真实 CI） | Java 17、desugaring、Gradle debug APK 成功；不改变 iOS 主平台定位 |
-| Cloud signed IPA | 流程实现 / NOT RUN | `mobile-ios-signed` 默认关闭，真实运行前需 Apple membership 与受保护 Secrets |
+| Cloud signed IPA | 流程实现 / SKIPPED / NOT RUN | 最新运行未启用 `mobile-ios-signed`；`ios-beta` 已配置仅所有者审批/main/RC，Secrets 为空；需 Apple membership 后实际构建 |
 | TestFlight upload / processing | 外部门禁 / NOT RUN | API Key 上传；processed build 只分配所有者一人的内部组 |
 | Physical iPhone acceptance | NOT RUN | 用 TestFlight Beta 验收；记录模板 `TESTFLIGHT_IPHONE_ACCEPTANCE.md` |
 
