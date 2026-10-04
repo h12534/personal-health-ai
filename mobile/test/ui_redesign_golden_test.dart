@@ -27,6 +27,13 @@ import 'package:personal_health_os/features/nutrition/presentation/meal_analysis
 import 'ui_rollout_fixtures.dart';
 import 'ui_rollout_training_test.dart' show rolloutTraining;
 import 'ui_rollout_coach_test.dart' show rolloutCoachOverview, RolloutCoachChat;
+import 'ui_rollout_profile_test.dart'
+    show rolloutPreferences, rolloutPermissions, RolloutUnlockedLock;
+import 'package:personal_health_os/features/profile/presentation/health_sync_screen.dart';
+import 'package:personal_health_os/features/supervision/presentation/supervision_controller.dart'
+    as supervision;
+import 'package:personal_health_os/features/supervision/presentation/supervision_screens.dart';
+import 'package:personal_health_os/core/privacy/privacy_lock.dart';
 
 const _frameKey = Key('golden-frame');
 
@@ -105,6 +112,12 @@ void main() {
     ('coach-conversation', true),
     ('profile', false),
     ('profile', true),
+    ('health-sync', false),
+    ('health-sync', true),
+    ('notifications', false),
+    ('notifications', true),
+    ('privacy-data', false),
+    ('privacy-data', true),
     ('nutrition-flow', false),
     ('nutrition-flow', true),
     ('meal-draft', false),
@@ -128,6 +141,9 @@ void main() {
             onEditItem: (_, __) {}),
         'coach' || 'coach-conversation' => const CoachScreen(),
         'profile' => const ProfileScreen(),
+        'health-sync' => const HealthSyncScreen(),
+        'notifications' => const NotificationSettingsScreen(),
+        'privacy-data' => const PrivacyDataScreen(),
         'nutrition-flow' => NutritionContent(
             data: rolloutNutrition,
             onRefresh: () async {},
@@ -153,6 +169,13 @@ void main() {
       final theme = dark ? AppTheme.dark : AppTheme.light;
       await tester.pumpWidget(ProviderScope(
         overrides: [
+          healthKitCapabilityProvider.overrideWith((ref) async => true),
+          healthPermissionsProvider
+              .overrideWith((ref) async => rolloutPermissions),
+          healthSyncStatusProvider.overrideWith((ref) async => []),
+          supervision.reminderPreferencesProvider
+              .overrideWith((ref) async => rolloutPreferences),
+          privacyLockControllerProvider.overrideWith(RolloutUnlockedLock.new),
           trainingHomeProvider.overrideWith((ref) async =>
               name == 'training-progress' ? rolloutTraining : _training),
           coachChatProvider.overrideWith(name == 'coach-conversation'

@@ -64,9 +64,9 @@ void main() {
     expect(find.text('在你同意后才请求系统通知权限'), findsOneWidget);
     expect(find.byKey(const Key('enable-notifications')), findsOneWidget);
     expect(notifications.requestCount, 0);
-    expect(find.text('温和'), findsOneWidget);
-    expect(find.text('标准'), findsOneWidget);
-    expect(find.text('积极'), findsOneWidget);
+    expect(find.text('轻提醒'), findsOneWidget);
+    expect(find.text('标准监督'), findsOneWidget);
+    expect(find.text('积极监督'), findsOneWidget);
   });
 
   testWidgets('reports render summaries without a health score',

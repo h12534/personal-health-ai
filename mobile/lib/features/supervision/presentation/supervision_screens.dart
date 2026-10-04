@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/privacy/privacy_lock.dart';
+import '../../../core/widgets/app_components.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/supervision_models.dart';
 import 'supervision_controller.dart';
@@ -75,42 +76,41 @@ class TodayTasksScreen extends ConsumerWidget {
   }
 }
 
-class NotificationSettingsScreen extends ConsumerWidget {
+class NotificationSettingsScreen extends ConsumerStatefulWidget {
   const NotificationSettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationSettingsScreen> createState() =>
+      _NotificationSettingsScreenState();
+}
+
+class _NotificationSettingsScreenState
+    extends ConsumerState<NotificationSettingsScreen> {
+  bool _saving = false;
+
+  @override
+  Widget build(BuildContext context) {
     final settings = ref.watch(reminderPreferencesProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('通知设置')),
+      appBar: DetailPageHeader(label: '通知设置'),
       body: settings.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => _Retry(
-          label: '通知设置加载失败',
+        loading: () => const LoadingState(label: '正在读取通知设置'),
+        error: (error, _) => ErrorState(
+          error: error,
+          title: '通知设置暂时无法读取',
           onRetry: () => ref.invalidate(reminderPreferencesProvider),
         ),
         data: (value) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Card(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              child: const Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('在你同意后才请求系统通知权限'),
-                    SizedBox(height: 8),
-                    Text('开启后，可提醒晨重、训练和睡眠；完成后不再发送服务器智能提醒。'),
-                  ],
-                ),
-              ),
-            ),
+            const InsightBlock(
+                title: '在你同意后才请求系统通知权限',
+                message: '开启后，可提醒晨重、训练和睡眠；完成后不再发送服务器智能提醒。'),
             const SizedBox(height: 12),
             if (!value.localNotificationsEnabled)
               FilledButton.icon(
                 key: const Key('enable-notifications'),
-                onPressed: () => _enable(context, ref, value),
+                onPressed: _saving ? null : () => _enable(value),
                 icon: const Icon(Icons.notifications_active_outlined),
                 label: const Text('开启通知'),
               ),
@@ -119,46 +119,57 @@ class NotificationSettingsScreen extends ConsumerWidget {
                 value: true,
                 title: const Text('iPhone 本地通知'),
                 subtitle: const Text('用于晨重、训练和睡眠等固定提醒。'),
-                onChanged: (enabled) =>
-                    SupervisionController(ref).savePreferences(
-                  value.copyWith(localNotificationsEnabled: enabled),
-                ),
+                onChanged: _saving
+                    ? null
+                    : (enabled) => _save(
+                          value.copyWith(localNotificationsEnabled: enabled),
+                        ),
               ),
             SwitchListTile.adaptive(
               value: value.serverNotificationsEnabled,
               title: const Text('服务器智能提醒'),
               subtitle: const Text('用于营养、步数、同步、报告和复查等复杂判断。'),
-              onChanged: (enabled) =>
-                  SupervisionController(ref).savePreferences(
-                value.copyWith(serverNotificationsEnabled: enabled),
-              ),
+              onChanged: _saving
+                  ? null
+                  : (enabled) => _save(
+                        value.copyWith(serverNotificationsEnabled: enabled),
+                      ),
             ),
             SwitchListTile.adaptive(
               value: value.enabled,
               title: const Text('监督提醒'),
               subtitle: const Text('可随时关闭；已完成任务不会提醒。'),
-              onChanged: (enabled) => SupervisionController(ref)
-                  .savePreferences(value.copyWith(enabled: enabled)),
+              onChanged: _saving
+                  ? null
+                  : (enabled) => _save(value.copyWith(enabled: enabled)),
             ),
             const SizedBox(height: 8),
             Text('提醒强度', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'gentle', label: Text('温和')),
-                ButtonSegment(value: 'standard', label: Text('标准')),
-                ButtonSegment(value: 'strict', label: Text('积极')),
-              ],
-              selected: {value.mode},
-              onSelectionChanged: (selection) => SupervisionController(ref)
-                  .savePreferences(value.copyWith(mode: selection.first)),
-            ),
+            for (final mode in const [
+              ('gentle', '轻提醒', '服务器智能提醒每天最多 2 条'),
+              ('standard', '标准监督', '服务器智能提醒每天最多 4 条'),
+              ('strict', '积极监督', '服务器智能提醒每天最多 6 条')
+            ])
+              Semantics(
+                  selected: value.mode == mode.$1,
+                  child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(mode.$2),
+                      subtitle: Text(mode.$3),
+                      trailing: value.mode == mode.$1
+                          ? const Icon(Icons.check)
+                          : null,
+                      onTap: _saving
+                          ? null
+                          : () => _save(value.copyWith(mode: mode.$1)))),
+            if (_saving) const Text('正在保存并重新读取设置…'),
             const SizedBox(height: 12),
             _TimeTile(
               title: '晨重提醒',
+              enabled: !_saving,
               value: value.weighTime,
-              onChanged: (time) => SupervisionController(ref)
-                  .savePreferences(value.copyWith(weighTime: time)),
+              onChanged: (time) => _save(value.copyWith(weighTime: time)),
             ),
             Text('餐次记录窗口', style: Theme.of(context).textTheme.titleMedium),
             for (final entry in const {
@@ -168,9 +179,9 @@ class NotificationSettingsScreen extends ConsumerWidget {
             }.entries)
               _MealWindowTile(
                 title: entry.value,
+                enabled: !_saving,
                 value: value.mealWindows[entry.key] ?? const ['00:00', '23:59'],
-                onChanged: (window) =>
-                    SupervisionController(ref).savePreferences(
+                onChanged: (window) => _save(
                   value.copyWith(
                     mealWindows: {...value.mealWindows, entry.key: window},
                   ),
@@ -178,38 +189,43 @@ class NotificationSettingsScreen extends ConsumerWidget {
               ),
             _TimeTile(
               title: '训练提醒',
+              enabled: !_saving,
               value: value.trainingReminderTime,
-              onChanged: (time) => SupervisionController(ref).savePreferences(
+              onChanged: (time) => _save(
                 value.copyWith(trainingReminderTime: time),
               ),
             ),
             _TimeTile(
               title: '步数检查',
+              enabled: !_saving,
               value: value.stepCheckTime,
-              onChanged: (time) => SupervisionController(ref)
-                  .savePreferences(value.copyWith(stepCheckTime: time)),
+              onChanged: (time) => _save(value.copyWith(stepCheckTime: time)),
             ),
             _TimeTile(
               title: '睡眠准备',
+              enabled: !_saving,
               value: value.sleepReminderTime,
-              onChanged: (time) => SupervisionController(ref)
-                  .savePreferences(value.copyWith(sleepReminderTime: time)),
+              onChanged: (time) =>
+                  _save(value.copyWith(sleepReminderTime: time)),
             ),
             _TimeTile(
               title: '勿扰开始',
+              enabled: !_saving,
               value: value.doNotDisturbStart,
-              onChanged: (time) => SupervisionController(ref).savePreferences(
+              onChanged: (time) => _save(
                 value.copyWith(doNotDisturbStart: time),
               ),
             ),
             _TimeTile(
               title: '勿扰结束',
+              enabled: !_saving,
               value: value.doNotDisturbEnd,
-              onChanged: (time) => SupervisionController(ref).savePreferences(
+              onChanged: (time) => _save(
                 value.copyWith(doNotDisturbEnd: time),
               ),
             ),
             DropdownButtonFormField<int>(
+              isExpanded: true,
               initialValue: value.weeklyReportDay,
               decoration: const InputDecoration(labelText: '周报生成日'),
               items: const [
@@ -221,32 +237,37 @@ class NotificationSettingsScreen extends ConsumerWidget {
                 DropdownMenuItem(value: 5, child: Text('周六')),
                 DropdownMenuItem(value: 6, child: Text('周日')),
               ],
-              onChanged: (day) {
-                if (day != null) {
-                  SupervisionController(ref).savePreferences(
-                    value.copyWith(weeklyReportDay: day),
-                  );
-                }
-              },
+              onChanged: _saving
+                  ? null
+                  : (day) {
+                      if (day != null) {
+                        _save(
+                          value.copyWith(weeklyReportDay: day),
+                        );
+                      }
+                    },
             ),
             DropdownButtonFormField<int>(
+              isExpanded: true,
               initialValue: value.monthlyReportDay,
               decoration: const InputDecoration(labelText: '月报生成日'),
               items: [
                 for (var day = 1; day <= 28; day += 1)
                   DropdownMenuItem(value: day, child: Text('每月 $day 日')),
               ],
-              onChanged: (day) {
-                if (day != null) {
-                  SupervisionController(ref).savePreferences(
-                    value.copyWith(monthlyReportDay: day),
-                  );
-                }
-              },
+              onChanged: _saving
+                  ? null
+                  : (day) {
+                      if (day != null) {
+                        _save(
+                          value.copyWith(monthlyReportDay: day),
+                        );
+                      }
+                    },
             ),
             const Padding(
               padding: EdgeInsets.all(12),
-              child: Text('严格模式仍受勿扰、冷却和每日上限约束，不会连续轰炸。'),
+              child: Text('积极监督仍受勿扰、冷却和每日上限约束。上述每日条数仅针对服务器智能提醒，不是全部本地通知的总上限。'),
             ),
           ],
         ),
@@ -254,16 +275,54 @@ class NotificationSettingsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _enable(
-    BuildContext context,
-    WidgetRef ref,
-    ReminderPreferencesModel value,
-  ) async {
-    final granted = await SupervisionController(ref).enableNotifications(value);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(granted ? '通知已开启' : '系统未授予通知权限')),
-    );
+  Future<void> _save(ReminderPreferencesModel value) async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await SupervisionController(ref).savePreferences(value);
+      if (!mounted) return;
+      await ref.read(reminderPreferencesProvider.future);
+    } on Object {
+      ref.invalidate(reminderPreferencesProvider);
+      try {
+        await ref.read(reminderPreferencesProvider.future);
+      } on Object {
+        /* The provider shows a read error instead of stale values. */
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('设置结果暂时无法确认，请重新读取后再试。')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _enable(ReminderPreferencesModel value) async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      final granted =
+          await SupervisionController(ref).enableNotifications(value);
+      if (!mounted) return;
+      await ref.read(reminderPreferencesProvider.future);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(granted ? '通知已开启' : '系统未授予通知权限')));
+    } on Object {
+      ref.invalidate(reminderPreferencesProvider);
+      try {
+        await ref.read(reminderPreferencesProvider.future);
+      } on Object {
+        /* The provider shows a read error instead of stale values. */
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('通知设置暂时无法完成，请稍后重试。')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 }
 
@@ -548,63 +607,75 @@ class FollowupsScreen extends ConsumerWidget {
   }
 }
 
-class PrivacyDataScreen extends ConsumerWidget {
+class PrivacyDataScreen extends ConsumerStatefulWidget {
   const PrivacyDataScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PrivacyDataScreen> createState() => _PrivacyDataScreenState();
+}
+
+class _PrivacyDataScreenState extends ConsumerState<PrivacyDataScreen> {
+  bool _working = false;
+
+  @override
+  Widget build(BuildContext context) {
     final lock = ref.watch(privacyLockControllerProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('隐私锁与数据')),
+      appBar: DetailPageHeader(label: 'App 锁与数据'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Card(
+          AppSection(
+            title: 'App 锁',
             child: lock.when(
               loading: () => const Padding(
                 padding: EdgeInsets.all(20),
-                child: LinearProgressIndicator(),
+                child: Text('正在读取设备验证状态…'),
               ),
-              error: (_, __) => const ListTile(title: Text('无法加载生物识别状态')),
+              error: (_, __) => ListRow(
+                  title: '无法读取设备验证状态',
+                  subtitle: '重新读取后再设置 App 锁',
+                  onTap: () => ref.invalidate(privacyLockControllerProvider)),
               data: (value) => SwitchListTile.adaptive(
                 key: const Key('biometric-lock-switch'),
                 value: value.enabled,
-                title: const Text('Face ID / Touch ID 隐私锁'),
+                title: const Text('Face ID / Touch ID'),
                 subtitle: Text(
                   value.available
                       ? '离开 App 超过 2 分钟后再次要求验证。'
                       : '此设备暂不可用；默认保持关闭。',
                 ),
-                onChanged: value.available
-                    ? (enabled) async {
-                        final changed = await ref
-                            .read(privacyLockControllerProvider.notifier)
-                            .setEnabled(enabled);
-                        if (!changed && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('身份验证未完成')),
-                          );
-                        }
-                      }
+                onChanged: value.available && !_working
+                    ? (enabled) => _run(() async {
+                          final changed = await ref
+                              .read(privacyLockControllerProvider.notifier)
+                              .setEnabled(enabled);
+                          if (!changed && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('身份验证未完成')),
+                            );
+                          }
+                        })
                     : null,
               ),
             ),
           ),
           const SizedBox(height: 12),
-          Card(
+          AppSection(
+            title: '你的数据',
             child: Column(
               children: [
                 ListTile(
                   leading: const Icon(Icons.download_outlined),
                   title: const Text('导出 JSON'),
                   subtitle: const Text('体重、饮食、训练、睡眠、体检和设置'),
-                  onTap: () => _export(context, ref, 'json'),
+                  onTap: _working ? null : () => _run(() => _export('json')),
                 ),
                 ListTile(
                   leading: const Icon(Icons.table_view_outlined),
                   title: const Text('导出 CSV'),
                   subtitle: const Text('复制为通用表格文本'),
-                  onTap: () => _export(context, ref, 'csv'),
+                  onTap: _working ? null : () => _run(() => _export('csv')),
                 ),
               ],
             ),
@@ -615,7 +686,7 @@ class PrivacyDataScreen extends ConsumerWidget {
             style: OutlinedButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.error,
             ),
-            onPressed: () => _delete(context, ref),
+            onPressed: _working ? null : () => _run(_delete),
             icon: const Icon(Icons.delete_forever_outlined),
             label: const Text('删除我的全部数据'),
           ),
@@ -623,24 +694,39 @@ class PrivacyDataScreen extends ConsumerWidget {
             padding: EdgeInsets.all(12),
             child: Text('删除会清除主数据库和私有原文件；备份保留策略见隐私文档。'),
           ),
+          if (_working) const Text('正在处理，请稍候…'),
         ],
       ),
     );
   }
 
-  Future<void> _export(
-      BuildContext context, WidgetRef ref, String format) async {
+  Future<void> _run(Future<void> Function() operation) async {
+    if (_working) return;
+    setState(() => _working = true);
+    try {
+      await operation();
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('操作暂时无法完成，请稍后重试。')));
+      }
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _export(String format) async {
     try {
       final value =
           await ref.read(apiClientProvider).exportPersonalData(format);
       await Clipboard.setData(ClipboardData(text: value));
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${format.toUpperCase()} 已复制到剪贴板')),
         );
       }
     } on Object {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('导出失败，请稍后重试')),
         );
@@ -648,43 +734,93 @@ class PrivacyDataScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _delete(BuildContext context, WidgetRef ref) async {
-    final controller = TextEditingController();
-    final confirmed = await showDialog<bool>(
+  Future<void> _delete() async {
+    await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      barrierDismissible: false,
+      builder: (_) => DeletePersonalDataDialog(onDelete: () async {
+        await ref.read(apiClientProvider).deleteMyData('DELETE MY DATA');
+        await ref.read(authControllerProvider.notifier).logout();
+      }),
+    );
+  }
+}
+
+/// Presentation-only confirmation; the caller owns the existing delete/logout.
+class DeletePersonalDataDialog extends StatefulWidget {
+  const DeletePersonalDataDialog({super.key, required this.onDelete});
+  final Future<void> Function() onDelete;
+  @override
+  State<DeletePersonalDataDialog> createState() =>
+      _DeletePersonalDataDialogState();
+}
+
+class _DeletePersonalDataDialogState extends State<DeletePersonalDataDialog> {
+  final _controller = TextEditingController();
+  final _form = GlobalKey<FormState>();
+  bool _deleting = false;
+  String? _error;
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+      canPop: !_deleting,
+      child: AlertDialog(
+        scrollable: true,
         title: const Text('永久删除全部数据？'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('此操作不可撤销。请输入 DELETE MY DATA 进行二次确认。'),
-            const SizedBox(height: 12),
-            TextField(
-              key: const Key('delete-confirmation'),
-              controller: controller,
-              decoration: const InputDecoration(labelText: '确认文字'),
-            ),
-          ],
-        ),
+        content: Form(
+            key: _form,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('此操作不可撤销。请输入 DELETE MY DATA 进行二次确认。'),
+                const SizedBox(height: 12),
+                TextFormField(
+                  key: const Key('delete-confirmation'),
+                  controller: _controller,
+                  enabled: !_deleting,
+                  autocorrect: false,
+                  validator: (value) => value?.trim() == 'DELETE MY DATA'
+                      ? null
+                      : '请输入完整的 DELETE MY DATA',
+                  decoration: const InputDecoration(labelText: '确认文字'),
+                ),
+                if (_error != null)
+                  Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(_error!)),
+              ],
+            )),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
+            onPressed: _deleting ? null : () => Navigator.pop(context, false),
             child: const Text('取消'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(
-              dialogContext,
-              controller.text.trim() == 'DELETE MY DATA',
-            ),
-            child: const Text('永久删除'),
+            onPressed: _deleting ? null : _submit,
+            child: Text(_deleting ? '正在删除…' : '永久删除'),
           ),
         ],
-      ),
-    );
-    controller.dispose();
-    if (confirmed != true) return;
-    await ref.read(apiClientProvider).deleteMyData('DELETE MY DATA');
-    await ref.read(authControllerProvider.notifier).logout();
+      ));
+
+  Future<void> _submit() async {
+    if (_deleting || !_form.currentState!.validate()) return;
+    setState(() {
+      _deleting = true;
+      _error = null;
+    });
+    try {
+      await widget.onDelete();
+      if (mounted) Navigator.pop(context, true);
+    } on Object {
+      if (mounted) setState(() => _error = '删除结果暂时无法确认。请重新读取数据后再决定是否重试。');
+    } finally {
+      if (mounted) setState(() => _deleting = false);
+    }
   }
 }
 
@@ -693,29 +829,33 @@ class _TimeTile extends StatelessWidget {
     required this.title,
     required this.value,
     required this.onChanged,
+    this.enabled = true,
   });
 
   final String title;
   final String value;
   final ValueChanged<String> onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) => ListTile(
         leading: const Icon(Icons.schedule),
         title: Text(title),
-        trailing: Text(_shortTime(value)),
-        onTap: () async {
-          final initial = _parseTime(value);
-          final selected = await showTimePicker(
-            context: context,
-            initialTime: initial,
-          );
-          if (selected != null) {
-            onChanged(
-              '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}:00',
-            );
-          }
-        },
+        subtitle: Text(_shortTime(value)),
+        onTap: !enabled
+            ? null
+            : () async {
+                final initial = _parseTime(value);
+                final selected = await showTimePicker(
+                  context: context,
+                  initialTime: initial,
+                );
+                if (selected != null) {
+                  onChanged(
+                    '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}:00',
+                  );
+                }
+              },
       );
 }
 
@@ -724,36 +864,40 @@ class _MealWindowTile extends StatelessWidget {
     required this.title,
     required this.value,
     required this.onChanged,
+    this.enabled = true,
   });
 
   final String title;
   final List<String> value;
   final ValueChanged<List<String>> onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) => ListTile(
         leading: const Icon(Icons.restaurant_outlined),
         title: Text(title),
-        subtitle: const Text('超过窗口后仍未记录时才考虑提醒'),
-        trailing: Text('${_shortTime(value[0])}–${_shortTime(value[1])}'),
-        onTap: () async {
-          final start = await showTimePicker(
-            context: context,
-            initialTime: _parseTime(value[0]),
-            helpText: '选择$title开始时间',
-          );
-          if (start == null || !context.mounted) return;
-          final end = await showTimePicker(
-            context: context,
-            initialTime: _parseTime(value[1]),
-            helpText: '选择$title结束时间',
-          );
-          if (end == null) return;
-          onChanged([
-            '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}',
-            '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}',
-          ]);
-        },
+        subtitle: Text(
+            '${_shortTime(value[0])}–${_shortTime(value[1])}\n超过窗口后仍未记录时才考虑提醒'),
+        onTap: !enabled
+            ? null
+            : () async {
+                final start = await showTimePicker(
+                  context: context,
+                  initialTime: _parseTime(value[0]),
+                  helpText: '选择$title开始时间',
+                );
+                if (start == null || !context.mounted) return;
+                final end = await showTimePicker(
+                  context: context,
+                  initialTime: _parseTime(value[1]),
+                  helpText: '选择$title结束时间',
+                );
+                if (end == null) return;
+                onChanged([
+                  '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}',
+                  '${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}',
+                ]);
+              },
       );
 }
 

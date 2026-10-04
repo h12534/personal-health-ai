@@ -11,7 +11,7 @@ The user requires sequential page gates: analyze → whole test suite → real F
 | Nutrition + Draft Review | Complete: analyze clean, 99 whole-suite tests pass; six actual Light/Dark captures reviewed; A/B priorities closed, including real four-zero offline regression |
 | Training | Complete: analyze clean, 109 whole-suite tests pass; four actual Light/Dark captures reviewed; A/B original priorities closed |
 | AI Coach | Complete: analyze clean, 120 whole-suite tests pass; four actual L/D captures reviewed; A/B original priorities closed |
-| Profile / Settings | Not started |
+| Profile / Settings | Complete: analyzer clean, 136 whole-suite tests pass; eight actual L/D captures manually reviewed; A/B original priorities closed |
 | Shared States | Incremental extraction with first consumers, final audit later |
 | Dark / Accessibility / Polish | Per-page checks plus final consolidated gate |
 
@@ -52,3 +52,7 @@ Original six tests plus eight new layout/recovery/state tests pass. Full suite 1
 ## AI Coach
 
 Baseline22/40; A finish34/40, A/B original P1 closed. Existing actual overview observations, nextActions and optional7/14day weights; no invented readiness, sleep or medical inference. Four question actions and separate canteen. Explicit user/coach typography, safe visible wait/error state near composer; lazy conversations. Presentation-only cache handles controller error values both with/without previous data, without changing conversation ID/request context. Slow retry regression caught duplicate history; corrected without loosening assertions. Hunger retains fields on failed save and closes only after success; original contexts/ranges/API unchanged. Adjustment pending decisions guarded; B's actual backend declined mapping corrected with regression. Busy action visuals unified. Complete120 tests pass/analyzer clean; four actual L/D captures reviewed. Existing golden standalone host's bottom nav is fixture context, not a new AI destination or installed iOS route. Native keyboard/VoiceOver and very long modal flows remain device checks.
+
+## Profile / Settings
+
+Historical24/40 → independent A finish34/40, B original priorities closed. Real routes grouped; inert placeholders removed, no fake profile/goals function. App lock and data, four independent Health choices/unknown permission, natural reminder modes with server-only limits, image privacy and folded diagnostic entry. UI operations await and preserve confirmation/recovery; existing controllers/consent/payload/auth sequence untouched. A caught actual saved-toggle→sync failure before refresh; UI-only re-read and precise regression close it. Ten new tests, eight actual L/D reviewed images; complete136 pass/analyzer clean. Only intentional reminder label expectations changed in existing tests. Native actual permission/VoiceOver/keyboard remain device checks.
