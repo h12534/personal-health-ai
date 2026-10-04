@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/theme/app_navigation_bar.dart';
 
 import '../../coach/data/coach_models.dart';
 import '../../coach/presentation/coach_controller.dart';
@@ -44,25 +47,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), label: '首页'),
-          NavigationDestination(
-            icon: Icon(Icons.restaurant_outlined),
-            label: '饮食',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.fitness_center_outlined),
-            label: '训练',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.health_and_safety_outlined),
-            label: '健康',
-          ),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: '我的'),
-        ],
+      bottomNavigationBar: AppNavigationBar(
+        index: _index,
+        onSelect: (value) {
+          if (value != _index) {
+            HapticFeedback.selectionClick();
+            setState(() => _index = value);
+          }
+        },
       ),
     );
   }
