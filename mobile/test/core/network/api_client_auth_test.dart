@@ -43,7 +43,7 @@ void main() {
             'refresh_token': 'refresh-2',
           },
         }));
-      } else if (request.uri.path == '/api/v1/supervision/push-device') {
+      } else if (request.uri.path == '/api/v1/weight') {
         protectedCalls += 1;
         if (request.headers.value('authorization') != 'Bearer access-2') {
           request.response.statusCode = 401;
@@ -65,11 +65,9 @@ void main() {
       store,
     );
     try {
-      await client.registerPushDevice(
-        deviceId: 'test-iphone',
-        platform: 'ios',
-        token: 'test-device-token',
-      );
+      // Authentication is required in every distribution. Do not use the
+      // deliberately disabled remote-push operation as the protected fixture.
+      await client.addWeight(72.4, DateTime(2026, 1, 1));
       expect(protectedCalls, 2);
       expect(refreshCalls, 1);
       expect(store.values['health_os_access_token'], 'access-2');
@@ -107,11 +105,7 @@ void main() {
     );
     try {
       await expectLater(
-        client.registerPushDevice(
-          deviceId: 'test-iphone',
-          platform: 'ios',
-          token: 'test-device-token',
-        ),
+        client.addWeight(72.4, DateTime(2026, 1, 1)),
         throwsA(isA<Exception>()),
       );
       expect(protectedCalls, 1);
@@ -156,11 +150,7 @@ void main() {
     );
     try {
       await expectLater(
-        client.registerPushDevice(
-          deviceId: 'test-iphone',
-          platform: 'ios',
-          token: 'test-device-token',
-        ),
+        client.addWeight(72.4, DateTime(2026, 1, 1)),
         throwsA(isA<Exception>()),
       );
       expect(protectedCalls, 2);

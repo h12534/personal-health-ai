@@ -4,12 +4,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/health/health_data_provider.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/network/api_client.dart';
 import '../../training/data/training_models.dart';
 
 final healthDataProviderProvider = Provider<HealthDataProvider>((ref) {
+  if (AppConfig.isPersonalSideload) {
+    final manual = ManualHealthProvider((
+        {required from, required to, required metrics}) async {
+      try {
+        // Reuse the existing manually recorded morning weight. Never invent
+        // step/sleep values, re-upload manual data, or turn missing data into 0.
+        final dashboard = await ref.read(apiClientProvider).fetchDashboard();
+        if (dashboard.date
+                .isBefore(DateTime(from.year, from.month, from.day)) ||
+            !dashboard.date.isBefore(DateTime(to.year, to.month, to.day)
+                .add(const Duration(days: 1))) ||
+            dashboard.todayWeightKg == null) {
+          return null;
+        }
+        return HealthDataSnapshot(
+            source: 'manual', weightKg: dashboard.todayWeightKg);
+      } on Object {
+        return null;
+      }
+    });
+    if (AppConfig.appleHealthDisabled) return manual;
+    return personalSideloadHealthProvider(
+      free: AppConfig.appleHealthDisabled,
+      apple: AppleHealthProvider(),
+      manual: manual,
+    );
+  }
   if (Platform.isIOS) return AppleHealthProvider();
   return const MockHealthDataProvider();
+});
+
+final healthKitCapabilityProvider = FutureProvider<bool>((ref) async {
+  if (AppConfig.appleHealthDisabled) return false;
+  if (AppConfig.isPersonalSideload) return AppleHealthProvider().isAvailable();
+  return ref.read(healthDataProviderProvider).isAvailable();
 });
 
 final healthPermissionsProvider =
@@ -43,6 +77,11 @@ class HealthSyncController {
       return;
     }
     final provider = ref.read(healthDataProviderProvider);
+    if (enabled &&
+        AppConfig.isPersonalSideload &&
+        !await ref.read(healthKitCapabilityProvider.future)) {
+      return;
+    }
     final result = await provider.requestAuthorization(metric);
     final status = switch (result) {
       HealthAuthorization.requested => 'unknown',
@@ -135,6 +174,21 @@ class HealthSyncScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final capability = ref.watch(healthKitCapabilityProvider);
+    if (AppConfig.isPersonalSideload &&
+        (AppConfig.appleHealthDisabled || capability.valueOrNull != true)) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('健康同步')),
+        body: ListView(padding: const EdgeInsets.all(20), children: [
+          if (capability.isLoading && !AppConfig.appleHealthDisabled)
+            const LinearProgressIndicator(),
+          const PersonalManualHealthNotice(),
+          const SizedBox(height: 12),
+          const Text(
+              '晨重与训练仍可在原页面手动记录。没有读取到的步数、睡眠或心率不会显示成真实的 0；本地通知、饮食、训练和离线功能不受影响。'),
+        ]),
+      );
+    }
     final permissions = ref.watch(healthPermissionsProvider);
     final syncStatus =
         ref.watch(healthSyncStatusProvider).valueOrNull ?? const [];
@@ -304,6 +358,19 @@ class HealthSyncScreen extends ConsumerWidget {
       }
     }
   }
+}
+
+class PersonalManualHealthNotice extends StatelessWidget {
+  const PersonalManualHealthNotice({super.key});
+
+  @override
+  Widget build(BuildContext context) => const Card(
+        key: Key('personal-manual-health-notice'),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(AppConfig.manualHealthNotice),
+        ),
+      );
 }
 
 String _syncTime(Object? value) {

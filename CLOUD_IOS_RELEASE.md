@@ -1,4 +1,14 @@
-# Cloud macOS + Apple Developer + Physical iPhone
+# Cloud macOS → Private Personal Sideload
+
+**当前目标已调整（2026-10-04）**：免费 Apple Account + Windows + Sideloadly / AltStore Classic + 本人 iPhone。App Store Connect、TestFlight、Apple Distribution、APNs 付费门禁暂停；不再索取 membership/Team ID/API Key。既有五个 CI Job 保留，新增 `mobile-ios-personal-sideload`，只执行 no-codesign build / Payload ZIP / unsigned IPA / SHA256 与 metadata artifact，无 Apple Secrets。
+
+先用 `personal-health-ios-unsigned.ipa` 尝试 HealthKit；如免费重签名/安装或 capability 不可用，用 `personal-health-ios-free-unsigned.ipa` / `PERSONAL_SIDELOAD_FREE`。两版均保留 Keychain/Face ID/Camera/PDF/本地通知/API/AI/Offline，Remote Push off。真实安装/首次启动与 HealthKit 目前 NOT RUN；不能把 artifact 产出等同设备验收完成。真实 API URL 未提供时产物仅用于安装/启动，不能称登录/AI/同步通过。
+
+当前执行文档：`PERSONAL_SIDELOAD_WINDOWS.md`、`FREE_SIGNING_ENTITLEMENT_AUDIT.md`、`IPHONE_PERSONAL_ACCEPTANCE.md`。免费 profile 约 7 天，Windows 需定期重签名/刷新；不要求购买或拥有 Mac。
+
+## 以下为未来付费发布能力（保留，当前暂停）
+
+下方历史路线/配置不再是当前前置条件，所有“需要 membership / ASC / TestFlight”的说明只适用于未来重新启用付费发布。签名 Job 增加 `vars.APP_DISTRIBUTION == 'app_store'` 防护；将来必须所有者明确改变目标并配置该变量、原 opt-in 与受保护 Secrets 才运行。当前不进行 Apple 注册/签名/上传。
 
 更新：2026-10-04。**不要求购买或拥有 Mac**；云端 macOS/Xcode 负责签名、Archive/Export 和上传，所有者用自己的 iPhone 从 TestFlight 安装并验收。
 

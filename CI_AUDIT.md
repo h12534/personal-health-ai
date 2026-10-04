@@ -1,5 +1,7 @@
 # CI Audit
 
+当前发布目标（2026-10-04）为 **Private Personal Sideload**。保留五个原有 Job；新增无 Apple Secrets 的 `mobile-ios-personal-sideload`，HealthKit-attempt / PERSONAL_SIDELOAD_FREE 双 unsigned IPA，Payload 布局、arm64 device Mach-O、无 Runner 签名/profile、原生版本与 Dart flavor 一致性、SHA-256/commit metadata 核验。Windows 个人签名与 iPhone 安装/启动仍 NOT RUN；付费签名/TestFlight 门禁暂停而非通过，未来代码保留。实际新 Job 结果须独立核验，操作见 `PERSONAL_SIDELOAD_WINDOWS.md`。
+
 验收更新：2026-10-04（Asia/Shanghai）。工作流文件为 `.github/workflows/ci.yml`。
 
 **Real GitHub CI：PASS / CLOSED。** 最新代码证据为 [run 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992)，event `push`，attempt `1`，commit `df4a1e161dfe565787e3a59beed19c7d84bcff97`，workflow conclusion `success`。五个原有 Job 全部 SUCCESS；新增签名 Job **SKIPPED / NOT RUN**，不计作签名门禁通过。下方保留首次关闭门禁的历史证据。

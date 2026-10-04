@@ -2,5 +2,8 @@
 // variables with: dart run tool/configure_ios.dart
 IOS_BUNDLE_ID = com.personal.healthcoach
 APP_DISPLAY_NAME = 私人健康
+APP_DISTRIBUTION = standard
+PERSONAL_SIDELOAD_FREE = false
+IOS_CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements
 
 #include? "AppConfig.local.xcconfig"

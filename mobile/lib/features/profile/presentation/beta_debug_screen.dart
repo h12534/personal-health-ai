@@ -28,13 +28,13 @@ final betaDebugSnapshotProvider =
   var providerStatus = <String, String>{};
   DateTime? lastSync;
   try {
-    final nativeAvailable =
-        await ref.read(healthDataProviderProvider).isAvailable();
+    final nativeAvailable = await ref.read(healthKitCapabilityProvider.future);
+    healthKitState = AppConfig.appleHealthDisabled
+        ? 'disabled_by_PERSONAL_SIDELOAD_FREE; manual records available'
+        : '${nativeAvailable ? 'available' : 'unavailable'}; Apple read authorization is not disclosed';
     final permissions = await api.fetchHealthPermissions();
     final enabled = permissions.where((item) => item.enabled).length;
-    healthKitState = '${nativeAvailable ? 'available' : 'unavailable'}; '
-        '$enabled/${permissions.length} sync switches enabled; '
-        'Apple read authorization is not disclosed';
+    healthKitState += '; $enabled/${permissions.length} sync switches enabled';
     final sync = await api.fetchHealthSyncStatus();
     final values = sync
         .map(
@@ -44,13 +44,14 @@ final betaDebugSnapshotProvider =
       ..sort();
     if (values.isNotEmpty) lastSync = values.last.toUtc();
   } on Object {
-    healthKitState = 'server state unavailable';
+    healthKitState += '; server state unavailable';
   }
   try {
     providerStatus = await api.fetchBetaProviderStatus();
   } on Object {
     // Offline / older servers are explicit unknown, never reported as healthy.
   }
+  if (!AppConfig.remotePushEnabled) providerStatus['push'] = 'disabled';
 
   return BetaDebugSnapshot(
     health: health,
@@ -88,6 +89,9 @@ class BetaDebugSnapshot {
   Map<String, Object?> toSafeJson() => {
         'app_version': AppConfig.appVersion,
         'build_number': AppConfig.buildNumber,
+        'app_distribution': AppConfig.distribution,
+        'build_flavor': AppConfig.buildFlavor,
+        'remote_push_enabled': AppConfig.remotePushEnabled,
         'api_environment': AppConfig.apiEnvironment,
         'api_url_host': apiHost,
         'provider_status': providerStatus,
@@ -128,6 +132,13 @@ class BetaDebugScreen extends ConsumerWidget {
           children: [
             _DiagnosticTile('App 版本', AppConfig.appVersion),
             _DiagnosticTile('Build', AppConfig.buildNumber),
+            _DiagnosticTile('安装模式', AppConfig.distribution),
+            _DiagnosticTile('Build flavor', AppConfig.buildFlavor),
+            _DiagnosticTile(
+                'Remote Push',
+                AppConfig.remotePushEnabled
+                    ? 'standard configuration'
+                    : 'off; local notifications only'),
             _DiagnosticTile('API 环境', AppConfig.apiEnvironment),
             _DiagnosticTile('API host', value.apiHost),
             _DiagnosticTile(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:personal_health_os/core/config/app_config.dart';
 import 'package:personal_health_os/core/database/local_database.dart';
 import 'package:personal_health_os/features/profile/presentation/health_sync_screen.dart';
 import 'package:personal_health_os/features/training/data/offline_workout_repository.dart';
@@ -59,6 +60,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          healthKitCapabilityProvider.overrideWith((ref) async => true),
           healthPermissionsProvider.overrideWith(
             (ref) async => const [
               HealthPermissionModel(
@@ -89,12 +91,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('步数'), findsOneWidget);
-    expect(find.text('睡眠'), findsOneWidget);
-    final switches = tester.widgetList<SwitchListTile>(
-      find.byType(SwitchListTile),
-    );
-    expect(switches.map((value) => value.value), [true, false, false, true]);
+    if (AppConfig.appleHealthDisabled) {
+      expect(find.text(AppConfig.manualHealthNotice), findsOneWidget);
+      expect(find.byType(SwitchListTile), findsNothing);
+    } else {
+      expect(find.text('步数'), findsOneWidget);
+      expect(find.text('睡眠'), findsOneWidget);
+      final switches = tester.widgetList<SwitchListTile>(
+        find.byType(SwitchListTile),
+      );
+      expect(switches.map((value) => value.value), [true, false, false, true]);
+    }
   });
 
   testWidgets('opens structured AI training coach sheet', (tester) async {

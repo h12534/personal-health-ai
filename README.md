@@ -1,5 +1,7 @@
 # Personal Health OS
 
+当前为 **Private Personal Sideload**：云 macOS 产出 unsigned IPA，Windows 用免费 Apple Account 在 Sideloadly / AltStore Classic 重签名，仅本人 iPhone 使用。无需本地 Mac、付费会员、App Store Connect 或 TestFlight；约 7 天需刷新。安装见 `PERSONAL_SIDELOAD_WINDOWS.md`，能力审计见 `FREE_SIGNING_ENTITLEMENT_AUDIT.md`，设备记录见 `IPHONE_PERSONAL_ACCEPTANCE.md`。原付费发布路线保留但暂停；unsigned artifact 不代表已经安装/启动或真实 API 可用。
+
 一个面向个人长期使用的私人健康操作系统。项目从稳健减脂、保留肌肉和建立力量训练习惯出发，逐步连接身体数据、现实饮食、训练、活动、睡眠、体检、知识库、提醒和 AI 教练。
 
 当前仓库已完成 Phase 0–7。在认证、档案、体重、饮食、训练、HealthKit、体检和健康知识之上，现已具备每日任务、防轰炸提醒、iOS 本地通知、日/周/月报、统一健康时间线、复查任务、可选生物识别锁和个人数据导出/删除。

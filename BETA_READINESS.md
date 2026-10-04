@@ -1,33 +1,33 @@
-# iPhone / TestFlight Beta Readiness
+# Private Personal Sideload Readiness
 
-> 2026-10-04：Real GitHub CI 已关闭，[最新代码 run 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992) 五个原有 Job 全部 SUCCESS。新增签名 Job SKIPPED / NOT RUN，不能计作签名通过。整体仍未 Beta Ready；下一门禁是 **Cloud macOS signing → IPA → TestFlight → physical iPhone acceptance**。**不要求拥有本地 Mac**。具体配置见 `CLOUD_IOS_RELEASE.md`。
+> 2026-10-04 发布目标调整：**Private Personal Sideload**。不要求付费 Apple Developer、本地 Mac、App Store Connect 或 TestFlight；下一门禁是 **Cloud macOS unsigned IPA → Windows 免费重签名 → 本人 iPhone 安装/启动**。既有五个 Job 保留；新增双 unsigned artifact 流程与 capability fallback，实际构建/设备证据分别记账。安装与首次启动仍 NOT RUN。
 
 实际常规 CI 全绿：[workflow 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992)，commit `df4a1e161dfe565787e3a59beed19c7d84bcff97`。Ruff、strict mypy 165 files、89 backend tests、7 PostgreSQL integration tests、Redis、迁移/恢复演练、Flutter analyze、40 Flutter tests、14 signing guardrail tests、iOS no-codesign 和 Android secondary 均有 SUCCESS 证据。此前 PostgreSQL 元数据漂移/Android desugaring，以及本轮 workflow context / 用户时区跨日失败均已修复复验；失败运行与修复记录保留在 `CI_AUDIT.md`，未降低任何门禁。
 
-状态定义：“代码就绪”表示仓库中已实现；“外部门禁”表示需要 Apple 凭据、云 macOS/真机、域名或服务器才能证明，不伪造通过。所有者已确认有 iPhone，但尚未办理 Apple Developer Program；Team/Bundle/App record/API Key/真实 HTTPS API 尚未提供。
+状态定义：“代码就绪”表示仓库实现，不伪造设备通过。所有者已确认有 iPhone；现在不要求 Apple paid membership、Team ID、App record 或 API Key。免费 Apple Account 只在 Windows 侧载工具内自行认证，不向助手/CI 提供密码或 2FA；真实 HTTPS API 仍未提供。原付费发布路径保留但暂停。安装说明见 `PERSONAL_SIDELOAD_WINDOWS.md`，能力审计见 `FREE_SIGNING_ENTITLEMENT_AUDIT.md`。
 
 | 项目 | 状态 | 验收 |
 |---|---|---|
 | Bundle ID | 代码就绪 | `IOS_BUNDLE_ID` 生成本地 xcconfig；发布前锁定与 App Store Connect 一致的 ID |
-| Team ID / Signing | 外部门禁 / NOT RUN | 云 CI 自动管理证书/profile 优先，手动 Secrets 导入 fallback；不要求本地 Mac |
+| Personal Signing | Windows / NOT RUN | CI 不签名、不要求 Team ID；所有者免费 Account 在 Sideloadly/AltStore 完成，每约 7 天刷新 |
 | App Name | 代码就绪 | `APP_DISPLAY_NAME` 可配置；上传前确认最终中英文名 |
 | App Icon / Launch Screen | 需产品确认 | 资产槽位完整；需在真机确认不是占位视觉且各尺寸无 alpha |
 | Privacy strings | 代码就绪 | Camera、Photos、HealthKit、Face ID 用途说明已写入 Info.plist |
-| HealthKit capability | 代码就绪/真机待验 | entitlement 与 Xcode capability 已存在，只读分类授权；需真机验证部分授权和撤权 |
+| HealthKit capability | 正式配置保留/私人实测待验 | 先试保留 HealthKit 的版本；profile capability 检测失败自动手动 fallback；备用 free 版禁用 AppleHealthProvider，不虚构指标 |
 | Camera / Photos / Files | 代码就绪/真机待验 | 权限语义与 PDF document picker 已实现 |
 | Notifications | 代码就绪/真机待验 | 延迟授权、本地定时、快捷完成、锁屏脱敏；Local Notifications 不依赖 APNs，remote push 另验 |
 | Network HTTPS | 代码就绪/域名待配 | staging/prod 拒绝 HTTP，未添加全局 ATS 放行 |
 | Keychain / App Lock | 代码就绪/真机待验 | Token 保留 Keychain，可选 Face ID/Touch ID 默认关闭，2 分钟后台宽限 |
-| Privacy policy / support URL | 外部门禁 | 需真实 HTTPS URL，内容与 Provider/保留/删除一致 |
+| Privacy policy / support URL | 正式发布未来门禁 | 私人安装不要求 App Store record；数据/Provider/删除隐私约束仍保留 |
 | Real GitHub CI | PASS / CLOSED | 上述 workflow 五个 Job 全绿；公开开源仓库由所有者明确授权，main/RC 已推送 |
 | PostgreSQL / Redis / Restore | PASS（CI） | 真实 PostgreSQL 16.15/pgvector，7 integration tests，10 表恢复 count/UUID 核验与 artifact |
 | iOS no-codesign build | PASS（真实 macOS CI） | macOS 26.6.2 arm64、Xcode 26.6 (17F113)、CocoaPods 1.17.0；Runner.app 24.4MB；尚未签名/安装真机 |
 | Android secondary | PASS（真实 CI） | Java 17、desugaring、Gradle debug APK 成功；不改变 iOS 主平台定位 |
-| Cloud signed IPA | 流程实现 / SKIPPED / NOT RUN | 最新运行未启用 `mobile-ios-signed`；`ios-beta` 已配置仅所有者审批/main/RC，Secrets 为空；需 Apple membership 后实际构建 |
-| TestFlight upload / processing | 外部门禁 / NOT RUN | API Key 上传；processed build 只分配所有者一人的内部组 |
-| Physical iPhone acceptance | NOT RUN | 用 TestFlight Beta 验收；记录模板 `TESTFLIGHT_IPHONE_ACCEPTANCE.md` |
+| Personal unsigned IPA | 流程实现 / 待真实 CI 产物 | 独立 Job 输出 HealthKit-attempt 与 PERSONAL_SIDELOAD_FREE 两版 IPA/hash/commit/version/build，不含 Apple 签名材料 |
+| Apple Distribution / TestFlight / APNs | 当前暂停 | 不属于个人侧载门禁；原正式发布代码保留，需未来明确 opt-in |
+| Physical iPhone acceptance | NOT RUN | Windows 免费重签名安装；记录 `IPHONE_PERSONAL_ACCEPTANCE.md`，不使用 TestFlight |
 
-## 真机 Beta 清单
+## 本人 iPhone 清单
 
 每项记录 iPhone 型号、iOS 版本、App build、API 环境、时区、测试者和日期。
 

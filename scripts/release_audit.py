@@ -19,6 +19,10 @@ REQUIRED = (
     "CLOUD_IOS_RELEASE.md",
     "TESTFLIGHT_IPHONE_ACCEPTANCE.md",
     "scripts/ios_release.py",
+    "scripts/personal_sideload.py",
+    "PERSONAL_SIDELOAD_WINDOWS.md",
+    "FREE_SIGNING_ENTITLEMENT_AUDIT.md",
+    "IPHONE_PERSONAL_ACCEPTANCE.md",
 )
 FORBIDDEN_TRACKED_NAMES = {".env", ".env.production", ".env.staging"}
 FORBIDDEN_SUFFIXES = {
@@ -115,7 +119,7 @@ def main() -> int:
     warnings.extend(
         [
             "external gate: GitHub CI requires a successful run for the release commit",
-            "external gate: cloud signing/TestFlight need Apple membership and Secrets; iPhone needs owner acceptance (no local Mac required)",
+            "external gate: personal unsigned IPA needs Windows re-sign/install and owner iPhone acceptance; paid signing/TestFlight suspended (no local Mac required)",
             "external gate: staging HTTPS and real providers require owner-supplied access",
         ]
     )

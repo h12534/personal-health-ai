@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/files/ios_document_picker.dart';
+import '../../../core/config/app_config.dart';
+import '../../profile/presentation/health_sync_screen.dart';
 import '../../coach/presentation/coach_screen.dart';
 import '../data/health_models.dart';
 import 'health_controller.dart';
@@ -40,6 +42,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
     return Column(
       key: const Key('health-screen'),
       children: [
+        if (AppConfig.appleHealthDisabled) const PersonalManualHealthNotice(),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 12, 4),
           child: Row(

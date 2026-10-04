@@ -1,6 +1,19 @@
 import 'dart:io';
 
 import 'package:health/health.dart';
+import 'package:flutter/services.dart';
+
+import '../config/app_config.dart';
+
+Future<bool> personalHealthKitCapability() async {
+  try {
+    return await const MethodChannel('personal_health_os/capabilities')
+            .invokeMethod<bool>('healthKitAvailable') ??
+        false;
+  } on Object {
+    return false;
+  }
+}
 
 enum HealthMetric {
   steps,
@@ -94,9 +107,18 @@ abstract interface class HealthDataProvider {
 }
 
 class AppleHealthProvider implements HealthDataProvider {
-  AppleHealthProvider({Health? health}) : _health = health ?? Health();
+  AppleHealthProvider({
+    Health? health,
+    Future<bool> Function()? capabilityProbe,
+    bool? isIOS,
+  })  : _health = health ?? Health(),
+        _capabilityProbe = capabilityProbe ??
+            (AppConfig.isPersonalSideload ? personalHealthKitCapability : null),
+        _isIOS = isIOS ?? Platform.isIOS;
 
   final Health _health;
+  final Future<bool> Function()? _capabilityProbe;
+  final bool _isIOS;
   bool _configured = false;
 
   @override
@@ -104,14 +126,19 @@ class AppleHealthProvider implements HealthDataProvider {
 
   @override
   Future<bool> isAvailable() async {
-    if (!Platform.isIOS) return false;
-    await _configure();
-    return _health.isDataTypeAvailable(HealthDataType.STEPS);
+    if (!_isIOS || AppConfig.appleHealthDisabled) return false;
+    try {
+      if (_capabilityProbe != null && !await _capabilityProbe()) return false;
+      await _configure();
+      return _health.isDataTypeAvailable(HealthDataType.STEPS);
+    } on Object {
+      return false;
+    }
   }
 
   @override
   bool supports(HealthMetric metric) {
-    if (!Platform.isIOS) return false;
+    if (!_isIOS || AppConfig.appleHealthDisabled) return false;
     return _types(metric).every(_health.isDataTypeAvailable);
   }
 
@@ -293,6 +320,13 @@ typedef ManualHealthReader = Future<HealthDataSnapshot?> Function({
   required Set<HealthMetric> metrics,
 });
 
+HealthDataProvider personalSideloadHealthProvider({
+  required bool free,
+  required HealthDataProvider apple,
+  required ManualHealthProvider manual,
+}) =>
+    free ? manual : PrioritizedHealthDataProvider([apple, manual]);
+
 class ManualHealthProvider implements HealthDataProvider {
   const ManualHealthProvider(this._reader);
 
@@ -370,20 +404,39 @@ class PrioritizedHealthDataProvider implements HealthDataProvider {
   @override
   Future<bool> isAvailable() async {
     for (final provider in providers) {
-      if (await provider.isAvailable()) return true;
+      try {
+        if (await provider.isAvailable()) return true;
+      } on Object {
+        // Missing entitlement / platform plugin must not defeat manual data.
+      }
     }
     return false;
   }
 
   @override
-  bool supports(HealthMetric metric) =>
-      providers.any((provider) => provider.supports(metric));
+  bool supports(HealthMetric metric) {
+    for (final provider in providers) {
+      try {
+        if (provider.supports(metric)) return true;
+      } on Object {
+        // Continue to the next capability provider.
+      }
+    }
+    return false;
+  }
 
   @override
   Future<HealthAuthorization> requestAuthorization(HealthMetric metric) async {
     for (final provider in providers) {
-      if (!provider.supports(metric) || !await provider.isAvailable()) continue;
-      return provider.requestAuthorization(metric);
+      try {
+        if (!provider.supports(metric) || !await provider.isAvailable()) {
+          continue;
+        }
+        final result = await provider.requestAuthorization(metric);
+        if (result != HealthAuthorization.unavailable) return result;
+      } on Object {
+        // Capability errors are recoverable; explicit denial is not overridden.
+      }
     }
     return HealthAuthorization.unavailable;
   }
@@ -395,13 +448,17 @@ class PrioritizedHealthDataProvider implements HealthDataProvider {
     required Set<HealthMetric> metrics,
   }) async {
     for (final provider in providers) {
-      if (!await provider.isAvailable()) continue;
-      final snapshot = await provider.read(
-        from: from,
-        to: to,
-        metrics: metrics,
-      );
-      if (snapshot != null) return snapshot;
+      try {
+        if (!await provider.isAvailable()) continue;
+        final snapshot = await provider.read(
+          from: from,
+          to: to,
+          metrics: metrics,
+        );
+        if (snapshot != null) return snapshot;
+      } on Object {
+        // Manual input remains usable even when a native capability fails.
+      }
     }
     return null;
   }

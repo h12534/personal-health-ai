@@ -169,12 +169,78 @@ jobs:
       - run: dart run tool/configure_platforms.dart
       - run: flutter build apk --debug
 
+  # Personal unsigned artifacts need no Apple account, Secrets, or local Mac.
+  mobile-ios-personal-sideload:
+    needs: [release-audit, backend, backend-postgres, mobile-ios-primary]
+    runs-on: macos-26
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      IOS_BUNDLE_ID: ${{ vars.PERSONAL_IOS_BUNDLE_ID || 'com.personal.healthcoach' }}
+      APP_DISPLAY_NAME: 私人健康
+      APP_DISTRIBUTION: personal_sideload
+      API_BASE_URL: ${{ vars.PERSONAL_IOS_API_BASE_URL || 'https://staging-api.personal-health.invalid/api/v1' }}
+      APP_VERSION: '0.1.0'
+      BUILD_NUMBER: ${{ github.run_number }}.${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - name: Record unsigned build toolchain
+        run: |
+          flutter doctor -v
+          xcodebuild -version
+          pod --version
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test tool
+      - run: flutter analyze
+      - name: Test HealthKit-attempt personal mode
+        run: flutter test --dart-define=APP_DISTRIBUTION=personal_sideload
+      - name: Build HealthKit-attempt app (no signing)
+        run: python ../scripts/personal_sideload.py build --variant healthkit
+      - name: Package and verify HealthKit-attempt unsigned IPA
+        run: python ../scripts/personal_sideload.py package --variant healthkit
+      - name: Upload personal unsigned IPA and evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: personal-health-ios-unsigned
+          path: mobile/build/personal-sideload/healthkit/*
+          if-no-files-found: error
+          retention-days: 7
+      - name: Test PERSONAL_SIDELOAD_FREE manual fallback
+        run: >-
+          flutter test --dart-define=APP_DISTRIBUTION=personal_sideload
+          --dart-define=PERSONAL_SIDELOAD_FREE=true
+      - name: Build manual fallback app (no signing)
+        run: python ../scripts/personal_sideload.py build --variant free
+      - name: Package and verify manual fallback unsigned IPA
+        run: python ../scripts/personal_sideload.py package --variant free
+      - name: Upload free fallback unsigned IPA and evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: personal-health-ios-free-unsigned
+          path: mobile/build/personal-sideload/free/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # Future paid route retained but suspended for the current personal release.
   # Separate from the already closed compilation gate. No secrets on PRs/forks.
   # Owner opts in only after configuring and protecting the ios-beta environment.
   mobile-ios-signed:
     needs: [release-audit, backend, backend-postgres, mobile-ios-primary]
     if: >-
       github.repository == 'h12534/personal-health-ai' &&
+      vars.APP_DISTRIBUTION == 'app_store' &&
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/release-candidate-beta') &&
       ((github.event_name == 'workflow_dispatch' && inputs.signed_ios) ||
        (github.event_name == 'push' && vars.IOS_RELEASE_ENABLED == 'true'))

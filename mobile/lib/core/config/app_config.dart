@@ -10,6 +10,23 @@ class AppConfig {
     defaultValue: '2',
   );
 
+  static const distribution = String.fromEnvironment(
+    'APP_DISTRIBUTION',
+    defaultValue: 'standard',
+  );
+  static const personalSideloadFree =
+      bool.fromEnvironment('PERSONAL_SIDELOAD_FREE');
+  static bool get isPersonalSideload => distribution == 'personal_sideload';
+  static bool get appleHealthDisabled =>
+      isPersonalSideload && personalSideloadFree;
+  static bool get remotePushEnabled => !isPersonalSideload;
+  static String get buildFlavor => appleHealthDisabled
+      ? 'PERSONAL_SIDELOAD_FREE'
+      : isPersonalSideload
+          ? 'PERSONAL_SIDELOAD_HEALTHKIT'
+          : 'STANDARD';
+  static const manualHealthNotice = '当前私人免费签名版本未启用 Apple Health 自动同步，可以手动记录数据。';
+
   static const environment = String.fromEnvironment(
     'APP_ENV',
     defaultValue: 'development',

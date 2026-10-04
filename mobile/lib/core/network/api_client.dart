@@ -66,8 +66,11 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 });
 
 class ApiClient {
-  ApiClient(this._dio, this._tokens, {LocalDiagnosticsLog? diagnostics})
-      : _diagnostics = diagnostics ?? localDiagnostics {
+  ApiClient(this._dio, this._tokens,
+      {LocalDiagnosticsLog? diagnostics, bool? remotePushEnabled})
+      : _diagnostics = diagnostics ?? localDiagnostics,
+        _remotePushEnabled =
+            AppConfig.remotePushEnabled && (remotePushEnabled ?? true) {
     _installDiagnostics(_dio);
     _dio.interceptors.add(
       InterceptorsWrapper(onError: _handleUnauthorized),
@@ -77,6 +80,7 @@ class ApiClient {
   final Dio _dio;
   final TokenStore _tokens;
   final LocalDiagnosticsLog _diagnostics;
+  final bool _remotePushEnabled;
   String? _lastRequestId;
   Future<String?>? _refreshInFlight;
 
@@ -198,6 +202,7 @@ class ApiClient {
     required String platform,
     required String token,
   }) async {
+    if (!_remotePushEnabled) return;
     try {
       await _dio.put<void>(
         '/supervision/push-device',

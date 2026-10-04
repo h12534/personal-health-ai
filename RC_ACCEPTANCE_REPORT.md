@@ -1,5 +1,7 @@
 # RC / Beta Acceptance Report
 
+**2026-10-04 目标调整：Private Personal Sideload。** 当前不要求 Apple Developer paid membership、App Store Connect、TestFlight、Apple Distribution 或 APNs。unsigned IPA → Windows 免费个人重签名 → 本人 iPhone；不要求 Mac。下方付费门禁/版本记录为历史，不再作为当前阻断；私人安装证据以 `IPHONE_PERSONAL_ACCEPTANCE.md` 记账，安装/启动尚 NOT RUN。所有者密码/2FA 只在本机工具输入。
+
 报告更新：2026-10-04（Asia/Shanghai）。本地候选版本：`0.1.0-beta.1+2`，不是已发布 TestFlight build。Real GitHub CI 门禁已关闭。最新代码证据：[run 37139080992](https://github.com/h12534/personal-health-ai/actions/runs/37139080992)，commit `df4a1e161dfe565787e3a59beed19c7d84bcff97`，五个原有 Job 全部 SUCCESS；新增签名 Job SKIPPED / NOT RUN。逐 Job 记录、耗时和两次失败修复见 `CI_AUDIT.md`。
 
 1. **GitHub remote**：CONFIGURED / PUSHED，`origin=https://github.com/h12534/personal-health-ai.git`；按所有者明确决定使用 Public 开源。仅 main 与 RC 两个远端分支。
