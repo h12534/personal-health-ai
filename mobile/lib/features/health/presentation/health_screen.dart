@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -8,13 +7,18 @@ import 'package:intl/intl.dart';
 
 import '../../../core/files/ios_document_picker.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../profile/presentation/health_sync_screen.dart';
 import '../../coach/presentation/coach_screen.dart';
 import '../data/health_models.dart';
 import 'health_controller.dart';
+import 'health_overview_content.dart';
+import 'health_trend_chart.dart';
 
 class HealthScreen extends ConsumerStatefulWidget {
-  const HealthScreen({super.key});
+  const HealthScreen(
+      {super.key, this.overviewVariant = HealthOverviewVariant.dataForward});
+  final HealthOverviewVariant overviewVariant;
 
   @override
   ConsumerState<HealthScreen> createState() => _HealthScreenState();
@@ -44,7 +48,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
       children: [
         if (AppConfig.appleHealthDisabled) const PersonalManualHealthNotice(),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 12, 4),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.page, AppSpacing.lg, AppSpacing.md, AppSpacing.sm),
           child: Row(
             children: [
               Expanded(
@@ -53,7 +58,9 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
                   children: [
                     Text('健康',
                         style: Theme.of(context).textTheme.headlineMedium),
-                    const Text('体检趋势与可靠证据，不做自动诊断。'),
+                    Text('你的记录，逐步看清。',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.of(context).secondaryText)),
                   ],
                 ),
               ),
@@ -74,6 +81,17 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
         TabBar(
           controller: _tabs,
           isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          dividerColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicator: BoxDecoration(
+              color: AppColors.of(context).softTint,
+              borderRadius: BorderRadius.circular(AppRadius.small)),
+          indicatorPadding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+          labelColor: AppColors.of(context).primary,
+          unselectedLabelColor: AppColors.of(context).secondaryText,
+          labelStyle: Theme.of(context).textTheme.labelMedium,
           tabs: const [
             Tab(text: '概览'),
             Tab(text: '体检报告'),
@@ -86,7 +104,10 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
             controller: _tabs,
             children: [
               _OverviewTab(
-                  onOpenReports: () => _tabs.animateTo(1), onAsk: _ask),
+                  variant: widget.overviewVariant,
+                  onOpenReports: () =>
+                      _tabs.animateTo(1, duration: AppMotion.duration(context)),
+                  onAsk: _ask),
               _ReportsTab(
                 uploading: _uploading,
                 onUpload: _chooseUpload,
@@ -102,7 +123,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
   }
 
   void _ask(LabResultModel result) {
-    _tabs.animateTo(3);
+    _tabs.animateTo(3, duration: AppMotion.duration(context));
     ref.read(healthChatProvider.notifier).send(
         '${result.testName} ${result.displayValue} ${result.unit ?? ''} 是什么意思？');
   }
@@ -310,7 +331,11 @@ class _LabUploadOptions {
 }
 
 class _OverviewTab extends ConsumerWidget {
-  const _OverviewTab({required this.onOpenReports, required this.onAsk});
+  const _OverviewTab(
+      {required this.onOpenReports,
+      required this.onAsk,
+      required this.variant});
+  final HealthOverviewVariant variant;
 
   final VoidCallback onOpenReports;
   final ValueChanged<LabResultModel> onAsk;
@@ -321,67 +346,86 @@ class _OverviewTab extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () => ref.refresh(healthReportsProvider.future),
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: AppSpacing.pageInsets,
         children: [
-          Card(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: ListTile(
-              leading: const Icon(Icons.health_and_safety_outlined),
-              title: const Text('个人健康时间线'),
-              subtitle: const Text('体重、睡眠、训练和体检只描述共同变化，不轻易断言因果。'),
-            ),
-          ),
-          const SizedBox(height: 12),
           ...switch (reports) {
             AsyncData(:final value) when value.isEmpty => [
                 _EmptyReports(onPressed: onOpenReports),
               ],
             AsyncData(:final value) => [
-                _LatestReportCard(report: value.first, onAsk: onAsk),
+                if (value
+                    .any((report) => report.reviewStatus != 'confirmed')) ...[
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('有体检草稿待核对'),
+                    subtitle: const Text('确认之前不会作为正式指标展示。'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: onOpenReports,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+                if (value.any((report) => report.reviewStatus == 'confirmed'))
+                  _ConfirmedOverview(
+                    report: value.firstWhere(
+                        (report) => report.reviewStatus == 'confirmed'),
+                    onOpenReports: onOpenReports,
+                    onAsk: onAsk,
+                    variant: variant,
+                  )
+                else
+                  _EmptyReports(onPressed: onOpenReports),
               ],
-            AsyncError(:final error) => [
-                Text('暂时无法读取体检记录：$error'),
+            AsyncError() => [
+                const Text('暂时无法读取体检记录。请检查网络后重试，已有报告不会因此删除。'),
+                const SizedBox(height: AppSpacing.md),
+                TextButton(
+                    onPressed: () => ref.invalidate(healthReportsProvider),
+                    child: const Text('重新读取体检记录')),
               ],
-            _ => [const Center(child: CircularProgressIndicator())],
+            _ => [const HealthSkeleton()],
           },
-          const SizedBox(height: 12),
-          const Card(
-            child: ListTile(
-              leading: Icon(Icons.verified_user_outlined),
-              title: Text('医疗安全边界'),
-              subtitle: Text('危急症状优先就医；AI 不确诊、不改药，也不会因轻度异常罗列严重疾病。'),
-            ),
-          ),
         ],
       ),
     );
   }
 }
 
-class _LatestReportCard extends StatelessWidget {
-  const _LatestReportCard({required this.report, required this.onAsk});
+class _ConfirmedOverview extends ConsumerWidget {
+  const _ConfirmedOverview(
+      {required this.report,
+      required this.onAsk,
+      required this.onOpenReports,
+      required this.variant});
+  final HealthOverviewVariant variant;
 
   final LabReportModel report;
   final ValueChanged<LabResultModel> onAsk;
+  final VoidCallback onOpenReports;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('上次体检', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(DateFormat('yyyy-MM-dd').format(report.reportDate)),
-            Text('需要关注 ${report.attentionCount} 项 · 以报告参考范围为准'),
-            const Divider(height: 24),
-            ...report.results.take(4).map(
-                  (item) => _LabResultTile(result: item, onAsk: onAsk),
-                ),
-          ],
-        ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final focus = overviewFocus(report);
+    final trend = focus == null || focus.value == null
+        ? null
+        : ref.watch(labTrendProvider(focus.normalizedName));
+    return HealthOverviewContent(
+      report: report,
+      variant: variant,
+      trend: trend?.valueOrNull,
+      trendLoading: trend?.isLoading ?? false,
+      onOpenReports: onOpenReports,
+      onAsk: onAsk,
+      onRetryTrend: trend?.hasError == true && focus != null
+          ? () => ref.invalidate(labTrendProvider(focus.normalizedName))
+          : null,
+      onOpenIndicator: (result) => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        useSafeArea: true,
+        builder: (_) =>
+            _IndicatorDetail(result: result, onAsk: () => onAsk(result)),
       ),
     );
   }
@@ -393,19 +437,18 @@ class _EmptyReports extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              const Icon(Icons.description_outlined, size: 36),
-              const SizedBox(height: 8),
-              const Text('还没有已保存的体检报告'),
-              const SizedBox(height: 12),
-              FilledButton.tonal(
-                  onPressed: onPressed, child: const Text('去上传')),
-            ],
-          ),
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.page),
+        child: Column(
+          children: [
+            const Icon(Icons.description_outlined, size: 36),
+            const SizedBox(height: 8),
+            const Text('还没有已保存的体检报告'),
+            const SizedBox(height: AppSpacing.sm),
+            const Text('上传图片或 PDF，核对识别草稿后，指标会保存在这里。'),
+            const SizedBox(height: 12),
+            FilledButton.tonal(onPressed: onPressed, child: const Text('去上传')),
+          ],
         ),
       );
 }
@@ -567,17 +610,13 @@ class _LabResultTile extends ConsumerWidget {
   final ValueChanged<LabResultModel> onAsk;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => ListTile(
-        key: Key('lab-result-${result.normalizedName}'),
-        contentPadding: EdgeInsets.zero,
-        leading: _FlagDot(flag: result.flag),
-        title: Text(result.testName),
-        subtitle: Text('参考：${result.referenceDisplay}'),
-        trailing: Text('${result.displayValue} ${result.unit ?? ''}'),
+  Widget build(BuildContext context, WidgetRef ref) => HealthMetricRow(
+        result: result,
         onTap: () => showModalBottomSheet<void>(
           context: context,
           isScrollControlled: true,
           showDragHandle: true,
+          useSafeArea: true,
           builder: (_) =>
               _IndicatorDetail(result: result, onAsk: () => onAsk(result)),
         ),
@@ -586,20 +625,15 @@ class _LabResultTile extends ConsumerWidget {
 
 class _FlagDot extends StatelessWidget {
   const _FlagDot({required this.flag});
-
   final String flag;
-
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final color = switch (flag) {
-      'high' || 'low' => Colors.amber.shade700,
-      'critical' => scheme.error,
-      'normal' => scheme.primary,
-      _ => scheme.outline,
-    };
-    return Icon(Icons.circle, size: 12, color: color);
-  }
+  Widget build(BuildContext context) => Semantics(
+        label: labFlagLabel(flag),
+        child: Icon(
+            flag == 'normal' ? Icons.check_circle_outline : Icons.info_outline,
+            size: AppIconSize.small,
+            color: labFlagColor(AppColors.of(context), flag)),
+      );
 }
 
 class _IndicatorDetail extends ConsumerWidget {
@@ -612,104 +646,50 @@ class _IndicatorDetail extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final trend = ref.watch(labTrendProvider(result.normalizedName));
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(result.testName,
-                style: Theme.of(context).textTheme.headlineSmall),
-            Text('当前 ${result.displayValue} ${result.unit ?? ''}'),
-            Text('本报告参考范围：${result.referenceDisplay}'),
-            const SizedBox(height: 18),
-            SizedBox(
-              height: 150,
-              width: double.infinity,
-              child: switch (trend) {
+      child: ConstrainedBox(
+        constraints:
+            BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .85),
+        child: SingleChildScrollView(
+          padding: AppSpacing.pageInsets,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(result.testName,
+                  style: Theme.of(context).textTheme.headlineSmall),
+              Text('当前 ${result.displayValue} ${result.unit ?? ''}',
+                  style: Theme.of(context).textTheme.titleLarge),
+              Text(labFlagLabel(result.flag),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: labFlagColor(AppColors.of(context), result.flag))),
+              Text('本报告参考范围：${result.referenceDisplay}'),
+              const SizedBox(height: 18),
+              switch (trend) {
                 AsyncData(:final value) => LabTrendChart(trend: value),
-                AsyncError() => const Center(child: Text('暂无可比较的历史趋势')),
-                _ => const Center(child: CircularProgressIndicator()),
+                AsyncError() => const Text('暂无可比较的历史趋势'),
+                _ => const HealthSkeleton(label: '正在读取历史记录', compact: true),
               },
-            ),
-            const SizedBox(height: 12),
-            const Text('趋势只描述时间上的共同变化，不代表因果关系。'),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.tonalIcon(
-                key: const Key('ask-about-indicator'),
-                onPressed: () {
-                  Navigator.pop(context);
-                  onAsk();
-                },
-                icon: const Icon(Icons.auto_awesome_outlined),
-                label: const Text('这个指标是什么意思？'),
+              const SizedBox(height: 12),
+              const Text('趋势只描述时间上的共同变化，不代表因果关系。'),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  key: const Key('ask-about-indicator'),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onAsk();
+                  },
+                  icon: const Icon(Icons.auto_awesome_outlined),
+                  label: const Text('这个指标是什么意思？'),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-class LabTrendChart extends StatelessWidget {
-  const LabTrendChart({super.key, required this.trend});
-
-  final LabTrendModel trend;
-
-  @override
-  Widget build(BuildContext context) => CustomPaint(
-        key: const Key('lab-trend-chart'),
-        painter: _TrendPainter(
-          points: trend.points.map((point) => point.value).toList(),
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Text('${trend.points.length} 次记录 · ${trend.canonicalUnit}'),
-        ),
-      );
-}
-
-class _TrendPainter extends CustomPainter {
-  const _TrendPainter({required this.points, required this.color});
-
-  final List<double> points;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (points.isEmpty) return;
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    final minimum = points.reduce(math.min);
-    final maximum = points.reduce(math.max);
-    final spread = math.max(0.001, maximum - minimum);
-    final path = Path();
-    for (var index = 0; index < points.length; index++) {
-      final x = points.length == 1
-          ? size.width / 2
-          : size.width * index / (points.length - 1);
-      final y =
-          16 + (size.height - 52) * (1 - (points[index] - minimum) / spread);
-      if (index == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-      canvas.drawCircle(Offset(x, y), 4, Paint()..color = color);
-    }
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _TrendPainter oldDelegate) =>
-      oldDelegate.points != points || oldDelegate.color != color;
 }
 
 class LabReviewSheet extends StatefulWidget {
