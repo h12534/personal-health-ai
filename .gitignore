@@ -50,3 +50,12 @@ mobile/ios/.symlinks/
 .idea/
 .vscode/
 
+# Project-local Impeccable engine/cache: keep skills and reviewable manifests.
+.agents/skills/impeccable/scripts/bin/
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+.impeccable/hook.pending.json
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/build/
+
