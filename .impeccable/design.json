@@ -1,0 +1,513 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-04T10:09:15Z",
+  "title": "Design System: Personal Health OS",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "primary",
+        "tonalRamp": [
+          "oklch(15.0% 0.0784 181.9)",
+          "oklch(26.4% 0.0784 181.9)",
+          "oklch(37.9% 0.0784 181.9)",
+          "oklch(49.3% 0.0784 181.9)",
+          "oklch(60.7% 0.0784 181.9)",
+          "oklch(72.1% 0.0784 181.9)",
+          "oklch(83.6% 0.0784 181.9)",
+          "oklch(95.0% 0.0784 181.9)"
+        ]
+      },
+      "accent": {
+        "role": "secondary",
+        "displayName": "accent",
+        "tonalRamp": [
+          "oklch(15.0% 0.0789 71.9)",
+          "oklch(26.4% 0.0789 71.9)",
+          "oklch(37.9% 0.0789 71.9)",
+          "oklch(49.3% 0.0789 71.9)",
+          "oklch(60.7% 0.0789 71.9)",
+          "oklch(72.1% 0.0789 71.9)",
+          "oklch(83.6% 0.0789 71.9)",
+          "oklch(95.0% 0.0789 71.9)"
+        ]
+      },
+      "positive": {
+        "role": "semantic",
+        "displayName": "positive",
+        "tonalRamp": [
+          "oklch(15.0% 0.0827 163.1)",
+          "oklch(26.4% 0.0827 163.1)",
+          "oklch(37.9% 0.0827 163.1)",
+          "oklch(49.3% 0.0827 163.1)",
+          "oklch(60.7% 0.0827 163.1)",
+          "oklch(72.1% 0.0827 163.1)",
+          "oklch(83.6% 0.0827 163.1)",
+          "oklch(95.0% 0.0827 163.1)"
+        ]
+      },
+      "attention": {
+        "role": "semantic",
+        "displayName": "attention",
+        "tonalRamp": [
+          "oklch(15.0% 0.0935 73.9)",
+          "oklch(26.4% 0.0935 73.9)",
+          "oklch(37.9% 0.0935 73.9)",
+          "oklch(49.3% 0.0935 73.9)",
+          "oklch(60.7% 0.0935 73.9)",
+          "oklch(72.1% 0.0935 73.9)",
+          "oklch(83.6% 0.0935 73.9)",
+          "oklch(95.0% 0.0935 73.9)"
+        ]
+      },
+      "warning": {
+        "role": "semantic",
+        "displayName": "warning",
+        "tonalRamp": [
+          "oklch(15.0% 0.1079 60.2)",
+          "oklch(26.4% 0.1079 60.2)",
+          "oklch(37.9% 0.1079 60.2)",
+          "oklch(49.3% 0.1079 60.2)",
+          "oklch(60.7% 0.1079 60.2)",
+          "oklch(72.1% 0.1079 60.2)",
+          "oklch(83.6% 0.1079 60.2)",
+          "oklch(95.0% 0.1079 60.2)"
+        ]
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "danger",
+        "tonalRamp": [
+          "oklch(15.0% 0.1432 22.0)",
+          "oklch(26.4% 0.1432 22.0)",
+          "oklch(37.9% 0.1432 22.0)",
+          "oklch(49.3% 0.1432 22.0)",
+          "oklch(60.7% 0.1432 22.0)",
+          "oklch(72.1% 0.1432 22.0)",
+          "oklch(83.6% 0.1432 22.0)",
+          "oklch(95.0% 0.1432 22.0)"
+        ]
+      },
+      "background": {
+        "role": "semantic",
+        "displayName": "background",
+        "tonalRamp": [
+          "oklch(15.0% 0.0054 117.9)",
+          "oklch(26.4% 0.0054 117.9)",
+          "oklch(37.9% 0.0054 117.9)",
+          "oklch(49.3% 0.0054 117.9)",
+          "oklch(60.7% 0.0054 117.9)",
+          "oklch(72.1% 0.0054 117.9)",
+          "oklch(83.6% 0.0054 117.9)",
+          "oklch(95.0% 0.0054 117.9)"
+        ]
+      },
+      "surface": {
+        "role": "semantic",
+        "displayName": "surface",
+        "tonalRamp": [
+          "oklch(15.0% 0.0000 89.9)",
+          "oklch(26.4% 0.0000 89.9)",
+          "oklch(37.9% 0.0000 89.9)",
+          "oklch(49.3% 0.0000 89.9)",
+          "oklch(60.7% 0.0000 89.9)",
+          "oklch(72.1% 0.0000 89.9)",
+          "oklch(83.6% 0.0000 89.9)",
+          "oklch(95.0% 0.0000 89.9)"
+        ]
+      },
+      "elevated-surface": {
+        "role": "semantic",
+        "displayName": "elevated surface",
+        "tonalRamp": [
+          "oklch(15.0% 0.0079 139.4)",
+          "oklch(26.4% 0.0079 139.4)",
+          "oklch(37.9% 0.0079 139.4)",
+          "oklch(49.3% 0.0079 139.4)",
+          "oklch(60.7% 0.0079 139.4)",
+          "oklch(72.1% 0.0079 139.4)",
+          "oklch(83.6% 0.0079 139.4)",
+          "oklch(95.0% 0.0079 139.4)"
+        ]
+      },
+      "primary-text": {
+        "role": "semantic",
+        "displayName": "primary text",
+        "tonalRamp": [
+          "oklch(15.0% 0.0281 180.7)",
+          "oklch(26.4% 0.0281 180.7)",
+          "oklch(37.9% 0.0281 180.7)",
+          "oklch(49.3% 0.0281 180.7)",
+          "oklch(60.7% 0.0281 180.7)",
+          "oklch(72.1% 0.0281 180.7)",
+          "oklch(83.6% 0.0281 180.7)",
+          "oklch(95.0% 0.0281 180.7)"
+        ]
+      },
+      "secondary-text": {
+        "role": "semantic",
+        "displayName": "secondary text",
+        "tonalRamp": [
+          "oklch(15.0% 0.0235 168.5)",
+          "oklch(26.4% 0.0235 168.5)",
+          "oklch(37.9% 0.0235 168.5)",
+          "oklch(49.3% 0.0235 168.5)",
+          "oklch(60.7% 0.0235 168.5)",
+          "oklch(72.1% 0.0235 168.5)",
+          "oklch(83.6% 0.0235 168.5)",
+          "oklch(95.0% 0.0235 168.5)"
+        ]
+      },
+      "tertiary-text": {
+        "role": "semantic",
+        "displayName": "tertiary text",
+        "tonalRamp": [
+          "oklch(15.0% 0.0201 164.1)",
+          "oklch(26.4% 0.0201 164.1)",
+          "oklch(37.9% 0.0201 164.1)",
+          "oklch(49.3% 0.0201 164.1)",
+          "oklch(60.7% 0.0201 164.1)",
+          "oklch(72.1% 0.0201 164.1)",
+          "oklch(83.6% 0.0201 164.1)",
+          "oklch(95.0% 0.0201 164.1)"
+        ]
+      },
+      "divider": {
+        "role": "semantic",
+        "displayName": "divider",
+        "tonalRamp": [
+          "oklch(15.0% 0.0120 145.5)",
+          "oklch(26.4% 0.0120 145.5)",
+          "oklch(37.9% 0.0120 145.5)",
+          "oklch(49.3% 0.0120 145.5)",
+          "oklch(60.7% 0.0120 145.5)",
+          "oklch(72.1% 0.0120 145.5)",
+          "oklch(83.6% 0.0120 145.5)",
+          "oklch(95.0% 0.0120 145.5)"
+        ]
+      },
+      "soft-tint": {
+        "role": "semantic",
+        "displayName": "soft tint",
+        "tonalRamp": [
+          "oklch(15.0% 0.0141 162.5)",
+          "oklch(26.4% 0.0141 162.5)",
+          "oklch(37.9% 0.0141 162.5)",
+          "oklch(49.3% 0.0141 162.5)",
+          "oklch(60.7% 0.0141 162.5)",
+          "oklch(72.1% 0.0141 162.5)",
+          "oklch(83.6% 0.0141 162.5)",
+          "oklch(95.0% 0.0141 162.5)"
+        ]
+      },
+      "dark-primary": {
+        "role": "primary",
+        "displayName": "dark primary",
+        "tonalRamp": [
+          "oklch(15.0% 0.0765 172.3)",
+          "oklch(26.4% 0.0765 172.3)",
+          "oklch(37.9% 0.0765 172.3)",
+          "oklch(49.3% 0.0765 172.3)",
+          "oklch(60.7% 0.0765 172.3)",
+          "oklch(72.1% 0.0765 172.3)",
+          "oklch(83.6% 0.0765 172.3)",
+          "oklch(95.0% 0.0765 172.3)"
+        ]
+      },
+      "dark-accent": {
+        "role": "secondary",
+        "displayName": "dark accent",
+        "tonalRamp": [
+          "oklch(15.0% 0.0632 75.5)",
+          "oklch(26.4% 0.0632 75.5)",
+          "oklch(37.9% 0.0632 75.5)",
+          "oklch(49.3% 0.0632 75.5)",
+          "oklch(60.7% 0.0632 75.5)",
+          "oklch(72.1% 0.0632 75.5)",
+          "oklch(83.6% 0.0632 75.5)",
+          "oklch(95.0% 0.0632 75.5)"
+        ]
+      },
+      "dark-positive": {
+        "role": "semantic",
+        "displayName": "dark positive",
+        "tonalRamp": [
+          "oklch(15.0% 0.0632 159.9)",
+          "oklch(26.4% 0.0632 159.9)",
+          "oklch(37.9% 0.0632 159.9)",
+          "oklch(49.3% 0.0632 159.9)",
+          "oklch(60.7% 0.0632 159.9)",
+          "oklch(72.1% 0.0632 159.9)",
+          "oklch(83.6% 0.0632 159.9)",
+          "oklch(95.0% 0.0632 159.9)"
+        ]
+      },
+      "dark-attention": {
+        "role": "semantic",
+        "displayName": "dark attention",
+        "tonalRamp": [
+          "oklch(15.0% 0.0946 80.6)",
+          "oklch(26.4% 0.0946 80.6)",
+          "oklch(37.9% 0.0946 80.6)",
+          "oklch(49.3% 0.0946 80.6)",
+          "oklch(60.7% 0.0946 80.6)",
+          "oklch(72.1% 0.0946 80.6)",
+          "oklch(83.6% 0.0946 80.6)",
+          "oklch(95.0% 0.0946 80.6)"
+        ]
+      },
+      "dark-warning": {
+        "role": "semantic",
+        "displayName": "dark warning",
+        "tonalRamp": [
+          "oklch(15.0% 0.0860 58.0)",
+          "oklch(26.4% 0.0860 58.0)",
+          "oklch(37.9% 0.0860 58.0)",
+          "oklch(49.3% 0.0860 58.0)",
+          "oklch(60.7% 0.0860 58.0)",
+          "oklch(72.1% 0.0860 58.0)",
+          "oklch(83.6% 0.0860 58.0)",
+          "oklch(95.0% 0.0860 58.0)"
+        ]
+      },
+      "dark-danger": {
+        "role": "semantic",
+        "displayName": "dark danger",
+        "tonalRamp": [
+          "oklch(15.0% 0.0916 16.8)",
+          "oklch(26.4% 0.0916 16.8)",
+          "oklch(37.9% 0.0916 16.8)",
+          "oklch(49.3% 0.0916 16.8)",
+          "oklch(60.7% 0.0916 16.8)",
+          "oklch(72.1% 0.0916 16.8)",
+          "oklch(83.6% 0.0916 16.8)",
+          "oklch(95.0% 0.0916 16.8)"
+        ]
+      },
+      "dark-background": {
+        "role": "semantic",
+        "displayName": "dark background",
+        "tonalRamp": [
+          "oklch(15.0% 0.0180 177.2)",
+          "oklch(26.4% 0.0180 177.2)",
+          "oklch(37.9% 0.0180 177.2)",
+          "oklch(49.3% 0.0180 177.2)",
+          "oklch(60.7% 0.0180 177.2)",
+          "oklch(72.1% 0.0180 177.2)",
+          "oklch(83.6% 0.0180 177.2)",
+          "oklch(95.0% 0.0180 177.2)"
+        ]
+      },
+      "dark-surface": {
+        "role": "semantic",
+        "displayName": "dark surface",
+        "tonalRamp": [
+          "oklch(15.0% 0.0224 171.8)",
+          "oklch(26.4% 0.0224 171.8)",
+          "oklch(37.9% 0.0224 171.8)",
+          "oklch(49.3% 0.0224 171.8)",
+          "oklch(60.7% 0.0224 171.8)",
+          "oklch(72.1% 0.0224 171.8)",
+          "oklch(83.6% 0.0224 171.8)",
+          "oklch(95.0% 0.0224 171.8)"
+        ]
+      },
+      "dark-elevated-surface": {
+        "role": "semantic",
+        "displayName": "dark elevated surface",
+        "tonalRamp": [
+          "oklch(15.0% 0.0285 166.6)",
+          "oklch(26.4% 0.0285 166.6)",
+          "oklch(37.9% 0.0285 166.6)",
+          "oklch(49.3% 0.0285 166.6)",
+          "oklch(60.7% 0.0285 166.6)",
+          "oklch(72.1% 0.0285 166.6)",
+          "oklch(83.6% 0.0285 166.6)",
+          "oklch(95.0% 0.0285 166.6)"
+        ]
+      },
+      "dark-primary-text": {
+        "role": "semantic",
+        "displayName": "dark primary text",
+        "tonalRamp": [
+          "oklch(15.0% 0.0129 141.8)",
+          "oklch(26.4% 0.0129 141.8)",
+          "oklch(37.9% 0.0129 141.8)",
+          "oklch(49.3% 0.0129 141.8)",
+          "oklch(60.7% 0.0129 141.8)",
+          "oklch(72.1% 0.0129 141.8)",
+          "oklch(83.6% 0.0129 141.8)",
+          "oklch(95.0% 0.0129 141.8)"
+        ]
+      },
+      "dark-secondary-text": {
+        "role": "semantic",
+        "displayName": "dark secondary text",
+        "tonalRamp": [
+          "oklch(15.0% 0.0215 156.7)",
+          "oklch(26.4% 0.0215 156.7)",
+          "oklch(37.9% 0.0215 156.7)",
+          "oklch(49.3% 0.0215 156.7)",
+          "oklch(60.7% 0.0215 156.7)",
+          "oklch(72.1% 0.0215 156.7)",
+          "oklch(83.6% 0.0215 156.7)",
+          "oklch(95.0% 0.0215 156.7)"
+        ]
+      },
+      "dark-tertiary-text": {
+        "role": "semantic",
+        "displayName": "dark tertiary text",
+        "tonalRamp": [
+          "oklch(15.0% 0.0254 158.9)",
+          "oklch(26.4% 0.0254 158.9)",
+          "oklch(37.9% 0.0254 158.9)",
+          "oklch(49.3% 0.0254 158.9)",
+          "oklch(60.7% 0.0254 158.9)",
+          "oklch(72.1% 0.0254 158.9)",
+          "oklch(83.6% 0.0254 158.9)",
+          "oklch(95.0% 0.0254 158.9)"
+        ]
+      },
+      "dark-divider": {
+        "role": "semantic",
+        "displayName": "dark divider",
+        "tonalRamp": [
+          "oklch(15.0% 0.0312 160.5)",
+          "oklch(26.4% 0.0312 160.5)",
+          "oklch(37.9% 0.0312 160.5)",
+          "oklch(49.3% 0.0312 160.5)",
+          "oklch(60.7% 0.0312 160.5)",
+          "oklch(72.1% 0.0312 160.5)",
+          "oklch(83.6% 0.0312 160.5)",
+          "oklch(95.0% 0.0312 160.5)"
+        ]
+      },
+      "dark-soft-tint": {
+        "role": "semantic",
+        "displayName": "dark soft tint",
+        "tonalRamp": [
+          "oklch(15.0% 0.0387 166.3)",
+          "oklch(26.4% 0.0387 166.3)",
+          "oklch(37.9% 0.0387 166.3)",
+          "oklch(49.3% 0.0387 166.3)",
+          "oklch(60.7% 0.0387 166.3)",
+          "oklch(72.1% 0.0387 166.3)",
+          "oklch(83.6% 0.0387 166.3)",
+          "oklch(95.0% 0.0387 166.3)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "hero-metric": {
+        "displayName": "Hero metric",
+        "purpose": "Real values, tabular figures; iOS system font at runtime."
+      },
+      "caption": {
+        "displayName": "Context",
+        "purpose": "Readable dates and ranges, never fake freshness."
+      }
+    },
+    "shadows": [
+      {
+        "name": "flat",
+        "value": "none",
+        "purpose": "Implemented cards and sheets have zero explicit elevation."
+      }
+    ],
+    "motion": [
+      {
+        "name": "fast",
+        "value": "120ms",
+        "purpose": "Shared short transition role."
+      },
+      {
+        "name": "standard",
+        "value": "220ms",
+        "purpose": "Programmatic tab selection; zero when Reduce Motion is enabled."
+      },
+      {
+        "name": "curve",
+        "value": "cubic-bezier(0.215, 0.61, 0.355, 1)",
+        "purpose": "Flutter Curves.easeOutCubic; no elastic overshoot."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Portable light-mode illustration of the implemented Flutter action.",
+      "html": "<button class=\"ds-primary\">查看记录</button>",
+      "css": ".ds-primary{min-height:48px;padding:12px 20px;border:0;border-radius:10px;font:600 17px/1.35 system-ui;cursor:pointer;background:#176b60;color:white}.ds-primary:hover{filter:brightness(.96)}.ds-primary:active{filter:brightness(.9)}.ds-primary:focus-visible{outline:2px solid #176b60;outline-offset:3px}"
+    },
+    {
+      "name": "Tonal action",
+      "kind": "button",
+      "refersTo": "button-tonal",
+      "description": "Secondary action, not another hierarchy-leading block.",
+      "html": "<button class=\"ds-tonal\">询问这个指标</button>",
+      "css": ".ds-tonal{min-height:48px;padding:12px 20px;border:0;border-radius:10px;font:600 17px/1.35 system-ui;cursor:pointer;background:#e6f1eb;color:#176b60}.ds-tonal:hover{filter:brightness(.98)}.ds-tonal:active{filter:brightness(.94)}.ds-tonal:focus-visible{outline:2px solid #176b60;outline-offset:3px}"
+    },
+    {
+      "name": "Filled field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Themed field illustration, not native keyboard behavior.",
+      "html": "<label class=\"ds-field\">记录备注<input placeholder=\"输入备注\" /></label>",
+      "css": ".ds-field{display:grid;gap:8px;font:15px/1.45 system-ui;color:#182d29}.ds-field input{min-height:44px;padding:8px 12px;border:1px solid transparent;border-radius:10px;background:#eef2ed;color:#182d29;font:inherit}.ds-field input::placeholder{color:#606e67}.ds-field input:hover{border-color:#53645d}.ds-field input:focus-visible{outline:2px solid #176b60;outline-offset:2px}"
+    },
+    {
+      "name": "Five destinations",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Text-only panel illustration. Actual Flutter uses one outlined icon family.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"主导航\"><button>首页</button><button>饮食</button><button>训练</button><button aria-current=\"page\">健康</button><button>我的</button></nav>",
+      "css": ".ds-nav{display:flex;background:white}.ds-nav button{flex:1;min-width:44px;min-height:56px;border:0;background:transparent;color:#53645d;font:13px/1.4 system-ui}.ds-nav button[aria-current]{color:#176b60}.ds-nav button:hover{background:#f7f8f4}.ds-nav button:active{background:#eef2ed}.ds-nav button:focus-visible{outline:2px solid #176b60;outline-offset:-3px}"
+    },
+    {
+      "name": "Selected segment",
+      "kind": "chip",
+      "refersTo": "selected-segment",
+      "description": "Clear touch selection without a thick pill group.",
+      "html": "<button class=\"ds-segment\" aria-pressed=\"true\">概览</button>",
+      "css": ".ds-segment{min-height:44px;padding:8px 16px;border:0;border-radius:6px;background:#e6f1eb;color:#176b60;font:600 17px/1.35 system-ui}.ds-segment:hover{filter:brightness(.97)}.ds-segment:active{filter:brightness(.93)}.ds-segment:focus-visible{outline:2px solid #176b60;outline-offset:3px}"
+    },
+    {
+      "name": "Report metric",
+      "kind": "custom",
+      "refersTo": "metric-focus",
+      "description": "Synthetic report evidence; do not infer a diagnosis from this value.",
+      "html": "<button class=\"ds-metric\"><span>糖化血红蛋白</span><strong>5.8 <small>%</small></strong><span class=\"ds-state\">高于本报告范围</span><span class=\"ds-reference\">本报告参考：4.0–5.6 %</span></button>",
+      "css": ".ds-metric{display:grid;gap:12px;width:100%;padding:24px;border:0;border-radius:16px;text-align:left;background:#e6f1eb;color:#182d29;font:600 17px/1.35 system-ui}.ds-metric strong{font:500 48px/1.1 system-ui;font-variant-numeric:tabular-nums;letter-spacing:-1.2px;color:#176b60}.ds-metric small{font:17px/1.35 system-ui;color:#53645d}.ds-state{color:#896022;font:15px/1.45 system-ui}.ds-reference{color:#53645d;font:13px/1.4 system-ui}.ds-metric:hover{filter:brightness(.98)}.ds-metric:active{filter:brightness(.95)}.ds-metric:focus-visible{outline:2px solid #176b60;outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Quiet Premium Health Intelligence",
+    "overview": "Data-forward private health records with restrained warmth. This documents the implemented Flutter reference, not a completed app-wide rollout. Browser snippets and synthesized tonal ramps are panel illustrations, not new runtime tokens.",
+    "keyCharacteristics": [
+      "Evidence first",
+      "Clear personal data",
+      "Quiet surfaces",
+      "System typography",
+      "Accessible state and actions"
+    ],
+    "rules": [
+      {
+        "name": "The Evidence Rule",
+        "body": "Report flags, values, units, dates and reference context remain authoritative; never invent diagnosis or freshness.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Use semantic roles and named typography.",
+      "Keep readable state text and an accessible tap action.",
+      "Grow and scroll for large Chinese text."
+    ],
+    "donts": [
+      "No health score fabrication, gamification or commercial styling.",
+      "No nested cards, outlines everywhere or oversized navigation capsules.",
+      "No browser or test-engine claims of physical iPhone acceptance."
+    ]
+  }
+}
