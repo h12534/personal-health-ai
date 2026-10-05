@@ -25,7 +25,10 @@ PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 PRIVATE_CHUNKS = {b"eXIf", b"tEXt", b"zTXt", b"iTXt"}
 SAFE_ANCILLARY = {b"sRGB", b"gAMA", b"cHRM", b"pHYs"}
 PRIVATE_PATTERNS = (
-    ("EMAIL", r"@"),
+    (
+        "EMAIL",
+        r"(?iu)[\w.!#$%&'*+/=?^`{|}~-]+\s*@\s*[\w-]+(?:\.[\w-]+)+|(?<!\w)@[\w_.-]+",
+    ),
     ("KEY", r"(?i)(?:sk[-_]|ghp_|github_pat_|AKIA)[a-z0-9_\-]{8,}"),
     ("AUTH", r"(?i)bearer\s+\S+|-----BEGIN|eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+"),
     ("SECRET", r"(?i)(?:token|api\s*key|password|密码|令牌)\s*[:=]\s*\S+"),
@@ -210,7 +213,22 @@ def check_ocr_observations(rows: list[dict], capture: str) -> None:
     joined_texts = []
     for row in rows:
         confirmed_axis = confirmed_synthetic_axis(row, rows, capture)
-        check_ocr_text([row["text"]], confirmed_axis)
+        try:
+            check_ocr_text([row["text"]], confirmed_axis)
+        except SafetyFailure as error:
+            # Only fixed categories and counts, never text or coordinate values.
+            axis_count = len(
+                {
+                    re.sub(r"\s", "", other["text"])
+                    for other in rows
+                    if other["language_pass"] == "chinese"
+                }
+                & FROZEN_AXIS_LABELS
+            )
+            raise SafetyFailure(
+                f"{error} ocr_pass={row['language_pass']} "
+                f"frozen_axis_labels={axis_count} axis_confirmed={confirmed_axis}"
+            ) from error
         joined_texts.append(
             "2026年6月1日 2026年9月1日" if confirmed_axis else row["text"]
         )

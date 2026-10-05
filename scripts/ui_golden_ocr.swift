@@ -1,5 +1,6 @@
 // OCR stays local; stdout is consumed privately by the safety checker.
 import Foundation
+import CoreImage
 import Vision
 
 do {
@@ -7,6 +8,12 @@ do {
         throw NSError(domain: "SyntheticUIReview", code: 1)
     }
     let url = URL(fileURLWithPath: CommandLine.arguments[1])
+    guard let source = CIImage(contentsOf: url) else {
+        throw NSError(domain: "SyntheticUIReview", code: 6)
+    }
+    // Higher-resolution OCR analysis only. Original artifact pixels stay exact;
+    // no resampled image, intermediate OCR data, or sidecar is written.
+    let analysisImage = source.transformed(by: CGAffineTransform(scaleX: 3, y: 3))
     var rows = [[String: Any]]()
     for (pass, languages) in [("chinese", ["zh-Hans"]), ("english", ["en-US"])] {
         let request = VNRecognizeTextRequest()
@@ -17,7 +24,7 @@ do {
             throw NSError(domain: "SyntheticUIReview", code: 2)
         }
         request.recognitionLanguages = languages
-        try VNImageRequestHandler(url: url, options: [:]).perform([request])
+        try VNImageRequestHandler(ciImage: analysisImage, options: [:]).perform([request])
         guard let observations = request.results else {
             throw NSError(domain: "SyntheticUIReview", code: 3)
         }

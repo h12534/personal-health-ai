@@ -99,6 +99,32 @@ class UiGoldenSafetyTests(unittest.TestCase):
         with self.assertRaisesRegex(SafetyFailure, "^PRIVATE_CONTENT_EMAIL$"):
             check_ocr_text(["person@example.invalid"])
 
+    def test_mail_and_account_shapes_block_but_isolated_icon_glyph_is_not_identity(
+        self,
+    ):
+        check_ocr_text(["@", "拍照记饮食"])
+        for text in (
+            "person @ example.invalid",
+            "健康 @ example.invalid",
+            "person@测试.公司",
+            "@private_account",
+            "@私人账号",
+        ):
+            with (
+                self.subTest(text=text),
+                self.assertRaisesRegex(SafetyFailure, "PRIVATE_CONTENT_EMAIL"),
+            ):
+                check_ocr_text([text])
+        with self.assertRaises(SafetyFailure):
+            check_ocr_observations(
+                [
+                    observation("person", "english"),
+                    observation("@", "english"),
+                    observation("example.invalid", "english"),
+                ],
+                "safe.png",
+            )
+
     def test_https_is_not_a_windows_drive_but_local_paths_still_block(self):
         check_ocr_text(["https://docs.example.invalid/health/context"])
         for text in ("C:/private", "D:\\private", "saved C:/private", "/Users/sample"):
