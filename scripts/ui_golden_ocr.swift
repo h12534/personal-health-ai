@@ -7,8 +7,8 @@ do {
         throw NSError(domain: "SyntheticUIReview", code: 1)
     }
     let url = URL(fileURLWithPath: CommandLine.arguments[1])
-    var texts = [String]()
-    for languages in [["zh-Hans", "en-US"], ["en-US"]] {
+    var rows = [[String: Any]]()
+    for (pass, languages) in [("chinese", ["zh-Hans"]), ("english", ["en-US"])] {
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = false
@@ -18,14 +18,25 @@ do {
         }
         request.recognitionLanguages = languages
         try VNImageRequestHandler(url: url, options: [:]).perform([request])
-        guard let observations = request.results, !observations.isEmpty else {
+        guard let observations = request.results else {
             throw NSError(domain: "SyntheticUIReview", code: 3)
         }
-        texts.append(contentsOf: observations.compactMap {
-            $0.topCandidates(1).first?.string
-        })
+        for observation in observations {
+            guard let text = observation.topCandidates(1).first?.string else {
+                throw NSError(domain: "SyntheticUIReview", code: 4)
+            }
+            let box = observation.boundingBox
+            rows.append([
+                "text": text,
+                "language_pass": pass,
+                "bounds": [box.origin.x, box.origin.y, box.size.width, box.size.height]
+            ])
+        }
     }
-    FileHandle.standardOutput.write(try JSONSerialization.data(withJSONObject: texts))
+    guard !rows.isEmpty else {
+        throw NSError(domain: "SyntheticUIReview", code: 5)
+    }
+    FileHandle.standardOutput.write(try JSONSerialization.data(withJSONObject: rows))
 } catch {
     // Never expose a path, recognized secret, or raw system error.
     FileHandle.standardError.write(Data("OCR_CHECK_UNAVAILABLE\n".utf8))

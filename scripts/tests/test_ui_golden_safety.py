@@ -9,6 +9,7 @@ from unittest import mock
 from scripts.ui_golden_safety import (
     PNG_SIGNATURE,
     SafetyFailure,
+    check_ocr_observations,
     check_ocr_text,
     prepare_export,
     sanitize_png,
@@ -35,6 +36,14 @@ def png(extra=b""):
         + chunk(b"IDAT", zlib.compress(b"\x00\x12\x34\x56\xff"))
         + chunk(b"IEND")
     )
+
+
+def observation(text, language="chinese", bounds=None):
+    return {
+        "text": text,
+        "language_pass": language,
+        "bounds": bounds or [0.1, 0.3, 0.8, 0.03],
+    }
 
 
 class UiGoldenSafetyTests(unittest.TestCase):
@@ -103,18 +112,55 @@ class UiGoldenSafetyTests(unittest.TestCase):
 
     def test_frozen_synthetic_date_axis_is_not_a_phone(self):
         capture = "health-variant-clinical.png"
-        check_ocr_text(["202661 202691"], capture)
-        check_ocr_text(["20260601 20260901"], capture)
-        for text, name in (
-            ("202661 202691", "unreviewed.png"),
-            ("13800000000", capture),
-            ("Phone: 202661 202691", capture),
-            ("202661 202691 13800000000", capture),
-            ("202661 202692", capture),
-            ("202661 202691 person@example.invalid", capture),
+        axis = [
+            observation("2026年6月1日", bounds=[0.1, 0.3, 0.35, 0.03]),
+            observation("2026年9月1日", bounds=[0.55, 0.3, 0.35, 0.03]),
+        ]
+        check_ocr_observations(
+            axis + [observation("202661 202691", "english")], capture
+        )
+        with self.assertRaises(SafetyFailure):
+            check_ocr_observations([observation("202661 202691", "english")], capture)
+        with self.assertRaises(SafetyFailure):
+            check_ocr_observations(
+                axis + [observation("202661 202691", "english")], "unreviewed.png"
+            )
+        for text in ("Phone: 202661 202691", "202661 202691 person@example.invalid"):
+            with self.subTest(text=text), self.assertRaises(SafetyFailure):
+                check_ocr_observations(axis + [observation(text, "english")], capture)
+        for language in ("chinese", "english"):
+            with self.assertRaises(SafetyFailure):
+                check_ocr_observations(
+                    axis
+                    + [observation("13800000000", language, [0.1, 0.6, 0.8, 0.03])],
+                    capture,
+                )
+        changed = [axis[0], observation("2026年9月2日", bounds=[0.55, 0.3, 0.35, 0.03])]
+        with self.assertRaises(SafetyFailure):
+            check_ocr_observations(
+                changed + [observation("202661 202691", "english")], capture
+            )
+
+    def test_empty_or_malformed_observations_block(self):
+        for rows in (
+            [],
+            ["not structured OCR"],
+            [observation("")],
+            [observation("合成", bounds=[0, 0, float("nan"), 0.1])],
+            [observation("合成", bounds=[0, 0, 0, 0.1])],
+            [observation("合成", "unknown")],
+            [dict(observation("合成"), extra="not permitted")],
         ):
-            with self.subTest(text=text, name=name), self.assertRaises(SafetyFailure):
-                check_ocr_text([text], name)
+            with self.subTest(rows=rows), self.assertRaises(SafetyFailure):
+                check_ocr_observations(rows, "safe.png")
+
+    def test_one_language_has_no_text_but_completed_other_pass_is_checked(self):
+        check_ocr_observations([observation("私人健康")], "login-light.png")
+        check_ocr_observations([observation("Synthetic UI", "english")], "safe.png")
+        with self.assertRaises(SafetyFailure):
+            check_ocr_observations(
+                [observation("person@example.invalid", "english")], "safe.png"
+            )
 
     def test_legitimate_labels_and_synthetic_values_do_not_claim_identity(self):
         check_ocr_text(
@@ -177,7 +223,10 @@ class UiGoldenSafetyTests(unittest.TestCase):
             with (
                 mock.patch(
                     "scripts.ui_golden_safety.local_ocr",
-                    side_effect=[["合成记录"], ["person@example.invalid"]],
+                    side_effect=[
+                        [observation("合成记录")],
+                        [observation("person@example.invalid")],
+                    ],
                 ),
                 self.assertRaises(SafetyFailure),
             ):
@@ -186,7 +235,8 @@ class UiGoldenSafetyTests(unittest.TestCase):
                 )
             self.assertFalse(output.exists())
             with mock.patch(
-                "scripts.ui_golden_safety.local_ocr", return_value=["合成记录"]
+                "scripts.ui_golden_safety.local_ocr",
+                return_value=[observation("合成记录")],
             ):
                 self.assertEqual(
                     prepare_export(

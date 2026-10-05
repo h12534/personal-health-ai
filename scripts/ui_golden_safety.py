@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import struct
@@ -37,25 +38,31 @@ PRIVATE_PATTERNS = (
     ("OPAQUE", r"[A-Za-z0-9_+/=-]{40,}"),
 )
 
-# This reference-only composition has two fixed synthetic trend labels:
-# 2026年6月1日 / 2026年9月1日 (ui_redesign_golden_test.dart sampleTrend).
-# English Vision can merge those labels into one numeric observation. Require
-# the ENTIRE observation and exact frozen dates, not an arbitrary numeric span.
-FROZEN_AXIS_DIGITS = {
-    f"2026{june}{day_a}2026{september}{day_b}"
-    for june in ("6", "06")
-    for september in ("9", "09")
-    for day_a in ("1", "01")
-    for day_b in ("1", "01")
-}
+# Only the frozen clinical reference has these exact two source fixture dates.
+# A numeric English observation is not exempt based on its digits: it needs
+# independent Chinese date recognition at the very same image location.
+FROZEN_AXIS_LABELS = {"2026年6月1日", "2026年9月1日"}
 
 
-def is_frozen_synthetic_date_axis(value: str, texts: list[str], capture: str) -> bool:
-    return (
-        capture == "health-variant-clinical.png"
-        and value.strip() in {text.strip() for text in texts}
-        and re.sub(r"[ +\-]", "", value.strip()) in FROZEN_AXIS_DIGITS
-    )
+def confirmed_synthetic_axis(row: dict, rows: list[dict], capture: str) -> bool:
+    if capture != "health-variant-clinical.png" or row["language_pass"] != "english":
+        return False
+    x, y, width, height = row["bounds"]
+    labels: set[str] = set()
+    for other in rows:
+        if other["language_pass"] != "chinese":
+            continue
+        ox, oy, ow, oh = other["bounds"]
+        if not (x <= ox + ow / 2 <= x + width and y <= oy + oh / 2 <= y + height):
+            continue
+        text = re.sub(r"\s", "", other["text"])
+        if text in FROZEN_AXIS_LABELS:
+            labels.add(text)
+        elif text == "2026年6月1日2026年9月1日":
+            labels.update(FROZEN_AXIS_LABELS)
+        else:
+            return False
+    return labels == FROZEN_AXIS_LABELS
 
 
 class SafetyFailure(Exception):
@@ -160,15 +167,18 @@ def sanitize_png(data: bytes, size: tuple[int, int]) -> bytes:
     return bytes(kept)
 
 
-def check_ocr_text(texts: list[str], capture: str = "") -> None:
+def check_ocr_text(texts: list[str], confirmed_axis: bool = False) -> None:
     if not texts or not all(isinstance(text, str) and text.strip() for text in texts):
         raise SafetyFailure("OCR_INCOMPLETE")
     normalized_texts = [unicodedata.normalize("NFKC", text) for text in texts]
     normalized = "\n".join(normalized_texts)
     for category, pattern in PRIVATE_PATTERNS:
         for match in re.finditer(pattern, normalized):
-            if category == "PHONE" and is_frozen_synthetic_date_axis(
-                match.group(), normalized_texts, capture
+            if (
+                category == "PHONE"
+                and confirmed_axis
+                and len(normalized_texts) == 1
+                and match.group().strip() == normalized_texts[0].strip()
             ):
                 continue
             raise SafetyFailure(f"PRIVATE_CONTENT_{category}")
@@ -177,7 +187,31 @@ def check_ocr_text(texts: list[str], capture: str = "") -> None:
             raise SafetyFailure("NON_SYNTHETIC_URL")
 
 
-def local_ocr(executable: Path, image: Path) -> list[str]:
+def check_ocr_observations(rows: list[dict], capture: str) -> None:
+    if not rows or not all(isinstance(row, dict) for row in rows):
+        raise SafetyFailure("OCR_INCOMPLETE")
+    for row in rows:
+        if (
+            set(row) != {"text", "language_pass", "bounds"}
+            or not isinstance(row["text"], str)
+            or not row["text"].strip()
+            or row["language_pass"] not in {"chinese", "english"}
+            or not isinstance(row["bounds"], list)
+            or len(row["bounds"]) != 4
+            or any(
+                type(value) not in (int, float) or not math.isfinite(value)
+                for value in row["bounds"]
+            )
+            or any(value < 0 or value > 1 for value in row["bounds"])
+            or row["bounds"][2] == 0
+            or row["bounds"][3] == 0
+        ):
+            raise SafetyFailure("OCR_INVALID_RESPONSE")
+    for row in rows:
+        check_ocr_text([row["text"]], confirmed_synthetic_axis(row, rows, capture))
+
+
+def local_ocr(executable: Path, image: Path) -> list[dict]:
     try:
         result = subprocess.run(
             [str(executable), str(image)], capture_output=True, timeout=60, check=False
@@ -211,7 +245,9 @@ def prepare_export(
                 sanitize_png(file.read_bytes(), tuple(captures[file.name]))
             )
             try:
-                check_ocr_text(local_ocr(ocr_executable, destination), file.name)
+                check_ocr_observations(
+                    local_ocr(ocr_executable, destination), file.name
+                )
             except SafetyFailure as error:
                 # The name is already in the sealed exact allowlist. Never log
                 # recognized text, a path, payload or external error details.

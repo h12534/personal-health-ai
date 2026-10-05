@@ -70,8 +70,8 @@
     "mobile/test/ui_rollout_profile_test.dart": "09e118c4119daf032059608b64c42e1ef58a58db375ca33856745dadefdbe890",
     "mobile/test/support/reviewed_pixel_comparator.dart": "4f442c6e53683563d9a4fff875eb42cf88723d0d470c3ed7598d860a0dd31d0c",
     "mobile/test/assets/NotoSansSC.ttf": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
-    "scripts/ui_golden_safety.py": "85eb2425d125179a4a2f5b2defc2fc07d236e4143da7f601e0f69e259d24b4d2",
-    "scripts/ui_golden_ocr.swift": "234e5d61f432ba253bbce7d7c8a4c1003c814c590ea53e6f91110bba4e953db9"
+    "scripts/ui_golden_safety.py": "409115596fdd337f8697d5a686970992ddf525bc724346e60627c7e4b9255c94",
+    "scripts/ui_golden_ocr.swift": "a2940acfcba7fc21bcdefdc5fb8c9f5fc80ebd1ea27d95a40314b4d92214860f"
   },
   "captures": {
     "standard": {
