@@ -185,6 +185,9 @@ class UiGoldenSafetyTests(unittest.TestCase):
         header = observation("上次体检 2026年9月1日")
         english = observation("11111202691", "english")
         check_ocr_observations([header, english], capture)
+        check_ocr_observations(
+            [header, observation("L111 11111202691", "english")], capture
+        )
         for rows, name in (
             ([english], capture),
             (
@@ -194,6 +197,9 @@ class UiGoldenSafetyTests(unittest.TestCase):
             ([observation("上次体检 2026年9月2日"), english], capture),
             ([header, english], "unknown.png"),
             ([header, observation("person@example.invalid", "english")], capture),
+            ([header, observation("Phone: 11111202691", "english")], capture),
+            ([header, observation("Token: fictional-value", "english")], capture),
+            ([header, observation("13800000000"), english], capture),
         ):
             with self.subTest(name=name), self.assertRaises(SafetyFailure):
                 check_ocr_observations(rows, name)

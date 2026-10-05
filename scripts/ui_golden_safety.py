@@ -181,7 +181,10 @@ def check_ocr_text(texts: list[str], confirmed_axis: bool = False) -> None:
                 category == "PHONE"
                 and confirmed_axis
                 and len(normalized_texts) == 1
-                and match.group().strip() == normalized_texts[0].strip()
+                and not re.search(
+                    r"(?i)\b(?:phone|mobile|tel(?:ephone)?|imei|device|account)\b|手机号|电话|账号",
+                    normalized,
+                )
             ):
                 continue
             raise SafetyFailure(f"PRIVATE_CONTENT_{category}")

@@ -17,6 +17,11 @@ on:
         description: Capture exactly 74 standard and 12 free synthetic UI PNGs after fail-closed safety checks
         type: boolean
         default: false
+      ui_golden_review_scope:
+        description: Review both approved sets, or retry only the missing free set
+        type: choice
+        options: [both, free]
+        default: both
 
 permissions:
   contents: read
@@ -166,7 +171,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flavor: [standard, free]
+        flavor: ${{ fromJSON(inputs.ui_golden_review_scope == 'free' && '["free"]' || '["standard", "free"]') }}
     steps:
       - uses: actions/checkout@v4
         with:
