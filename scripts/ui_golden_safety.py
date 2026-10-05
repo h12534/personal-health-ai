@@ -41,31 +41,31 @@ PRIVATE_PATTERNS = (
     ("OPAQUE", r"[A-Za-z0-9_+/=-]{40,}"),
 )
 
-# Only the frozen clinical reference has these exact two source fixture dates.
+# Frozen fixture dates/header text, not an arbitrary numeric allowlist.
 # A numeric English observation is not exempt based on its digits: it needs
 # independent Chinese date recognition at the very same image location.
 FROZEN_AXIS_LABELS = {"2026年6月1日", "2026年9月1日"}
+FROZEN_TEXT_BY_CAPTURE = {
+    "health-variant-clinical.png": "2026年6月1日2026年9月1日",
+    "health-overview-large-text-light.png": "上次体检2026年9月1日",
+    "health-overview-large-text-dark.png": "上次体检2026年9月1日",
+}
 
 
 def confirmed_synthetic_axis(row: dict, rows: list[dict], capture: str) -> bool:
-    if capture != "health-variant-clinical.png" or row["language_pass"] != "english":
+    expected = FROZEN_TEXT_BY_CAPTURE.get(capture)
+    if expected is None or row["language_pass"] != "english":
         return False
     x, y, width, height = row["bounds"]
-    labels: set[str] = set()
+    parts = []
     for other in rows:
         if other["language_pass"] != "chinese":
             continue
         ox, oy, ow, oh = other["bounds"]
         if not (x <= ox + ow / 2 <= x + width and y <= oy + oh / 2 <= y + height):
             continue
-        text = re.sub(r"\s", "", other["text"])
-        if text in FROZEN_AXIS_LABELS:
-            labels.add(text)
-        elif text == "2026年6月1日2026年9月1日":
-            labels.update(FROZEN_AXIS_LABELS)
-        else:
-            return False
-    return labels == FROZEN_AXIS_LABELS
+        parts.append((ox, re.sub(r"\s", "", other["text"])))
+    return "".join(text for _, text in sorted(parts)) == expected
 
 
 class SafetyFailure(Exception):
@@ -196,8 +196,6 @@ def check_ocr_observations(rows: list[dict], capture: str) -> None:
     for row in rows:
         if (
             set(row) != {"text", "language_pass", "bounds"}
-            or not isinstance(row["text"], str)
-            or not row["text"].strip()
             or row["language_pass"] not in {"chinese", "english"}
             or not isinstance(row["bounds"], list)
             or len(row["bounds"]) != 4
@@ -205,11 +203,22 @@ def check_ocr_observations(rows: list[dict], capture: str) -> None:
                 type(value) not in (int, float) or not math.isfinite(value)
                 for value in row["bounds"]
             )
-            or any(value < 0 or value > 1 for value in row["bounds"])
-            or row["bounds"][2] == 0
-            or row["bounds"][3] == 0
+            or row["bounds"][2] <= 0
+            or row["bounds"][3] <= 0
         ):
             raise SafetyFailure("OCR_INVALID_RESPONSE")
+        if not isinstance(row["text"], str) or not row["text"].strip():
+            raise SafetyFailure("OCR_EMPTY_OBSERVATION")
+        x, y, width, height = row["bounds"]
+        if not math.isfinite(x + width) or not math.isfinite(y + height):
+            raise SafetyFailure("OCR_INVALID_BOUNDS")
+        left, bottom = max(0, x), max(0, y)
+        right, top = min(1, x + width), min(1, y + height)
+        if right <= left or top <= bottom:
+            raise SafetyFailure("OCR_OUTSIDE_IMAGE")
+        # Vision can extend a text box across a clipped image edge. Intersect
+        # its geometry only; every recognized character is still checked.
+        row["bounds"] = [left, bottom, right - left, top - bottom]
     joined_texts = []
     for row in rows:
         confirmed_axis = confirmed_synthetic_axis(row, rows, capture)
@@ -230,7 +239,7 @@ def check_ocr_observations(rows: list[dict], capture: str) -> None:
                 f"frozen_axis_labels={axis_count} axis_confirmed={confirmed_axis}"
             ) from error
         joined_texts.append(
-            "2026年6月1日 2026年9月1日" if confirmed_axis else row["text"]
+            FROZEN_TEXT_BY_CAPTURE[capture] if confirmed_axis else row["text"]
         )
     # Preserve checks whose label/value span separate recognition observations.
     # Only a geometrically confirmed fixture date is semantically normalized;

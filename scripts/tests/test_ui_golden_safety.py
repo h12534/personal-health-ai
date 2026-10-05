@@ -180,6 +180,41 @@ class UiGoldenSafetyTests(unittest.TestCase):
             with self.subTest(rows=rows), self.assertRaises(SafetyFailure):
                 check_ocr_observations(rows, "safe.png")
 
+    def test_large_text_synthetic_header_needs_exact_chinese_at_same_location(self):
+        capture = "health-overview-large-text-light.png"
+        header = observation("上次体检 2026年9月1日")
+        english = observation("11111202691", "english")
+        check_ocr_observations([header, english], capture)
+        for rows, name in (
+            ([english], capture),
+            (
+                [header, observation("11111202691", "english", [0.1, 0.7, 0.8, 0.03])],
+                capture,
+            ),
+            ([observation("上次体检 2026年9月2日"), english], capture),
+            ([header, english], "unknown.png"),
+            ([header, observation("person@example.invalid", "english")], capture),
+        ):
+            with self.subTest(name=name), self.assertRaises(SafetyFailure):
+                check_ocr_observations(rows, name)
+
+    def test_edge_clipped_geometry_is_intersected_but_all_text_still_checked(self):
+        row = observation("合成中文问题", bounds=[-0.01, 0.3, 0.4, 0.03])
+        check_ocr_observations([row], "health-keyboard-small-dark.png")
+        self.assertEqual(row["bounds"][0], 0)
+        with self.assertRaises(SafetyFailure):
+            check_ocr_observations(
+                [
+                    observation(
+                        "Token: fictional-value", "english", [-0.01, 0.3, 0.4, 0.03]
+                    )
+                ],
+                "health-keyboard-small-dark.png",
+            )
+        for bounds in ([2, 0.3, 0.4, 0.03], [0, 0, -0.1, 0.1], [1e308, 0, 1e308, 0.1]):
+            with self.subTest(bounds=bounds), self.assertRaises(SafetyFailure):
+                check_ocr_observations([observation("合成", bounds=bounds)], "safe.png")
+
     def test_one_language_has_no_text_but_completed_other_pass_is_checked(self):
         check_ocr_observations([observation("私人健康")], "login-light.png")
         check_ocr_observations([observation("Synthetic UI", "english")], "safe.png")
