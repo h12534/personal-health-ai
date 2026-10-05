@@ -29,10 +29,33 @@ PRIVATE_PATTERNS = (
     ("AUTH", r"(?i)bearer\s+\S+|-----BEGIN|eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+"),
     ("SECRET", r"(?i)(?:token|api\s*key|password|密码|令牌)\s*[:=]\s*\S+"),
     ("DEVICE", r"(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"),
-    ("PATH", r"(?i)/Users/|/home/|[a-z]:[\\/]|file://|127\.0\.0\.1"),
+    (
+        "PATH",
+        r"(?i)/Users/|/home/|(?<![a-z0-9])[a-z]:[\\/]|file://|127\.0\.0\.1",
+    ),
     ("PHONE", r"(?<!\d)(?:\+?\d[ -]?){11,}(?!\d)"),
     ("OPAQUE", r"[A-Za-z0-9_+/=-]{40,}"),
 )
+
+# This reference-only composition has two fixed synthetic trend labels:
+# 2026年6月1日 / 2026年9月1日 (ui_redesign_golden_test.dart sampleTrend).
+# English Vision can merge those labels into one numeric observation. Require
+# the ENTIRE observation and exact frozen dates, not an arbitrary numeric span.
+FROZEN_AXIS_DIGITS = {
+    f"2026{june}{day_a}2026{september}{day_b}"
+    for june in ("6", "06")
+    for september in ("9", "09")
+    for day_a in ("1", "01")
+    for day_b in ("1", "01")
+}
+
+
+def is_frozen_synthetic_date_axis(value: str, texts: list[str], capture: str) -> bool:
+    return (
+        capture == "health-variant-clinical.png"
+        and value.strip() in {text.strip() for text in texts}
+        and re.sub(r"[ +\-]", "", value.strip()) in FROZEN_AXIS_DIGITS
+    )
 
 
 class SafetyFailure(Exception):
@@ -137,12 +160,17 @@ def sanitize_png(data: bytes, size: tuple[int, int]) -> bytes:
     return bytes(kept)
 
 
-def check_ocr_text(texts: list[str]) -> None:
+def check_ocr_text(texts: list[str], capture: str = "") -> None:
     if not texts or not all(isinstance(text, str) and text.strip() for text in texts):
         raise SafetyFailure("OCR_INCOMPLETE")
-    normalized = unicodedata.normalize("NFKC", "\n".join(texts))
+    normalized_texts = [unicodedata.normalize("NFKC", text) for text in texts]
+    normalized = "\n".join(normalized_texts)
     for category, pattern in PRIVATE_PATTERNS:
-        if re.search(pattern, normalized):
+        for match in re.finditer(pattern, normalized):
+            if category == "PHONE" and is_frozen_synthetic_date_axis(
+                match.group(), normalized_texts, capture
+            ):
+                continue
             raise SafetyFailure(f"PRIVATE_CONTENT_{category}")
     for url in re.findall(r"https?://[^\s]+", normalized):
         if not url.startswith("https://docs.example.invalid/"):
@@ -183,7 +211,7 @@ def prepare_export(
                 sanitize_png(file.read_bytes(), tuple(captures[file.name]))
             )
             try:
-                check_ocr_text(local_ocr(ocr_executable, destination))
+                check_ocr_text(local_ocr(ocr_executable, destination), file.name)
             except SafetyFailure as error:
                 # The name is already in the sealed exact allowlist. Never log
                 # recognized text, a path, payload or external error details.

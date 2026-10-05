@@ -90,6 +90,32 @@ class UiGoldenSafetyTests(unittest.TestCase):
         with self.assertRaisesRegex(SafetyFailure, "^PRIVATE_CONTENT_EMAIL$"):
             check_ocr_text(["person@example.invalid"])
 
+    def test_https_is_not_a_windows_drive_but_local_paths_still_block(self):
+        check_ocr_text(["https://docs.example.invalid/health/context"])
+        for text in ("C:/private", "D:\\private", "saved C:/private", "/Users/sample"):
+            with (
+                self.subTest(text=text),
+                self.assertRaisesRegex(SafetyFailure, "PRIVATE_CONTENT_PATH"),
+            ):
+                check_ocr_text([text])
+        with self.assertRaisesRegex(SafetyFailure, "NON_SYNTHETIC_URL"):
+            check_ocr_text(["https://private.example/health"])
+
+    def test_frozen_synthetic_date_axis_is_not_a_phone(self):
+        capture = "health-variant-clinical.png"
+        check_ocr_text(["202661 202691"], capture)
+        check_ocr_text(["20260601 20260901"], capture)
+        for text, name in (
+            ("202661 202691", "unreviewed.png"),
+            ("13800000000", capture),
+            ("Phone: 202661 202691", capture),
+            ("202661 202691 13800000000", capture),
+            ("202661 202692", capture),
+            ("202661 202691 person@example.invalid", capture),
+        ):
+            with self.subTest(text=text, name=name), self.assertRaises(SafetyFailure):
+                check_ocr_text([text], name)
+
     def test_legitimate_labels_and_synthetic_values_do_not_claim_identity(self):
         check_ocr_text(
             [
