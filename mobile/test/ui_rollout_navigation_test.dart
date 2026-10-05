@@ -12,7 +12,12 @@ void main() {
       testWidgets(
           'navigation $width ${dark ? 'dark' : 'light'} scales and activates',
           (tester) async {
-        tester.view.physicalSize = Size(width, 852);
+        final height = width == 320
+            ? 568.0
+            : width == 393
+                ? 852.0
+                : 932.0;
+        tester.view.physicalSize = Size(width, height);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -23,15 +28,30 @@ void main() {
             theme: dark ? AppTheme.dark : AppTheme.light,
             builder: (context, child) => MediaQuery(
               data: MediaQuery.of(context).copyWith(
-                  textScaler: TextScaler.linear(2), disableAnimations: true),
+                  padding: const EdgeInsets.only(top: 44, bottom: 34),
+                  viewPadding: const EdgeInsets.only(top: 44, bottom: 34),
+                  textScaler: TextScaler.linear(2),
+                  disableAnimations: true),
               child: child!,
             ),
             home: Scaffold(
+                body: ListView.builder(
+                    itemCount: 100,
+                    itemBuilder: (_, index) => Text('合成内容 $index')),
                 bottomNavigationBar: AppNavigationBar(
                     index: 3, onSelect: (value) => selected = value)),
           ));
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
+          final navRect = tester.getRect(find.byType(AppNavigationBar));
+          expect(navRect.bottom, height);
+          for (final label in ['首页', '饮食', '训练', '健康', '我的']) {
+            expect(tester.getRect(find.text(label)).bottom,
+                lessThanOrEqualTo(height - 34));
+          }
+          await tester.drag(find.byType(ListView), const Offset(0, -500));
+          await tester.pumpAndSettle();
+          expect(tester.getRect(find.byType(AppNavigationBar)), navRect);
           final bar = tester
               .widget<BottomNavigationBar>(find.byType(BottomNavigationBar));
           expect(bar.selectedFontSize, 26);
@@ -41,8 +61,7 @@ void main() {
             expect(find.text(label).hitTestable(), findsOneWidget);
           }
           final healthNode = tester.getSemantics(find.text('健康'));
-          expect(
-              healthNode.getSemanticsData().flagsCollection.isSelected,
+          expect(healthNode.getSemanticsData().flagsCollection.isSelected,
               Tristate.isTrue);
           expect(healthNode.getSemanticsData().hasAction(SemanticsAction.tap),
               isTrue);

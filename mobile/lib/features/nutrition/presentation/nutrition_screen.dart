@@ -188,16 +188,28 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     if (!context.mounted || action == null) return;
     try {
       if (action == 'delete') {
-        await ref
-            .read(nutritionControllerProvider.notifier)
-            .deleteItem(meal, item);
+        await showDialog<bool>(
+            context: context,
+            builder: (_) => AwaitedEntryDialog(
+                title: '删除这条餐食记录？',
+                content: Text('${item.foodName} · '
+                    '${AppFormat.editableNumber(item.amount)} '
+                    '${item.unit == 'serving' ? '份' : item.unit}'),
+                validate: () => null,
+                saveLabel: '确认删除',
+                busyLabel: '正在删除…',
+                retryLabel: '重试删除',
+                destructive: true,
+                onSave: () => ref
+                    .read(nutritionControllerProvider.notifier)
+                    .deleteItem(meal, item)));
         return;
       }
       await showDialog<bool>(
           context: context,
           builder: (_) => NumberEntryDialog(
               title: '修改 ${item.foodName}',
-              initialValue: item.amount.toStringAsFixed(1),
+              initialValue: AppFormat.editableNumber(item.amount),
               unit: item.unit,
               onSave: (amount) => ref
                   .read(nutritionControllerProvider.notifier)

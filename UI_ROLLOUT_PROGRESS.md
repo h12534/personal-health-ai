@@ -80,3 +80,15 @@ School-food lists use open groups instead of nested cards/FAB; errors no longer 
 Eight new L/D images plus four intentional existing unit changes were manually reviewed; only those four existing images were refreshed after viewing actual failure captures. The final sliver change did not change any of54 goldens. A's sole new P1 is closed; final scoped Nielsen34/40, specificity8/10. B code-native audit14/20, no blocking issues, one inherited P2: canteen collections remain eager, not a measured frame-rate failure. Complete203 tests pass / analyzer clean.
 
 The app-owned local gallery now shows six pages × light/dark/before, with image byte hashes,44px rendered controls, no page errors/external requests, and old interactive mock retained. TypeScript/Vite build and28 protected runtime hashes pass. Screenshot reviewed. No public deployment or push. Full final evidence and remaining native limits are in UI_REDESIGN_REPORT.md.
+
+## UI Release Candidate Acceptance — 2026-10-05
+
+C remains frozen. Fresh independent whole-app critique A31/40 and native B16/20 are different scopes from Phase 2's narrower scores. Confirmed RC priorities closed through one main implementation path; reviewers made no business edits. Canteen 10/50/1000 fixture and lazy Slivers reduce initial saved-meal mounted widgets1000→7; pathological 1000-dish stall mounts2. Deep scroll, expand/collapse, submitted search, pending recycle and collapse guards pass. No hardware FPS claim.
+
+Filled send contrast, raw decimal edit defaults, recorded-meal delete confirmation, SearchBar role drift, three-chat reply arrival and 42px small-keyboard overflow corrected. Root matrix covers3phone sizes×3text scales×L/D; nav bottom34safe area/scroll anchoring and6training keyboard checks pass. Real SQLite workout two-set/outbox flow and synthetic restored meal draft125.5g/edit/remove/confirm exercise existing operations.
+
+Final strict formatter94files unchanged, analyze clean, full262tests exit0 including74Goldens. Six old icon-only golden differences reviewed before selective refresh;20new actual images independently reviewed. 32PNG `UI_RC_PREVIEW` pack and frozen Phase2Final12-image archive preserve provenance. No skip, tolerance reduction or new business code.
+
+Codex native hook approval entry unavailable in current environment.
+
+UI RC now authorizes exact feature-branch push and actual CI, not merge; current remote results and installation boundary are recorded in UI_RC_ACCEPTANCE_REPORT.md. Local gallery remains a previous static preview, not a new installed native build.

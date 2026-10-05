@@ -200,6 +200,8 @@ B 的独立 native audit：**PlatformConformanceVerdict PASS（code-layer）**�
 
 ## 16. Remaining visual debt
 
+UI RC 更新（2026-10-05）：下述 Phase 2 eager 食堂债务已以 10 食堂／50 档口／1000 菜品与 lazy slivers 关闭，具体执行与物理性能限制见 [UI_RC_ACCEPTANCE_REPORT](UI_RC_ACCEPTANCE_REPORT.md)。这里保留原始阶段判断，不把历史评分或测试数量冒称当前结果。
+
 一项非阻断 P2：`mobile/lib/features/coach/presentation/canteen_screen.dart` 的 `_SavedMeals`（本轮第 394 行）仍以 eager Column 构建集合，类似食堂分组也沿用既有 eager 结构。大量数据可能增加 layout／memory 成本；没有设备 profile，不能写成已测量的卡顿或帧率退化。
 
 建议后续仅针对实际大数据 fixture 与 iPhone profile 使用 `$impeccable optimize`；确认瓶颈后再决定 lazy／sliver，不为假设重建模块。若有修复，最后 `$impeccable polish` + native audit，不重开方向。
@@ -236,4 +238,10 @@ Phase 1 已有 `af8916d / 4459ee4 / a7653c4 / e9bc527 / af42dd2 / 6f3f1e0` 保�
 
 **从本地 presentation 回归与设计审查角度，已具备请求 push 审批的条件；本轮仍按用户要求不 push、不 merge main。** 当前 tracked 改动已提交，本机预览可看。
 
-获明确确认后才考虑推送此 UI 分支并运行真实 CI；需要记录当前 commit 的实际 job 结果，不能以“已配置”或旧 RC run 替代。随后再进行允许安装路线下的 iPhone 验收。没有新业务功能计划，也不把本地 UI 完成冒称正式发布、签名或真机门禁已关闭。
+Phase 2 当时未推送。当前 UI RC 用户已明确授权仅推 feature 分支用于真实 CI，仍禁止 merge。当前证据见 [UI_RC_ACCEPTANCE_REPORT](UI_RC_ACCEPTANCE_REPORT.md)，不以旧 RC run 替代。之后通过允许安装路线进行 iPhone 验收；不把本地 UI 完成冒称签名或真机门禁关闭。
+
+## UI RC Before / After provenance
+
+原始 Before 与 Phase 1 Reference 保留 [phase2-before](docs/ui-redesign/phase2-before/README.md)。提交 55fea20 的十二张 Phase 2 Final 已在任何 RC Golden 刷新前无损保存到 [phase2-final](docs/ui-redesign/phase2-final/README.md)，原 After 链接可继续指向当前回归基线但不再被误当作不可变历史。最新 RC 的 32 张实际截图见 [UI_RC_PREVIEW](docs/ui-redesign/UI_RC_PREVIEW/README.md) 及哈希 manifest。
+
+本轮解决已证实的性能、对比度、回复到达、编辑精度、删除确认、搜索样式、键盘溢出与折叠期间 busy state 问题；未换 C 方向，未修改业务层。剩余设备边界与最终 CI 结果单独记录在 RC 报告。

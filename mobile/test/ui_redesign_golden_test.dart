@@ -26,7 +26,8 @@ import 'package:personal_health_os/core/widgets/app_components.dart';
 import 'package:personal_health_os/features/nutrition/presentation/meal_analysis_screen.dart';
 import 'ui_rollout_fixtures.dart';
 import 'ui_shared_fixtures.dart';
-import 'ui_rollout_training_test.dart' show rolloutTraining;
+import 'ui_rollout_training_test.dart'
+    show rolloutTraining, rolloutTrainingItem;
 import 'ui_rollout_coach_test.dart' show rolloutCoachOverview, RolloutCoachChat;
 import 'ui_rollout_profile_test.dart'
     show rolloutPreferences, rolloutPermissions, RolloutUnlockedLock;
@@ -157,13 +158,35 @@ void main() {
     ('add-food', true),
     ('canteen', false),
     ('canteen', true),
+    for (final name in [
+      'dashboard-small',
+      'nutrition-small',
+      'training-small',
+      'health-overview-small',
+      'coach-large-text',
+      'profile-large-text',
+      'health-overview-large-text',
+      'workout-set-large-text',
+      'training-library',
+      'training-keyboard-small'
+    ]) ...[(name, false), (name, true)],
   ]) {
     final (name, dark) = entry;
     testWidgets('$name ${dark ? 'dark' : 'light'} themed golden',
         (tester) async {
       final smallKeyboard = name.endsWith('keyboard-small');
+      final small = smallKeyboard || name.endsWith('-small');
+      final largeText = name.endsWith('-large-text');
+      final baseName = smallKeyboard
+          ? name
+          : name.replaceFirst(RegExp(r'-(small|large-text)$'), '');
+      final overlay = [
+        'health-data-detail',
+        'weight-editor',
+        'training-keyboard-small'
+      ].contains(name);
       tester.view.physicalSize =
-          smallKeyboard ? const Size(320, 568) : const Size(393, 852);
+          small ? const Size(320, 568) : const Size(393, 852);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -171,7 +194,7 @@ void main() {
       addTearDown(note.dispose);
       final db = LocalDatabase();
       addTearDown(db.close);
-      final Widget screen = switch (name) {
+      final Widget screen = switch (baseName) {
         'login' => const LoginScreen(),
         'food-search' => const FoodSearchScreen(mealType: 'lunch'),
         'add-food' => const AddFoodScreen(mealType: 'lunch', food: polishFood),
@@ -187,6 +210,14 @@ void main() {
         'coach-keyboard-small' =>
           const CoachScreen(),
         'profile' => const ProfileScreen(),
+        'health-overview' => const HealthScreen(),
+        'workout-set' => SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: WorkoutSetEditor(
+                item: rolloutTrainingItem,
+                enabled: true,
+                completed: const [],
+                onRecord: (_, __, ___) async {})),
         'health-sync' => const HealthSyncScreen(),
         'notifications' => const NotificationSettingsScreen(),
         'privacy-data' => const PrivacyDataScreen(),
@@ -265,15 +296,14 @@ void main() {
               .overrideWith((ref) async => const VisionPrivacySettings())
         ],
         child: RepaintBoundary(
-          key: name == 'health-data-detail' || name == 'weight-editor'
-              ? _frameKey
-              : null,
+          key: overlay ? _frameKey : null,
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
-            builder: (context, child) => smallKeyboard
+            builder: (context, child) => smallKeyboard || largeText
                 ? MediaQuery(
                     data: MediaQuery.of(context).copyWith(
-                        viewInsets: const EdgeInsets.only(bottom: 300),
+                        viewInsets:
+                            EdgeInsets.only(bottom: smallKeyboard ? 300 : 0),
                         textScaler: const TextScaler.linear(2),
                         disableAnimations: true),
                     child: child!)
@@ -283,7 +313,7 @@ void main() {
                 textTheme:
                     theme.textTheme.apply(fontFamily: 'GoldenTestChinese')),
             home: RepaintBoundary(
-                key: name == 'health-data-detail' || name == 'weight-editor'
+                key: overlay
                     ? null
                     : smallKeyboard
                         ? null
@@ -293,7 +323,7 @@ void main() {
                         ? DetailPageHeader(label: '核对餐食')
                         : null,
                     body: RepaintBoundary(
-                        key: smallKeyboard ? _frameKey : null,
+                        key: smallKeyboard && !overlay ? _frameKey : null,
                         child: smallKeyboard
                             ? Material(
                                 color: theme.scaffoldBackgroundColor,
@@ -314,11 +344,17 @@ void main() {
                                         const Icon(Icons.check_circle_outline),
                                     label: const Text('确认并计入今日营养')))
                             : AppNavigationBar(
-                                index: switch (name) {
+                                index: switch (baseName) {
                                   'dashboard' || 'weight-editor' => 0,
                                   'nutrition' => 1,
                                   'nutrition-flow' => 1,
-                                  'training' || 'training-progress' => 2,
+                                  'training' ||
+                                  'training-progress' ||
+                                  'training-library' ||
+                                  'training-keyboard-small' ||
+                                  'workout-set' =>
+                                    2,
+                                  'health-overview' => 3,
                                   'health-chat' ||
                                   'health-knowledge' ||
                                   'health-data-detail' ||
@@ -333,6 +369,10 @@ void main() {
       await tester.pumpAndSettle();
       if (name == 'training-progress') {
         await tester.tap(find.text('进度'));
+        await tester.pumpAndSettle();
+      }
+      if (name == 'training-library') {
+        await tester.tap(find.text('动作库'));
         await tester.pumpAndSettle();
       }
       if (name == 'coach-conversation') {
@@ -360,6 +400,10 @@ void main() {
         await tester.pumpAndSettle();
       }
       if (smallKeyboard) {
+        if (name == 'training-keyboard-small') {
+          await tester.tap(find.byTooltip('AI 私教'));
+          await tester.pumpAndSettle();
+        }
         if (name.startsWith('health')) {
           await tester.ensureVisible(find.text('健康 AI'));
           await tester.tap(find.text('健康 AI'));

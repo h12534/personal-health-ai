@@ -8,6 +8,7 @@ import '../../../core/files/ios_document_picker.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/app_components.dart';
+import '../../../core/widgets/chat_arrival.dart';
 import '../../profile/presentation/health_sync_screen.dart';
 import '../../coach/presentation/coach_screen.dart';
 import '../data/health_models.dart';
@@ -1151,6 +1152,7 @@ class _HealthChatTabState extends ConsumerState<_HealthChatTab>
     with AutomaticKeepAliveClientMixin {
   final _message = TextEditingController();
   final _focus = FocusNode();
+  final _arrival = ChatArrivalController();
   bool _sending = false;
   List<HealthChatMessage> _retained = const [], _historyPrefix = const [];
   final Set<HealthChatMessage> _hiddenFailedAttempts = {};
@@ -1181,6 +1183,7 @@ class _HealthChatTabState extends ConsumerState<_HealthChatTab>
   void dispose() {
     _message.dispose();
     _focus.dispose();
+    _arrival.dispose();
     super.dispose();
   }
 
@@ -1205,34 +1208,38 @@ class _HealthChatTabState extends ConsumerState<_HealthChatTab>
     return LayoutBuilder(
         builder: (context, space) => Column(children: [
               Expanded(
-                  child: ListView.builder(
-                      key: const Key('health-chat-history'),
-                      padding: AppSpacing.pageInsets,
-                      itemCount: _retained.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == 0) {
-                          return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (space.maxHeight < 400)
-                                  const Text('没有足够依据时会明确说明；不能替代医生诊断或处方。',
-                                      style: AppTypography.caption),
-                                if (space.maxHeight >= 400)
-                                  const InsightBlock(
-                                      title: '结合记录，理解健康',
-                                      message: '没有足够依据时会明确说明；不能替代医生诊断或处方。'),
-                                if (_retained.isEmpty &&
-                                    !chat.isLoading &&
-                                    !chat.hasError)
-                                  EmptyState(
-                                      title: '从一个问题开始',
-                                      message: '可以询问指标含义、个人趋势或已有可靠证据。',
-                                      actionLabel: '写下健康问题',
-                                      onAction: _focus.requestFocus),
-                              ]);
-                        }
-                        return _HealthConversationRow(_retained[index - 1]);
-                      })),
+                  child: NotificationListener<ScrollNotification>(
+                      onNotification: _arrival.onScroll,
+                      child: ListView.builder(
+                          controller: _arrival.scroll,
+                          key: const Key('health-chat-history'),
+                          padding: AppSpacing.pageInsets,
+                          itemCount: _retained.length + 1,
+                          itemBuilder: (context, index) {
+                            if (index == 0) {
+                              return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (space.maxHeight < 400)
+                                      const Text('没有足够依据时会明确说明；不能替代医生诊断或处方。',
+                                          style: AppTypography.caption),
+                                    if (space.maxHeight >= 400)
+                                      const InsightBlock(
+                                          title: '结合记录，理解健康',
+                                          message: '没有足够依据时会明确说明；不能替代医生诊断或处方。'),
+                                    if (_retained.isEmpty &&
+                                        !chat.isLoading &&
+                                        !chat.hasError)
+                                      EmptyState(
+                                          title: '从一个问题开始',
+                                          message: '可以询问指标含义、个人趋势或已有可靠证据。',
+                                          actionLabel: '写下健康问题',
+                                          onAction: _focus.requestFocus),
+                                  ]);
+                            }
+                            return _HealthConversationRow(_retained[index - 1]);
+                          }))),
+              ChatArrivalNotice(controller: _arrival),
               Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
@@ -1298,10 +1305,14 @@ class _HealthChatTabState extends ConsumerState<_HealthChatTab>
       }
     }
     setState(() => _sending = true);
+    _arrival.beginSend();
     widget.onBusyChanged(true);
     try {
       await ref.read(healthChatProvider.notifier).send(value);
-      if (mounted && !ref.read(healthChatProvider).hasError) _message.clear();
+      if (mounted && !ref.read(healthChatProvider).hasError) {
+        _message.clear();
+        _arrival.replyArrived();
+      }
     } finally {
       if (mounted) {
         setState(() => _sending = false);

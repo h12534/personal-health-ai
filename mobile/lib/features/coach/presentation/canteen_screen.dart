@@ -27,45 +27,54 @@ class CanteenScreen extends ConsumerWidget {
             ref.refresh(savedMealsProvider.future),
           ]);
         },
-        child: ListView(
+        child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: AppSpacing.pageInsets,
-          children: [
-            _SectionTitle(
-              title: '常吃套餐',
-              subtitle: '从已经保存的组合开始，记录一餐。',
-            ),
-            _SavedMeals(
-              value: savedMeals,
-              onLog: (value) => _logSavedMeal(context, ref, value),
-              onReload: () => ref.invalidate(savedMealsProvider),
-            ),
-            const SizedBox(height: 18),
-            _SectionTitle(
-              title: '我的食堂',
-              subtitle: '按食堂、档口和菜品逐步积累；无需一次录完整个食堂。',
-            ),
-            _CanteenTree(
-              value: canteens,
-              onReload: () => ref.invalidate(canteensProvider),
-              onAddCanteen: () => _editCanteen(context, ref),
-              onEditCanteen: (value) => _editCanteen(context, ref, value),
-              onAddStall: (value) => _editStall(context, ref, value),
-              onEditStall: (canteen, stall) =>
-                  _editStall(context, ref, canteen, stall),
-              onAddDish: (stall) => _editDish(context, ref, stall),
-              onEditDish: (stall, dish) => _editDish(context, ref, stall, dish),
-              onToggleFavorite: (dish) => _toggleFavorite(context, ref, dish),
-            ),
-            const SizedBox(height: 18),
-            _SectionTitle(
-              title: '现在吃什么',
-              subtitle: '按今天的热量和蛋白质缺口给出多个可执行选择，不做“健康评分”。',
-            ),
-            _Recommendations(
-                value: recommendations,
-                onReload: () => ref.invalidate(canteenRecommendationsProvider),
-                onAddCanteen: () => _editCanteen(context, ref)),
+          slivers: [
+            SliverPadding(
+                padding: AppSpacing.pageInsets,
+                sliver: SliverMainAxisGroup(slivers: [
+                  SliverToBoxAdapter(
+                      child: _SectionTitle(
+                    title: '常吃套餐',
+                    subtitle: '从已经保存的组合开始，记录一餐。',
+                  )),
+                  _SavedMeals(
+                    value: savedMeals,
+                    onLog: (value) => _logSavedMeal(context, ref, value),
+                    onReload: () => ref.invalidate(savedMealsProvider),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 18)),
+                  SliverToBoxAdapter(
+                      child: _SectionTitle(
+                    title: '我的食堂',
+                    subtitle: '按食堂、档口和菜品逐步积累；无需一次录完整个食堂。',
+                  )),
+                  _CanteenTree(
+                    value: canteens,
+                    onReload: () => ref.invalidate(canteensProvider),
+                    onAddCanteen: () => _editCanteen(context, ref),
+                    onEditCanteen: (value) => _editCanteen(context, ref, value),
+                    onAddStall: (value) => _editStall(context, ref, value),
+                    onEditStall: (canteen, stall) =>
+                        _editStall(context, ref, canteen, stall),
+                    onAddDish: (stall) => _editDish(context, ref, stall),
+                    onEditDish: (stall, dish) =>
+                        _editDish(context, ref, stall, dish),
+                    onToggleFavorite: (dish) =>
+                        _toggleFavorite(context, ref, dish),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 18)),
+                  SliverToBoxAdapter(
+                      child: _SectionTitle(
+                    title: '现在吃什么',
+                    subtitle: '按今天的热量和蛋白质缺口给出多个可执行选择，不做“健康评分”。',
+                  )),
+                  _Recommendations(
+                      value: recommendations,
+                      onReload: () =>
+                          ref.invalidate(canteenRecommendationsProvider),
+                      onAddCanteen: () => _editCanteen(context, ref)),
+                ]))
           ],
         ),
       ),
@@ -349,7 +358,7 @@ class CanteenScreen extends ConsumerWidget {
   }
 
   static String _displayNumber(double? value) =>
-      value == null ? '' : value.toStringAsFixed(value % 1 == 0 ? 0 : 1);
+      value == null ? '' : AppFormat.editableNumber(value);
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -382,39 +391,107 @@ class _SavedMeals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => value.when(
-        loading: () => const LoadingState(inline: true, label: '正在读取套餐'),
-        error: (error, stack) =>
-            ErrorState(error: error, onRetry: onReload, inline: true),
+        loading: () => const SliverToBoxAdapter(
+            child: LoadingState(inline: true, label: '正在读取套餐')),
+        error: (error, stack) => SliverToBoxAdapter(
+            child: ErrorState(error: error, onRetry: onReload, inline: true)),
         data: (values) => values.isEmpty
-            ? EmptyState(
-                title: '还没有常吃套餐',
-                message: '这里显示已经保存的组合。也可以返回饮食页，逐项记录这一餐。',
-                actionLabel: '重新读取',
-                onAction: onReload)
-            : Column(
-                children: [
-                  for (final item in values)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(item.name, style: AppTypography.cardTitle),
-                            Text(
-                              '${item.itemCount} 项 · ${item.totalCalories.toStringAsFixed(0)} kcal',
-                            ),
-                            AsyncActionButton(
-                              onPressed: () => onLog(item),
-                              label: '一键记录',
-                            ),
-                          ]),
-                    ),
-                ],
-              ),
+            ? SliverToBoxAdapter(
+                child: EmptyState(
+                    title: '还没有常吃套餐',
+                    message: '这里显示已经保存的组合。也可以返回饮食页，逐项记录这一餐。',
+                    actionLabel: '重新读取',
+                    onAction: onReload))
+            : SliverList.builder(
+                itemCount: values.length,
+                findChildIndexCallback: (key) {
+                  final index =
+                      values.indexWhere((item) => ValueKey(item.id) == key);
+                  return index < 0 ? null : index;
+                },
+                itemBuilder: (context, index) {
+                  final item = values[index];
+                  return _PendingActionRow(
+                      key: ValueKey(item.id),
+                      onAction: () => onLog(item),
+                      builder: (run) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(item.name,
+                                      style: AppTypography.cardTitle),
+                                  Text(
+                                      '${item.itemCount} 项 · ${item.totalCalories.toStringAsFixed(0)} kcal'),
+                                  AsyncActionButton(
+                                      onPressed: run, label: '一键记录'),
+                                ]),
+                          ));
+                }),
       );
 }
 
-class _CanteenTree extends StatelessWidget {
+// Recycle idle rows, but never reset an in-flight action by scrolling it away.
+class _PendingActionRow extends StatefulWidget {
+  const _PendingActionRow(
+      {super.key, required this.onAction, required this.builder});
+  final Future<void> Function() onAction;
+  final Widget Function(Future<void> Function()) builder;
+
+  @override
+  State<_PendingActionRow> createState() => _PendingActionRowState();
+}
+
+class _PendingActionRowState extends State<_PendingActionRow>
+    with AutomaticKeepAliveClientMixin {
+  bool _pending = false;
+  @override
+  bool get wantKeepAlive => _pending;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.builder(_run);
+  }
+
+  Future<void> _run() async {
+    if (_pending) return;
+    _pending = true;
+    updateKeepAlive();
+    try {
+      await widget.onAction();
+    } finally {
+      if (mounted) {
+        _pending = false;
+        updateKeepAlive();
+      }
+    }
+  }
+}
+
+enum _TreeRowKind {
+  canteen,
+  stall,
+  dish,
+  emptyStall,
+  emptyDish,
+  addStall,
+  addDish
+}
+
+class _TreeRow {
+  const _TreeRow(this.kind, this.canteen, {this.stall, this.dish});
+  final _TreeRowKind kind;
+  final CanteenModel canteen;
+  final CanteenStallModel? stall;
+  final CanteenDishModel? dish;
+  String get identity =>
+      '${kind.name}:${canteen.id}:${stall?.id ?? ''}:${dish?.id ?? ''}';
+}
+
+// One viewport owns the whole hierarchy. Expansion changes row descriptors,
+// not nested shrink-wrapped lists or a Column containing every dish widget.
+class _CanteenTree extends StatefulWidget {
   const _CanteenTree({
     required this.value,
     required this.onEditCanteen,
@@ -437,131 +514,177 @@ class _CanteenTree extends StatelessWidget {
   final VoidCallback onReload, onAddCanteen;
 
   @override
-  Widget build(BuildContext context) => value.when(
-        loading: () => const LoadingState(inline: true, label: '正在读取食堂'),
-        error: (error, stack) =>
-            ErrorState(error: error, onRetry: onReload, inline: true),
-        data: (values) => values.isEmpty
-            ? EmptyState(
-                title: '还没有食堂',
-                message: '先记住一个常去的地方，再逐步添加档口和菜品。',
-                actionLabel: '新增食堂',
-                onAction: onAddCanteen)
-            : Column(
-                children: [
-                  TextButton.icon(
-                      onPressed: onAddCanteen,
-                      icon: const Icon(Icons.add),
-                      label: const Text('新增食堂')),
-                  for (final canteen in values)
-                    ExpansionTile(
-                      leading: const Icon(Icons.storefront_outlined),
-                      title: Text(canteen.name),
-                      subtitle: Text(
-                        [canteen.campus, canteen.location]
-                            .whereType<String>()
-                            .where((value) => value.isNotEmpty)
-                            .join(' · '),
-                      ),
-                      trailing: IconButton(
-                        tooltip: '编辑食堂',
-                        onPressed: () => onEditCanteen(canteen),
-                        icon: const Icon(Icons.edit_outlined),
-                      ),
-                      children: [
-                        if (canteen.stalls.isEmpty)
-                          const ListTile(
-                            title: Text('暂无档口'),
-                            subtitle: Text('先添加一个经常购买的档口。'),
-                          ),
-                        for (final stall in canteen.stalls)
-                          _StallTile(
-                            stall: stall,
-                            onEdit: () => onEditStall(canteen, stall),
-                            onAddDish: () => onAddDish(stall),
-                            onEditDish: (dish) => onEditDish(stall, dish),
-                            onToggleFavorite: onToggleFavorite,
-                          ),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton.icon(
-                            onPressed: () => onAddStall(canteen),
-                            icon: const Icon(Icons.add),
-                            label: const Text('新增档口'),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-      );
+  State<_CanteenTree> createState() => _CanteenTreeState();
 }
 
-class _StallTile extends StatelessWidget {
-  const _StallTile({
-    required this.stall,
-    required this.onEdit,
-    required this.onAddDish,
-    required this.onEditDish,
-    required this.onToggleFavorite,
-  });
+class _CanteenTreeState extends State<_CanteenTree> {
+  final _canteens = <String>{}, _stalls = <String>{};
+  final _pendingDishes = <String>{};
 
-  final CanteenStallModel stall;
-  final VoidCallback onEdit;
-  final VoidCallback onAddDish;
-  final void Function(CanteenDishModel) onEditDish;
-  final Future<void> Function(CanteenDishModel) onToggleFavorite;
+  Future<void> _toggleDish(CanteenDishModel dish) async {
+    if (_pendingDishes.contains(dish.id)) return;
+    setState(() => _pendingDishes.add(dish.id));
+    try {
+      await widget.onToggleFavorite(dish);
+    } finally {
+      if (mounted) setState(() => _pendingDishes.remove(dish.id));
+    }
+  }
+
+  void _expand(Set<String> values, String id, bool expanded) => setState(() {
+        expanded ? values.add(id) : values.remove(id);
+      });
+
+  List<_TreeRow> _rows(List<CanteenModel> values) {
+    final rows = <_TreeRow>[];
+    for (final canteen in values) {
+      rows.add(_TreeRow(_TreeRowKind.canteen, canteen));
+      if (!_canteens.contains(canteen.id)) continue;
+      if (canteen.stalls.isEmpty) {
+        rows.add(_TreeRow(_TreeRowKind.emptyStall, canteen));
+      }
+      for (final stall in canteen.stalls) {
+        rows.add(_TreeRow(_TreeRowKind.stall, canteen, stall: stall));
+        if (!_stalls.contains(stall.id)) continue;
+        if (stall.dishes.isEmpty) {
+          rows.add(_TreeRow(_TreeRowKind.emptyDish, canteen, stall: stall));
+        }
+        for (final dish in stall.dishes) {
+          rows.add(
+              _TreeRow(_TreeRowKind.dish, canteen, stall: stall, dish: dish));
+        }
+        rows.add(_TreeRow(_TreeRowKind.addDish, canteen, stall: stall));
+      }
+      rows.add(_TreeRow(_TreeRowKind.addStall, canteen));
+    }
+    return rows;
+  }
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(left: 16, right: 8),
-        child: ExpansionTile(
-          leading: const Icon(Icons.countertops_outlined),
-          title: Text(stall.name),
-          subtitle: Text(
-            [stall.floor, stall.cuisine]
+  Widget build(BuildContext context) => widget.value.when(
+        loading: () => const SliverToBoxAdapter(
+            child: LoadingState(inline: true, label: '正在读取食堂')),
+        error: (error, stack) => SliverToBoxAdapter(
+            child: ErrorState(
+                error: error, onRetry: widget.onReload, inline: true)),
+        data: (values) {
+          if (values.isEmpty) {
+            return SliverToBoxAdapter(
+                child: EmptyState(
+                    title: '还没有食堂',
+                    message: '先记住一个常去的地方，再逐步添加档口和菜品。',
+                    actionLabel: '新增食堂',
+                    onAction: widget.onAddCanteen));
+          }
+          final rows = _rows(values);
+          final indices = {
+            for (var i = 0; i < rows.length; i++) ValueKey(rows[i].identity): i
+          };
+          return SliverMainAxisGroup(slivers: [
+            SliverToBoxAdapter(
+                child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                        onPressed: widget.onAddCanteen,
+                        icon: const Icon(Icons.add),
+                        label: const Text('新增食堂')))),
+            SliverList.builder(
+                itemCount: rows.length,
+                findChildIndexCallback: (key) => indices[key],
+                itemBuilder: (context, index) => KeyedSubtree(
+                    key: ValueKey(rows[index].identity),
+                    child: _row(rows[index]))),
+          ]);
+        },
+      );
+
+  Widget _row(_TreeRow row) {
+    final canteen = row.canteen, stall = row.stall;
+    switch (row.kind) {
+      case _TreeRowKind.canteen:
+        return ExpansionTile(
+            initiallyExpanded: _canteens.contains(canteen.id),
+            onExpansionChanged: (expanded) =>
+                _expand(_canteens, canteen.id, expanded),
+            leading: const Icon(Icons.storefront_outlined),
+            title: Text(canteen.name),
+            subtitle: Text([canteen.campus, canteen.location]
                 .whereType<String>()
                 .where((value) => value.isNotEmpty)
-                .join(' · '),
-          ),
-          trailing: IconButton(
-            tooltip: '编辑档口',
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined),
-          ),
-          children: [
-            if (stall.dishes.isEmpty)
-              const ListTile(title: Text('暂无菜品，吃过后再慢慢添加。')),
-            for (final dish in stall.dishes)
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                ListTile(
-                  title: Text(dish.name),
-                  subtitle: Text(
-                    '${dish.calories.toStringAsFixed(0)} kcal · '
-                    '蛋白质 ${dish.protein.toStringAsFixed(0)} g',
-                  ),
-                  trailing: IconButton(
-                    tooltip: '编辑菜品',
-                    onPressed: () => onEditDish(dish),
-                    icon: const Icon(Icons.edit_outlined),
-                  ),
-                ),
-                AsyncActionButton(
-                    label: dish.favorite ? '取消收藏' : '收藏',
-                    icon: dish.favorite ? Icons.star : Icons.star_border,
-                    onPressed: () => onToggleFavorite(dish)),
-              ]),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: onAddDish,
+                .join(' · ')),
+            trailing: IconButton(
+                tooltip: '编辑食堂',
+                onPressed: () => widget.onEditCanteen(canteen),
+                icon: const Icon(Icons.edit_outlined)));
+      case _TreeRowKind.stall:
+        return Padding(
+            padding: const EdgeInsets.only(left: 16, right: 8),
+            child: ExpansionTile(
+                initiallyExpanded: _stalls.contains(stall!.id),
+                onExpansionChanged: (expanded) =>
+                    _expand(_stalls, stall.id, expanded),
+                leading: const Icon(Icons.countertops_outlined),
+                title: Text(stall.name),
+                subtitle: Text([stall.floor, stall.cuisine]
+                    .whereType<String>()
+                    .where((value) => value.isNotEmpty)
+                    .join(' · ')),
+                trailing: IconButton(
+                    tooltip: '编辑档口',
+                    onPressed: () => widget.onEditStall(canteen, stall),
+                    icon: const Icon(Icons.edit_outlined))));
+      case _TreeRowKind.dish:
+        final dish = row.dish!;
+        return Padding(
+            padding: const EdgeInsets.only(left: 16, right: 8),
+            child: _PendingActionRow(
+                onAction: () => _toggleDish(dish),
+                builder: (run) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ListTile(
+                              title: Text(dish.name),
+                              subtitle: Text(
+                                  '${dish.calories.toStringAsFixed(0)} kcal · '
+                                  '蛋白质 ${dish.protein.toStringAsFixed(0)} g'),
+                              trailing: IconButton(
+                                  tooltip: '编辑菜品',
+                                  onPressed: () =>
+                                      widget.onEditDish(stall!, dish),
+                                  icon: const Icon(Icons.edit_outlined))),
+                          AsyncActionButton(
+                              busy: _pendingDishes.contains(dish.id),
+                              label: dish.favorite ? '取消收藏' : '收藏',
+                              icon: dish.favorite
+                                  ? Icons.star
+                                  : Icons.star_border,
+                              onPressed: run),
+                        ])));
+      case _TreeRowKind.emptyStall:
+        return const ListTile(
+            title: Text('暂无档口'), subtitle: Text('先添加一个经常购买的档口。'));
+      case _TreeRowKind.emptyDish:
+        return const Padding(
+            padding: EdgeInsets.only(left: 16, right: 8),
+            child: ListTile(title: Text('暂无菜品，吃过后再慢慢添加。')));
+      case _TreeRowKind.addStall:
+        return Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+                onPressed: () => widget.onAddStall(canteen),
                 icon: const Icon(Icons.add),
-                label: const Text('新增菜品'),
-              ),
-            ),
-          ],
-        ),
-      );
+                label: const Text('新增档口')));
+      case _TreeRowKind.addDish:
+        return Padding(
+            padding: const EdgeInsets.only(left: 16, right: 8),
+            child: Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                    onPressed: () => widget.onAddDish(stall!),
+                    icon: const Icon(Icons.add),
+                    label: const Text('新增菜品'))));
+    }
+  }
 }
 
 class _Recommendations extends StatelessWidget {
@@ -575,29 +698,29 @@ class _Recommendations extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => value.when(
-        loading: () => const LoadingState(inline: true, label: '正在读取饮食建议'),
-        error: (error, stack) =>
-            ErrorState(error: error, onRetry: onReload, inline: true),
+        loading: () => const SliverToBoxAdapter(
+            child: LoadingState(inline: true, label: '正在读取饮食建议')),
+        error: (error, stack) => SliverToBoxAdapter(
+            child: ErrorState(error: error, onRetry: onReload, inline: true)),
         data: (values) => values.isEmpty
-            ? EmptyState(
-                title: '还没有可推荐的菜品',
-                message: '记录食堂菜品后，可以查看下一餐的现有建议。',
-                actionLabel: '新增食堂',
-                onAction: onAddCanteen)
-            : Column(
-                children: [
-                  for (final item in values)
-                    ListTile(
+            ? SliverToBoxAdapter(
+                child: EmptyState(
+                    title: '还没有可推荐的菜品',
+                    message: '记录食堂菜品后，可以查看下一餐的现有建议。',
+                    actionLabel: '新增食堂',
+                    onAction: onAddCanteen))
+            : SliverList.builder(
+                itemCount: values.length,
+                itemBuilder: (context, index) {
+                  final item = values[index];
+                  return ListTile(
                       leading: const Icon(Icons.restaurant_outlined),
                       title: Text(item.dishName),
-                      subtitle: Text(
-                        '${item.calories.toStringAsFixed(0)} kcal · '
-                        '蛋白质 ${item.protein.toStringAsFixed(0)} g\n'
-                        '${item.reasons.join('；')}',
-                      ),
-                    ),
-                ],
-              ),
+                      subtitle:
+                          Text('${item.calories.toStringAsFixed(0)} kcal · '
+                              '蛋白质 ${item.protein.toStringAsFixed(0)} g\n'
+                              '${item.reasons.join('；')}'));
+                }),
       );
 }
 

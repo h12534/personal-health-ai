@@ -7,6 +7,7 @@ import '../../../core/database/local_database.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/app_components.dart';
 import '../../../core/widgets/app_trend_chart.dart';
+import '../../../core/widgets/chat_arrival.dart';
 import '../data/offline_workout_repository.dart';
 import '../data/training_models.dart';
 import 'training_controller.dart';
@@ -378,13 +379,12 @@ class _WorkoutSetEditorState extends State<WorkoutSetEditor> {
   void initState() {
     super.initState();
     _weight = TextEditingController(
-      text: widget.item.targetWeightKg?.toStringAsFixed(1) ??
-          widget.previous?.weightKg.toStringAsFixed(1) ??
-          '0',
+      text: AppFormat.editableNumber(
+          widget.item.targetWeightKg ?? widget.previous?.weightKg ?? 0),
     );
     _reps = TextEditingController(text: '${widget.item.repMin}');
-    _rir =
-        TextEditingController(text: '${widget.item.targetRir?.round() ?? 2}');
+    _rir = TextEditingController(
+        text: AppFormat.editableNumber(widget.item.targetRir ?? 2));
   }
 
   @override
@@ -792,12 +792,14 @@ class _TrainingCoachSheet extends ConsumerStatefulWidget {
 
 class _TrainingCoachSheetState extends ConsumerState<_TrainingCoachSheet> {
   final _controller = TextEditingController();
+  final _arrival = ChatArrivalController();
   bool _sending = false;
   List<TrainingChatMessage> _retained = const [];
 
   @override
   void dispose() {
     _controller.dispose();
+    _arrival.dispose();
     super.dispose();
   }
 
@@ -808,123 +810,159 @@ class _TrainingCoachSheetState extends ConsumerState<_TrainingCoachSheet> {
     final values = _retained;
     return Scaffold(
       appBar: DetailPageHeader(label: 'AI 私人训练教练'),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                const InsightBlock(
-                    title: '重量和进阶由程序规则计算', message: 'AI 负责解释；任何调整都需要你点击确认。'),
-                for (final message in values)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(message.fromUser ? '你' : '私人教练',
-                            style: AppTypography.caption),
-                        const SizedBox(height: 8),
-                        Text(message.text),
-                        if (message.safetyNotice case final notice?)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              notice,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
-                          ),
-                        for (final action in message.actions.where(
-                          (value) => value['type'] == 'apply_progression',
-                        ))
-                          Padding(
-                            padding: const EdgeInsets.only(top: 10),
-                            child: FilledButton.tonalIcon(
-                              key: const Key(
-                                'apply-training-suggestion',
-                              ),
-                              onPressed: _sending
-                                  ? null
-                                  : () async {
-                                      setState(() => _sending = true);
-                                      try {
-                                        await ref
-                                            .read(
-                                              trainingChatProvider.notifier,
-                                            )
-                                            .applySuggestion(action);
-                                        ref.invalidate(trainingHomeProvider);
-                                        if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              '建议已应用到当前训练计划',
-                                            ),
-                                          ),
-                                        );
-                                      } on Object {
-                                        if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              '应用失败，请稍后重试',
-                                            ),
-                                          ),
-                                        );
-                                      } finally {
-                                        if (mounted) {
-                                          setState(() => _sending = false);
-                                        }
-                                      }
-                                    },
-                              icon: const Icon(Icons.check_circle_outline),
-                              label: Text(
-                                action['label'] as String? ?? '应用建议',
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                if (_sending || state.isLoading) const Text('教练正在整理回复…'),
-                if (state.hasError)
-                  Text('${UiFailure.title(state.error!)}。问题已保留，请重试。'),
-              ],
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
+      body: LayoutBuilder(
+          builder: (context, space) => Column(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      enabled: !_sending,
-                      minLines: 1,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: '问私人教练',
-                        hintText: '例如：明天还练吗？',
+                    child: NotificationListener<ScrollNotification>(
+                        onNotification: _arrival.onScroll,
+                        child: ListView(
+                          key: const Key('training-chat-history'),
+                          controller: _arrival.scroll,
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            const InsightBlock(
+                                title: '重量和进阶由程序规则计算',
+                                message: 'AI 负责解释；任何调整都需要你点击确认。'),
+                            for (final message in values)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(message.fromUser ? '你' : '私人教练',
+                                        style: AppTypography.caption),
+                                    const SizedBox(height: 8),
+                                    Text(message.text),
+                                    if (message.safetyNotice case final notice?)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(
+                                          notice,
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .error,
+                                          ),
+                                        ),
+                                      ),
+                                    for (final action in message.actions.where(
+                                      (value) =>
+                                          value['type'] == 'apply_progression',
+                                    ))
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 10),
+                                        child: FilledButton.tonalIcon(
+                                          key: const Key(
+                                            'apply-training-suggestion',
+                                          ),
+                                          onPressed: _sending
+                                              ? null
+                                              : () async {
+                                                  setState(
+                                                      () => _sending = true);
+                                                  try {
+                                                    await ref
+                                                        .read(
+                                                          trainingChatProvider
+                                                              .notifier,
+                                                        )
+                                                        .applySuggestion(
+                                                            action);
+                                                    ref.invalidate(
+                                                        trainingHomeProvider);
+                                                    if (!context.mounted) {
+                                                      return;
+                                                    }
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          '建议已应用到当前训练计划',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  } on Object {
+                                                    if (!context.mounted) {
+                                                      return;
+                                                    }
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          '应用失败，请稍后重试',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  } finally {
+                                                    if (mounted) {
+                                                      setState(() =>
+                                                          _sending = false);
+                                                    }
+                                                  }
+                                                },
+                                          icon: const Icon(
+                                              Icons.check_circle_outline),
+                                          label: Text(
+                                            action['label'] as String? ??
+                                                '应用建议',
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            if (_sending || state.isLoading)
+                              const Text('教练正在整理回复…'),
+                            if (state.hasError)
+                              Text(
+                                  '${UiFailure.title(state.error!)}。问题已保留，请重试。'),
+                          ],
+                        )),
+                  ),
+                  ChatArrivalNotice(controller: _arrival),
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _controller,
+                              enabled: !_sending,
+                              minLines: 1,
+                              maxLines: ((space.maxHeight - 140) /
+                                      (MediaQuery.textScalerOf(context)
+                                              .scale(17) *
+                                          1.5))
+                                  .floor()
+                                  .clamp(1, 4),
+                              decoration: InputDecoration(
+                                isDense: space.maxHeight < 250,
+                                hintMaxLines: 1,
+                                labelText: '问私人教练',
+                                hintText: '例如：明天还练吗？',
+                              ),
+                            ),
+                          ),
+                          IconButton.filled(
+                            tooltip: '发送问题',
+                            style: IconButton.styleFrom(
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.onPrimary),
+                            onPressed: _sending ? null : _send,
+                            icon: const Icon(Icons.send),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  IconButton.filled(
-                    tooltip: '发送问题',
-                    onPressed: _sending ? null : _send,
-                    icon: const Icon(Icons.send),
-                  ),
                 ],
-              ),
-            ),
-          ),
-        ],
-      ),
+              )),
     );
   }
 
@@ -932,10 +970,12 @@ class _TrainingCoachSheetState extends ConsumerState<_TrainingCoachSheet> {
     final value = _controller.text.trim();
     if (_sending || value.isEmpty) return;
     setState(() => _sending = true);
+    _arrival.beginSend();
     try {
       await ref.read(trainingChatProvider.notifier).send(value);
       if (mounted && !ref.read(trainingChatProvider).hasError) {
         _controller.clear();
+        _arrival.replyArrived();
       }
     } finally {
       if (mounted) setState(() => _sending = false);

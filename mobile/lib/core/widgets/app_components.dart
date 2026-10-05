@@ -497,9 +497,11 @@ class AsyncActionButton extends StatefulWidget {
       {super.key,
       required this.label,
       required this.onPressed,
-      this.icon = Icons.arrow_forward});
+      this.icon = Icons.arrow_forward,
+      this.busy = false});
   final String label;
   final IconData icon;
+  final bool busy;
   final Future<void> Function() onPressed;
   @override
   State<AsyncActionButton> createState() => _AsyncActionButtonState();
@@ -512,9 +514,9 @@ class _AsyncActionButtonState extends State<AsyncActionButton> {
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         FilledButton.tonalIcon(
-            onPressed: _busy ? null : _run,
+            onPressed: _busy || widget.busy ? null : _run,
             icon: Icon(widget.icon),
-            label: Text(_busy ? '正在处理…' : widget.label)),
+            label: Text(_busy || widget.busy ? '正在处理…' : widget.label)),
         if (_error != null)
           Semantics(
               liveRegion: true,
@@ -523,7 +525,7 @@ class _AsyncActionButtonState extends State<AsyncActionButton> {
                       .copyWith(color: AppColors.of(context).danger))),
       ]);
   Future<void> _run() async {
-    if (_busy) return;
+    if (_busy || widget.busy) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -586,11 +588,17 @@ class AwaitedEntryDialog extends StatefulWidget {
       required this.title,
       required this.content,
       required this.validate,
-      required this.onSave});
+      required this.onSave,
+      this.saveLabel = '保存',
+      this.busyLabel = '正在保存…',
+      this.retryLabel = '重试保存',
+      this.destructive = false});
   final String title;
   final Widget content;
   final String? Function() validate;
   final Future<void> Function() onSave;
+  final String saveLabel, busyLabel, retryLabel;
+  final bool destructive;
   @override
   State<AwaitedEntryDialog> createState() => _AwaitedEntryDialogState();
 }
@@ -652,16 +660,27 @@ class _AwaitedEntryDialogState extends State<AwaitedEntryDialog> {
                 onPressed: _busy ? null : () => Navigator.pop(context),
                 child: const Text('取消')),
             FilledButton(
+                style: widget.destructive
+                    ? FilledButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                        foregroundColor: Theme.of(context).colorScheme.onError)
+                    : null,
                 onPressed: _busy ? null : _save,
                 child: Text(_busy
-                    ? '正在保存…'
+                    ? widget.busyLabel
                     : _error == null
-                        ? '保存'
-                        : '重试保存')),
+                        ? widget.saveLabel
+                        : widget.retryLabel)),
           ]));
 }
 
 abstract final class AppFormat {
+  /// Editors preserve the stored value; summaries may deliberately round it.
+  static String editableNumber(num value) {
+    final raw = value.toString();
+    return raw.endsWith('.0') ? raw.substring(0, raw.length - 2) : raw;
+  }
+
   static String number(num value, {int decimals = 0, bool grouped = false}) {
     final raw = value.toStringAsFixed(decimals);
     if (!grouped) return raw;

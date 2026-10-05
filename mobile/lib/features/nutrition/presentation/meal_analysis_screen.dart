@@ -158,7 +158,7 @@ class _MealAnalysisScreenState extends ConsumerState<MealAnalysisScreen> {
         context: context,
         builder: (_) => NumberEntryDialog(
             title: '修改 ${item.foodName ?? item.name} 份量',
-            initialValue: item.weightG.toStringAsFixed(0),
+            initialValue: AppFormat.editableNumber(item.weightG),
             unit: 'g',
             onSave: (next) => _mutate(
                 () => ref.read(apiClientProvider).updateMealAnalysisItem(

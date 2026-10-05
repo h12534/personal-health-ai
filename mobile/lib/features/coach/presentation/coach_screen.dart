@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/app_components.dart';
+import '../../../core/widgets/chat_arrival.dart';
 import 'hunger_entry_dialog.dart';
 import '../data/coach_models.dart';
 import 'canteen_screen.dart';
@@ -19,6 +20,7 @@ class CoachScreen extends ConsumerStatefulWidget {
 class _CoachScreenState extends ConsumerState<CoachScreen> {
   final _controller = TextEditingController();
   final _inputFocus = FocusNode();
+  final _arrival = ChatArrivalController();
   bool _sending = false;
   bool _acting = false;
   List<CoachBubble> _retained = const [];
@@ -29,6 +31,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   void dispose() {
     _controller.dispose();
     _inputFocus.dispose();
+    _arrival.dispose();
     super.dispose();
   }
 
@@ -52,62 +55,68 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
         builder: (context, space) => Column(
               children: [
                 Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-                    itemCount: _retained.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (space.maxHeight >= 400)
-                                RootPageHeader(
-                                    title: 'AI 饮食教练',
-                                    subtitle: '你的私人教练。目标和趋势由程序计算，AI 负责把建议说清楚。',
-                                    action: Navigator.canPop(context)
-                                        ? IconButton(
+                  child: NotificationListener<ScrollNotification>(
+                      onNotification: _arrival.onScroll,
+                      child: ListView.builder(
+                        controller: _arrival.scroll,
+                        padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                        itemCount: _retained.length + 1,
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (space.maxHeight >= 400)
+                                    RootPageHeader(
+                                        title: 'AI 饮食教练',
+                                        subtitle:
+                                            '你的私人教练。目标和趋势由程序计算，AI 负责把建议说清楚。',
+                                        action: Navigator.canPop(context)
+                                            ? IconButton(
+                                                tooltip: '返回',
+                                                onPressed: () =>
+                                                    Navigator.maybePop(context),
+                                                icon: const Icon(
+                                                    Icons.arrow_back_ios_new))
+                                            : null),
+                                  if (space.maxHeight < 400)
+                                    Row(children: [
+                                      const Expanded(
+                                          child: Text('AI 饮食教练',
+                                              style: AppTypography.cardTitle)),
+                                      if (Navigator.canPop(context))
+                                        IconButton(
                                             tooltip: '返回',
                                             onPressed: () =>
                                                 Navigator.maybePop(context),
                                             icon: const Icon(
                                                 Icons.arrow_back_ios_new))
-                                        : null),
-                              if (space.maxHeight < 400)
-                                Row(children: [
-                                  const Expanded(
-                                      child: Text('AI 饮食教练',
-                                          style: AppTypography.cardTitle)),
-                                  if (Navigator.canPop(context))
-                                    IconButton(
-                                        tooltip: '返回',
-                                        onPressed: () =>
-                                            Navigator.maybePop(context),
-                                        icon: const Icon(
-                                            Icons.arrow_back_ios_new))
-                                ]),
-                              _OverviewCard(
-                                  onDecision: _decideAdjustment,
-                                  busy: _acting || _sending),
-                              AppSection(
-                                  title: '问你的教练',
-                                  child: _QuickPrompts(
-                                      onSend: _send,
-                                      busy: _sending || _acting)),
-                              if (_retained.isEmpty &&
-                                  !chat.isLoading &&
-                                  !chat.hasError)
-                                EmptyState(
-                                    title: '从一个问题开始',
-                                    message: '可以聊下一餐、蛋白质或本周趋势。不需要重新解释已有背景。',
-                                    actionLabel: '写下你的问题',
-                                    onAction: _inputFocus.requestFocus),
-                            ]);
-                      }
-                      return _MessageBubble(_retained[index - 1],
-                          onAction: _handleAction, busy: _acting || _sending);
-                    },
-                  ),
+                                    ]),
+                                  _OverviewCard(
+                                      onDecision: _decideAdjustment,
+                                      busy: _acting || _sending),
+                                  AppSection(
+                                      title: '问你的教练',
+                                      child: _QuickPrompts(
+                                          onSend: _send,
+                                          busy: _sending || _acting)),
+                                  if (_retained.isEmpty &&
+                                      !chat.isLoading &&
+                                      !chat.hasError)
+                                    EmptyState(
+                                        title: '从一个问题开始',
+                                        message: '可以聊下一餐、蛋白质或本周趋势。不需要重新解释已有背景。',
+                                        actionLabel: '写下你的问题',
+                                        onAction: _inputFocus.requestFocus),
+                                ]);
+                          }
+                          return _MessageBubble(_retained[index - 1],
+                              onAction: _handleAction,
+                              busy: _acting || _sending);
+                        },
+                      )),
                 ),
+                ChatArrivalNotice(controller: _arrival),
                 Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
@@ -153,6 +162,9 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                         ),
                         IconButton.filled(
                           tooltip: '发送',
+                          style: IconButton.styleFrom(
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onPrimary),
                           onPressed: _sending || _acting ? null : _send,
                           icon: const Icon(Icons.send_outlined),
                         ),
@@ -180,9 +192,13 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       }
     }
     setState(() => _sending = true);
+    _arrival.beginSend();
     try {
       await ref.read(coachChatProvider.notifier).send(message);
-      if (mounted && !ref.read(coachChatProvider).hasError) _controller.clear();
+      if (mounted && !ref.read(coachChatProvider).hasError) {
+        _controller.clear();
+        _arrival.replyArrived();
+      }
     } finally {
       if (mounted) setState(() => _sending = false);
     }

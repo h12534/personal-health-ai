@@ -101,7 +101,10 @@ void main() {
         results: const []);
     await _pump(tester, reports: [draft, sampleReport]);
     expect(find.text('有体检草稿待核对'), findsOneWidget);
-    expect(find.text('2026年9月1日'), findsNWidgets(2)); // Report date and chart endpoint now share the Chinese date format.
+    expect(
+        find.text('2026年9月1日'),
+        findsNWidgets(
+            2)); // Report date and chart endpoint now share the Chinese date format.
     expect(find.text('需要关注 0 项 · 以报告参考范围为准'), findsNothing);
   });
 

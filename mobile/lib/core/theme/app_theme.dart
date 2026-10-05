@@ -98,6 +98,17 @@ class AppTheme {
         fillColor: colors.elevatedSurface,
         filled: true,
       ),
+      searchBarTheme: SearchBarThemeData(
+        elevation: const WidgetStatePropertyAll(AppElevation.flat),
+        backgroundColor: WidgetStatePropertyAll(colors.elevatedSurface),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.medium))),
+        textStyle: WidgetStatePropertyAll(
+            AppTypography.body.copyWith(color: colors.primaryText)),
+        hintStyle: WidgetStatePropertyAll(
+            AppTypography.secondary.copyWith(color: colors.secondaryText)),
+      ),
       bottomSheetTheme: BottomSheetThemeData(
           backgroundColor: colors.surface,
           elevation: AppElevation.sheet,

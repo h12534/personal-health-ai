@@ -1,0 +1,264 @@
+{
+  "baseline_commit": "55fea20bf068fa527603526d66b52eed0f5eb013",
+  "source": "mobile/test/ui_redesign_golden_test.dart",
+  "renderer": "Flutter 3.47.5 Windows widget-test, TargetPlatform.iOS, GoldenTestChinese",
+  "data": "synthetic only",
+  "screenshots": [
+    {
+      "file": "coach-dark.png",
+      "sha256": "5eca56a3641204723577fd442e6a88be727d09c0e35bab0279ff646498a8cb25",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "coach-large-text-dark.png",
+      "sha256": "5c7cb3a31fa5ec421336b919ea85ef1fd05919398001f5a5a40daf4aa6f85252",
+      "width": 393,
+      "height": 852,
+      "textScale": 2,
+      "keyboardInset": 0
+    },
+    {
+      "file": "coach-large-text-light.png",
+      "sha256": "530f21fb171d80efdcd8fe95ec0628e9ef0a486467f6d6e96b29ff943abe8826",
+      "width": 393,
+      "height": 852,
+      "textScale": 2,
+      "keyboardInset": 0
+    },
+    {
+      "file": "coach-light.png",
+      "sha256": "9efa92b57fb8efc1190aae5811de196ee341c8f52a66f16413dc65cdfa31de19",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "dashboard-dark.png",
+      "sha256": "7ff388d69ba411937a50d332c7ced20b3c0511e2b00c6ffe5e4c0307607dfb84",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "dashboard-light.png",
+      "sha256": "e90a7797a55f46e3be5892222ba869cde84b07e3007f8e5c4213d2593b1e25ed",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "dashboard-small-dark.png",
+      "sha256": "853a6242466a5831acac517978b63ea4333c04ab84a7bab3f4a584dc168a8202",
+      "width": 320,
+      "height": 568,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "dashboard-small-light.png",
+      "sha256": "a62f5b01e949dcf6840aec25a888fd2646a305761a8561d91db6181f164020e8",
+      "width": 320,
+      "height": 568,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "health-overview-dark.png",
+      "sha256": "f8c25d49751e141b27c7e1cdc186d159fceb35ab7883ae35c0181d5ac29c549d",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "health-overview-large-text-dark.png",
+      "sha256": "d87cf1712622bab5e6c91ff3ada83b4170a017c46f5d936f661eac635de9358c",
+      "width": 393,
+      "height": 852,
+      "textScale": 2,
+      "keyboardInset": 0
+    },
+    {
+      "file": "health-overview-large-text-light.png",
+      "sha256": "af02035685d6111db78dddd1d966726f5bd595b0afa672c234ad8eb2b87118aa",
+      "width": 393,
+      "height": 852,
+      "textScale": 2,
+      "keyboardInset": 0
+    },
+    {
+      "file": "health-overview-light.png",
+      "sha256": "361b65c81409fc3cd4f1b293f915c6ed91a6c95700d81f83b93622514293006d",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "health-overview-small-dark.png",
+      "sha256": "6a613d3a0e337031b3864d20eb6dbae0a2aeecf3926bf7c90a745f69b4e1fd63",
+      "width": 320,
+      "height": 568,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "health-overview-small-light.png",
+      "sha256": "5a3a2f73e4eaa5f96ad2ca3851c8204c4292bf4ea7593601ea4559b32ba0da75",
+      "width": 320,
+      "height": 568,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "nutrition-dark.png",
+      "sha256": "8ac88f0c3bf6f213c812a8d7dfa0f8aed1bea286f536330272c290ca98dcec8a",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "nutrition-light.png",
+      "sha256": "8add048b04d23d2572d2c7d8e1d049f796687c8be1015cb3501d43907079ed5c",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "nutrition-small-dark.png",
+      "sha256": "1b6c0fa3068f3ec8ae3ae4bdff92fef695eb3697d15d43d1a8fd6cb668c7d0c1",
+      "width": 320,
+      "height": 568,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "nutrition-small-light.png",
+      "sha256": "c9cf10155a9b8b223acbd6588b6087aa77c4cbd2b9fcfd64f20de891a3b8fa0e",
+      "width": 320,
+      "height": 568,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "profile-dark.png",
+      "sha256": "8ae324a5f79bc82a661d82a2689c9f716975225f1075755bd4e9d77f0970b69a",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "profile-large-text-dark.png",
+      "sha256": "ea999b440ee54ad29dbbe12d9335649e476651c9f4d4788820e6e510587f9517",
+      "width": 393,
+      "height": 852,
+      "textScale": 2,
+      "keyboardInset": 0
+    },
+    {
+      "file": "profile-large-text-light.png",
+      "sha256": "3d8ede9f9f49351f27402e107475275b9a6d18ce1a5ae5576905844e466b514a",
+      "width": 393,
+      "height": 852,
+      "textScale": 2,
+      "keyboardInset": 0
+    },
+    {
+      "file": "profile-light.png",
+      "sha256": "e63ddba33e76df6881ff9a07c0e49694635e4c1d7b261b6ae364ec700206b655",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "training-dark.png",
+      "sha256": "18227dacd04cfffd4d2308a330aa52be9deec2d76f9051c3032b7fb772083eb5",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "training-keyboard-small-dark.png",
+      "sha256": "5f258219bc46e45f09eef499cc18c063653fe9aa91bbbfd76247caaeeed823f3",
+      "width": 320,
+      "height": 568,
+      "textScale": 2,
+      "keyboardInset": 300
+    },
+    {
+      "file": "training-keyboard-small-light.png",
+      "sha256": "082fb61036af91a8db339d06aca86f31668b99b7f804b8ede71279ad2d4b26b1",
+      "width": 320,
+      "height": 568,
+      "textScale": 2,
+      "keyboardInset": 300
+    },
+    {
+      "file": "training-library-dark.png",
+      "sha256": "bbef6d6ee2bafb483addaae3fb6de979c0666576a4caf3d21be9e80995021a81",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "training-library-light.png",
+      "sha256": "553c2973f3a19bad02819cafdf58d736c7e7a14ef4825a35a15fd82c7962de64",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "training-light.png",
+      "sha256": "87a0275d5d0cfecfa9d30a755639526e8b7f2f672b244561815d1b30c766f7fc",
+      "width": 393,
+      "height": 852,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "training-small-dark.png",
+      "sha256": "89bdfa61a34bccda094a43592c41bccc7600348e058bd451cc945db882757e59",
+      "width": 320,
+      "height": 568,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "training-small-light.png",
+      "sha256": "ef30917a9b7313bcbea4cb2b5696606f384335e1dce5d1dcf95922cf5e3946a5",
+      "width": 320,
+      "height": 568,
+      "textScale": 1,
+      "keyboardInset": 0
+    },
+    {
+      "file": "workout-set-large-text-dark.png",
+      "sha256": "e94f2bd39876e4087826a02e64318ba29c6a528f598fc8dd594a1ada186e7a6a",
+      "width": 393,
+      "height": 852,
+      "textScale": 2,
+      "keyboardInset": 0
+    },
+    {
+      "file": "workout-set-large-text-light.png",
+      "sha256": "ae257e19b11396f1d0b2db07c549777e7eab592255ba79770d219430d20d4c7b",
+      "width": 393,
+      "height": 852,
+      "textScale": 2,
+      "keyboardInset": 0
+    }
+  ]
+}

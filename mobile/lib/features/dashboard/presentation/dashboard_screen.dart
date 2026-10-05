@@ -258,7 +258,7 @@ class DashboardContent extends StatelessWidget {
                             unit: 'kcal'),
                         ProgressMetric(
                             label: '蛋白质',
-                    unit: 'g',
+                            unit: 'g',
                             value: '${data.proteinG.toStringAsFixed(0)} g',
                             amount: data.proteinG,
                             target: data.proteinTargetG),

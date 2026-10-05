@@ -173,6 +173,8 @@ Small radius marks selected segments; medium radius shapes buttons and fields; l
 
 ## Components
 
+SearchBar consumes the same medium radius, flat elevation, elevated input surface and text/hint roles as ordinary fields. Filled icon actions explicitly consume onPrimary instead of the global secondary icon color. Editor defaults preserve original numeric precision; rounding is a summary policy, not an implicit edit. Chat arrival feedback is shared by all three existing coach entries and preserves an older reading position. Canteen pending state survives lazy recycling and group collapse without changing server operations.
+
 Buttons use the theme's minimum height; the frontmatter height is a minimum, not a text-clipping fixed height. Inputs are softly filled with an explicit focused outline. Bottom navigation is a stable five-destination solid surface, text plus one consistent outlined Material icon family, no pill indicator. This is native-feeling Flutter, not an SF Symbols claim.
 
 RootPageHeader, DetailPageHeader, and DataDetailHeader handle orientation and return paths. AppSection, MetricHero, MetricRow, ProgressMetric, InsightBlock, TaskRow, ListRow, TrendIndicator, and BottomActionArea reuse the same type and spacing roles. Units can remain visually subordinate without disappearing from values or goals. Chinese date labels retain the year when cross-year context matters; machine-readable exports keep their original formats.
