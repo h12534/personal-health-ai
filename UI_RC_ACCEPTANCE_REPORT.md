@@ -116,6 +116,8 @@ Run [37284504075](https://github.com/h12534/personal-health-ai/actions/runs/3728
 
 Required: release audit; backend Ruff/mypy/tests; PostgreSQL16+real pgvector/Redis/migration/RAG; Flutter format/analyze/tests; macOS iOS no-codesign; Android secondary. Existing personal-sideload cloud job is also reviewed. Paid App Store signing is conditionally disabled for this branch by the existing project route, not by an RC test workaround.
 
+Before releasing the revised bilingual export, cross-observation secret-label/value detection was explicitly preserved (e.g. `Token:` and a separate OCR value still block). Original per-observation text is checked before any independently confirmed fixture-date interpretation, followed by the full joined scan. New regression: **42 script tests pass**; no detector is skipped. In-progress review run [37285720755](https://github.com/h12534/personal-health-ai/actions/runs/37285720755), SHA `19aef14a10ba51bec308a5ece521408f23310f60`, is superseded by this safety correction; its configured workflow is not an upload/CI acceptance claim.
+
 ## 14. Final Screenshot Pack
 
 [UI_RC_PREVIEW](docs/ui-redesign/UI_RC_PREVIEW/README.md): the previously committed 32 PNGs and hash manifest remain unchanged. Twelve six-page L/D roots, eight small-phone, eight large-text, two action-library and two small-keyboard captures. The extra 8 free-mode preview images from the earlier 40-image local pack remain only in the unpushed pre-authorization local snapshot. Newly captured 74 standard / 12 free cloud images will be artifact-only, with 1-day retention and individual review. No new screenshot is added to the public source/history. Widget-test images are not physical iPhone evidence.

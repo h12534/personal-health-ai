@@ -162,6 +162,16 @@ class UiGoldenSafetyTests(unittest.TestCase):
                 [observation("person@example.invalid", "english")], "safe.png"
             )
 
+    def test_secret_label_and_value_across_observations_still_block(self):
+        with self.assertRaisesRegex(SafetyFailure, "PRIVATE_CONTENT_SECRET"):
+            check_ocr_observations(
+                [
+                    observation("Token:", "english"),
+                    observation("fictional-value", "english"),
+                ],
+                "safe.png",
+            )
+
     def test_legitimate_labels_and_synthetic_values_do_not_claim_identity(self):
         check_ocr_text(
             [

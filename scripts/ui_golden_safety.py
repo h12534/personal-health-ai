@@ -207,8 +207,17 @@ def check_ocr_observations(rows: list[dict], capture: str) -> None:
             or row["bounds"][3] == 0
         ):
             raise SafetyFailure("OCR_INVALID_RESPONSE")
+    joined_texts = []
     for row in rows:
-        check_ocr_text([row["text"]], confirmed_synthetic_axis(row, rows, capture))
+        confirmed_axis = confirmed_synthetic_axis(row, rows, capture)
+        check_ocr_text([row["text"]], confirmed_axis)
+        joined_texts.append(
+            "2026年6月1日 2026年9月1日" if confirmed_axis else row["text"]
+        )
+    # Preserve checks whose label/value span separate recognition observations.
+    # Only a geometrically confirmed fixture date is semantically normalized;
+    # all other private patterns were also checked on its original text above.
+    check_ocr_text(joined_texts)
 
 
 def local_ocr(executable: Path, image: Path) -> list[dict]:
