@@ -248,7 +248,7 @@ Phase 2 当时未推送。当前 UI RC 用户已明确授权仅推 feature 分�
 
 ### UI RC cloud gate status (actual results)
 
-最新进度：74标准版＋12免费版云端合成实际截图已通过自动来源／PNG／隐私检查，分别上传到 [37288364174](https://github.com/h12534/personal-health-ai/actions/runs/37288364174) 和 [37289471831](https://github.com/h12534/personal-health-ai/actions/runs/37289471831) 的1天PNG-only artifacts。主代理已逐张查看全部86张，并独立核对下载图片的RGBA摘要／尺寸；[逐图审查记录](docs/ui-redesign/MACOS_GOLDEN_REVIEW.md)。只提交文本摘要及审查记录，不提交任何新截图。严格macOS基线的全量真实CI仍待运行，不降低阈值、不跳过测试、不执行merge、不宣称iPhone通过。下文保留之前失败及本地快照的历史，不代表最新截图上传状态。
+最新进度：74标准版＋12免费版云端合成实际截图已通过自动来源／PNG／隐私检查，分别上传到 [37288364174](https://github.com/h12534/personal-health-ai/actions/runs/37288364174) 和 [37289471831](https://github.com/h12534/personal-health-ai/actions/runs/37289471831) 的1天PNG-only artifacts。主代理已逐张查看全部86张，并独立核对下载图片的RGBA摘要／尺寸；[逐图审查记录](docs/ui-redesign/MACOS_GOLDEN_REVIEW.md)。只提交文本摘要及审查记录，不提交任何新截图。严格实现的 [真实CI37292995869](https://github.com/h12534/personal-health-ai/actions/runs/37292995869)、SHA `6dae1319b216cb2646c5de87efeeee2d6ec2a764` 已SUCCESS：六个常规必需Job，三种配置各268tests及74个零容差Golden，以及primary no-codesign／双unsigned IPA构建与打包核验全部通过。不降低阈值、不跳过测试、不执行merge、不宣称iPhone或真实HTTPS API通过。后续仅文档提交与该已测试源码SHA严格区分。下文保留之前失败及本地快照的历史，不代表最新截图上传／CI状态。
 
 后续用户明确授权74标准版＋12免费版合成PNG作为短期Actions artifact，且禁止新增截图进入源码／Git history。当前修复链仅保存逐像素RGBA SHA-256、尺寸及审查来源；此前含新增PNG的未推送本地提交保留为本地快照，不会随feature推送。公开截图包仍是既有32张，新云端图片将经自动安全检查后仅保留1天；原40张本地成果属于授权前历史，不能冒称当前已发布文件。具体真实结果以最新RC报告为准。
 

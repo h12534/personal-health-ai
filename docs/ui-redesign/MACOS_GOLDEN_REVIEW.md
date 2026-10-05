@@ -2,6 +2,8 @@
 
 Owner-authorized synthetic screenshots only. Main viewed **74 standard + 12 free = 86** actual PNGs individually, not an automatic or blanket Golden update. Font and fixture provenance was sealed; source network was forbidden. Full source/exact-set/PNG CRC/decompression/EXIF-text rejection/offline bilingual OCR checks passed before each upload. No real user data, names, accounts, keys, device identifiers, reports or meal photos appear in these fixtures.
 
+The repository is public. These artifacts are treated as potentially accessible to external readers; short retention is not relied upon as privacy protection. Any failed safety check blocks upload, even with owner authorization.
+
 | Set | Actual workflow / source | Approved artifact / expiry UTC |
 |---|---|---|
 | Standard, 74 | [37288364174](https://github.com/h12534/personal-health-ai/actions/runs/37288364174), `83726595b0d425edd90c41b8a171915c65443c20` | [11335398755](https://github.com/h12534/personal-health-ai/actions/runs/37288364174/artifacts/11335398755), 2026-10-06 09:16:21Z |
@@ -11,7 +13,9 @@ Each ZIP checksum matches Actions metadata. Each ZIP contains exactly its named 
 
 Images are NOT added to Git. `mobile/test/goldens/digests/macos.json` contains reviewed pixel hashes, exact dimensions, provenance and the individual notes below. Comparisons remain exact; missing entries and automatic updates fail. Existing Windows image baselines and Phase 2 archives remain unchanged. Expired artifacts do not disable future hash comparisons. A future pixel change still requires review, not auto-adoption.
 
-This is a host-rendering baseline review, not physical iPhone/VoiceOver/keyboard/permission/performance acceptance. Pressure views intentionally include scrollable below-fold content, horizontally scrolled tabs/drafts and mocked keyboard insets; those must not be misreported as native device proof. No new visual direction, business feature or independent review score was invented. Strict CI verification of the new manifest is pending until its real jobs finish.
+This is a host-rendering baseline review, not physical iPhone/VoiceOver/keyboard/permission/performance acceptance. Pressure views intentionally include scrollable below-fold content, horizontally scrolled tabs/drafts and mocked keyboard insets; those must not be misreported as native device proof. No new visual direction, business feature or independent review score was invented.
+
+Strict implementation verification is complete: [real CI 37292995869](https://github.com/h12534/personal-health-ai/actions/runs/37292995869), commit `6dae1319b216cb2646c5de87efeeee2d6ec2a764`, attempt 1, workflow conclusion SUCCESS. Primary job 111707578426 and personal job 111711280048 logs confirm three full suites of 268 passing tests, each with all 74 strict Goldens (222 comparisons of 86 distinct images); format/analyze, primary no-codesign build and both unsigned personal IPA builds/package checks succeed. Original backend/PostgreSQL/release/Android checks also succeed. Paid signing remains suspended; capture is optional and was not requested again. No required test was skipped, no tolerance increased, no new image committed. Later documentation commits are not retrospectively attributed to this verified source SHA.
 
 | Individually viewed key | Main review disposition |
 |---|---|

@@ -67,7 +67,7 @@ Debug timings are not release-frame or physical-memory evidence. No 60/120fps cl
 
 Each of the three configurations still executes all 74 comparisons. Twelve free-mode images were individually inspected locally. Under the owner's subsequent artifact-only constraint, their decoded RGBA hashes and dimensions replace new committed PNGs; the other 62 captures share standard references. The earlier image-bearing local commits are preserved in an unpushed local snapshot, not ancestors of the new public repair chain. Existing 74 Windows PNGs predate this authorization and remain unchanged. Enabled-permission assertions remain for standard/HealthKit-attempt builds; free-mode assertions verify no toggles, no false authorization and zero permission reads/writes/uploads.
 
-macOS cross-host baseline review is complete: all 74 standard + 12 free cloud actuals were individually viewed by main, both artifact ZIP checksums/exact file sets/metadata were independently verified, and every downloaded PNG's decoded-RGBA hash and dimensions match the cloud candidates. [Individual review ledger](docs/ui-redesign/MACOS_GOLDEN_REVIEW.md). Existing Windows and Phase 2 PNGs remain unchanged. The new text-only macOS manifest compares dimensions + SHA-256 with zero pixel tolerance; missing entries fail and automatic update throws. Flutter documents host differences: [LocalFileComparator](https://api.flutter.dev/flutter/flutter_test/LocalFileComparator-class.html). Actual CI of the approved manifest is still pending; safe image upload is not a green test/build claim.
+macOS cross-host baseline review is complete: all 74 standard + 12 free cloud actuals were individually viewed by main, both artifact ZIP checksums/exact file sets/metadata were independently verified, and every downloaded PNG's decoded-RGBA hash and dimensions match the cloud candidates. [Individual review ledger](docs/ui-redesign/MACOS_GOLDEN_REVIEW.md). Existing Windows and Phase 2 PNGs remain unchanged. The text-only macOS manifest compares dimensions + SHA-256 with zero pixel tolerance; missing entries fail and automatic update throws. Flutter documents host differences: [LocalFileComparator](https://api.flutter.dev/flutter/flutter_test/LocalFileComparator-class.html). Actual strict CI [37292995869](https://github.com/h12534/personal-health-ai/actions/runs/37292995869), SHA `6dae1319b216cb2646c5de87efeeee2d6ec2a764`, is SUCCESS: all three full suites passed 268 tests and all 74 Goldens each (222 comparisons over 86 distinct reviewed macOS images). Safe image upload alone was never treated as passing tests/builds.
 
 ## 11. Flutter analyze
 
@@ -81,14 +81,29 @@ Real in-memory SQLite and unchanged OfflineWorkoutRepository exercise start → 
 
 ## 13. Remote CI
 
-**Open / not green.** Actual feature-branch runs, all jobs and completed job logs were read. Do not interpret old release runs or configured workflows as this UI RC's success. Main has not been merged.
+**PASS / cloud UI RC gate CLOSED for the reviewed implementation.** Real push run [37292995869](https://github.com/h12534/personal-health-ai/actions/runs/37292995869), commit `6dae1319b216cb2646c5de87efeeee2d6ec2a764`, attempt 1, workflow conclusion `success`, completed 2026-10-05 10:17:54Z. Every actual job result, completed log and artifact list was read. Standard, HealthKit-attempt and free manual full suites each pass 268 tests including all 74 strict Goldens. No new screenshot upload occurs on the normal push; optional capture is not requested. No main merge. The following old runs remain historical failures, not relabeled green.
+
+| Current real job | Actual result / evidence |
+|---|---|
+| [release-audit, 111707578096](https://github.com/h12534/personal-health-ai/actions/runs/37292995869/job/111707578096) | SUCCESS; errors=0, existing external warnings=3, 45 script tests |
+| [backend, 111707578582](https://github.com/h12534/personal-health-ai/actions/runs/37292995869/job/111707578582) | SUCCESS; Ruff check/format (203 files), strict mypy 165 files, 89 tests |
+| [backend-postgres, 111707578202](https://github.com/h12534/personal-health-ai/actions/runs/37292995869/job/111707578202) | SUCCESS; PostgreSQL 16.15 / real pgvector, Redis 7.4.11, JSONB/cosine/full text/Hybrid RAG/UUID/timezone/unique/idempotency/cascade checks; 0001→0007→0008 upgrade, downgrade/re-upgrade/check; 7 integration tests; ten-table count/UUID restore drill |
+| [mobile-ios-primary, 111707578426](https://github.com/h12534/personal-health-ai/actions/runs/37292995869/job/111707578426) | SUCCESS; format 97 unchanged, analyze clean, 268 tests / all 74 strict Goldens, release no-codesign Runner.app 24.5MB |
+| [mobile-android-compat, 111707578285](https://github.com/h12534/personal-health-ai/actions/runs/37292995869/job/111707578285) | SUCCESS; secondary debug APK build |
+| [mobile-ios-personal-sideload, 111711280048](https://github.com/h12534/personal-health-ai/actions/runs/37292995869/job/111711280048) | SUCCESS; both modes 268 tests / 74 strict Goldens, both unsigned builds/package validation/artifact uploads |
+| mobile-ios-signed, 111711282252 | SKIPPED / SUSPENDED by existing paid-route conditions; NOT a passed signing/TestFlight gate |
+| ui-golden-review, 111707579701 | Optional manual capture not requested; no duplicate screenshots; all regular tests above executed |
+
+Actual toolchain: Flutter 3.47.5, macOS 26.6.2 arm64, Xcode 26.6 (17F113), CocoaPods 1.17.0. SwiftPM was attempted; existing plugins use the supported CocoaPods compatibility route. Their future SwiftPM adoption warning remains a dependency limitation, not hidden by disabling checks. Compiled iOS target is 16.0; native permissions/hardware remain separate.
+
+Both unsigned IPAs are 0.1.0 / build 30.1 and source SHA `6dae1319b216cb2646c5de87efeeee2d6ec2a764`. CI package validation reports device arm64/Payload/native flavor/version/hash/unsigned checks passed: [HealthKit-attempt artifact 11337971795](https://github.com/h12534/personal-health-ai/actions/runs/37292995869/artifacts/11337971795), IPA SHA-256 `f2192e364e3924a93d80aa1a88323ff4b791d857fef0ac8ce398e7014e65d176`; [free artifact 11337838434](https://github.com/h12534/personal-health-ai/actions/runs/37292995869/artifacts/11337838434), IPA SHA-256 `3799f5b64ca8f2f2a28d7cda92997de6ad041ba43a3d2b4c12122da2265250ee`. These are existing build artifacts, separate from one-day screenshot artifacts. Current IPAs have CI validation; no new local download/physical-device validation is claimed. API host remains `.invalid`, `api_configured=false`; real HTTPS login/AI/sync, Windows re-sign and iPhone install/launch/permissions are NOT RUN.
 
 | Run | Pushed commit | Result |
 |---|---|---|
 | [37271096988](https://github.com/h12534/personal-health-ai/actions/runs/37271096988) | `6b5a94bc61d4566631814b184802f88c0269f567` | Four jobs pass; primary macOS tests fail 74 Goldens; dependent personal build and paid signing skipped |
 | [37272234650](https://github.com/h12534/personal-health-ai/actions/runs/37272234650) | `b4615e684e9afc404ed2398ab72a9081198bb697` | Same strict failure; four explicitly synthetic rendering evidence files retained |
 
-Latest completed run 37272234650:
+Historical completed run 37272234650:
 
 | Actual job | Result / evidence |
 |---|---|
@@ -134,11 +149,13 @@ Original Before / Phase 1 Reference remain [here](docs/ui-redesign/phase2-before
 
 ## 15. Remaining UI debt
 
-No confirmed remaining P0/P1/required P2 in the locally verified presentation scope. The macOS Golden host-baseline gate remains a release blocker, so overall RC acceptance is not complete. Unverified boundaries: actual iPhone VoiceOver/fonts/keyboard/gestures/Safe Area/haptic, hardware performance, landscape/iPad/Split View, very large action library/chat history, and the existing API HTTP-status precision limitation. Do not remove declared device support or change business APIs to conceal these limitations. No further P3 polish planned.
+No confirmed remaining P0/P1/required P2 in the locally and cloud-verified presentation scope. The strict macOS Golden/full-test/no-codesign/unsigned build gate is CLOSED for implementation `6dae131`; physical daily-use acceptance remains OPEN. Unverified boundaries: actual iPhone VoiceOver/fonts/keyboard/gestures/Safe Area/haptic, hardware performance, landscape/iPad/Split View, very large action library/chat history, and the existing API HTTP-status precision limitation. Existing plugin SwiftPM-adoption warnings remain documented. Do not remove declared device support or change business APIs to conceal these limitations. No further P3 polish planned.
 
 ## 16. Git commit
 
 Published implementation: `6b5a94bc61d4566631814b184802f88c0269f567`; diagnostic CI: `b4615e684e9afc404ed2398ab72a9081198bb697`. The earlier unpushed local `b415a41` / `ba0e557` commits contain new free-mode PNGs; they are preserved at local-only `codex/ui-rc-artifact-local-snapshot-20261005`. Current `feature/ui-redesign-impeccable` continues from the already-pushed b4615e6 with those text fixes reapplied, plus strict digest/security tooling, but no new PNGs. No force push or published-history rewrite is involved.
+
+Individually approved text-only macOS baseline commit: `6dae1319b216cb2646c5de87efeeee2d6ec2a764`, verified by real successful run 37292995869. This final acceptance update changes documentation only; it does not silently claim its later commit SHA was the implementation tested by that run.
 
 Backend, providers/controllers, models, repositories, authentication, DB, offline semantics, RAG/safety and iOS/Android remain unchanged against 55fea20. Workflow adds gated artifact-only review with fail-closed safety; no existing full test/build/check is removed or weakened. Crypto 3.0.7 moves from an already locked transitive package to a pinned test-only dependency; no runtime upgrade. Two earlier indentation issues were formatter-only; archive whitespace fixed without rescoring.
 
@@ -146,14 +163,14 @@ User-owned untracked `ui-preview/` and local golden failure evidence are preserv
 
 ## 17. 是否建议 merge
 
-Not yet: macOS Goldens and the current UI no-codesign build remain open. Even after CI is green, user explicitly requested no merge; report a recommendation separately from executing a merge.
+From the verified presentation/code/cloud-CI scope, the feature branch is ready for owner review and a merge recommendation. **No merge is executed**: the user explicitly requested no merge. Physical iPhone acceptance is separately pending and not certified by this recommendation.
 
 ## 18. 是否适合进入 iPhone 真机验收
 
-Local UI evidence supports proceeding once cloud CI succeeds. It does not prove daily-use/native acceptance. Use the project's permitted cloud-build + personal iPhone installation route; no requirement to buy or own a Mac, no Apple ID password/2FA request. Verify native permissions, offline/lifecycle/HTTPS sync and system accessibility on the iPhone. Pause new business features and additional visual exploration.
+Yes: real cloud CI has succeeded, so the existing personal installation route can proceed. This does not prove daily-use/native acceptance. Use cloud build + Windows personal signing + the owner's iPhone; no requirement to buy or own a Mac, no Apple ID password/2FA request. Real HTTPS API deployment/access is still missing; `.invalid` builds cannot establish login/AI/sync acceptance. Verify native permissions, offline/lifecycle/HTTPS sync and system accessibility on the iPhone. Pause new business features and additional visual exploration.
 
 ## Run Notes
 
 Impeccable context reused once for this logical session; applicable references and craft floor read directly by main. Critique snapshot saved and closed; trend returned snapshots with different surface scopes, so no score-improvement claim was made. Detector returned `[]` / exit 0 with unsupported Dart coverage; no ignore rule, value suppression or security-hook workaround was added. Two reviewers were read-only, with focused closure checks; free-flavor follow-up was main's actual screenshot/test verification, not an invented independent score. No RC browser server/overlay was started. Temporary critique body was removed after validating its exact workspace path. User-owned local gallery and failure images remain untouched.
 
-Owner authorization was executed: all 86 new synthetic PNGs passed automatic source/PNG/privacy checks before artifact upload, with one-day expiry, no image committed and no OCR/log/sidecar file attached. Main individually reviewed each image and independently verified all exact pixel hashes. Real strict CI of the resulting text manifest remains pending until jobs complete. No public repository was created, no arbitrary failure directory uploaded, no automatic Golden approval, test skip, main merge or force push. Native iPhone acceptance is still NOT RUN.
+Owner authorization was executed: all 86 new synthetic PNGs passed automatic source/PNG/privacy checks before artifact upload, with one-day expiry, no image committed and no OCR/log/sidecar file attached. Main individually reviewed each image and independently verified all exact pixel hashes. Real strict implementation CI 37292995869 is SUCCESS; all six required regular jobs passed and all three full suites executed. The paid route remains suspended and optional screenshot capture is not requested, neither a skipped required test. No public repository was created, no arbitrary failure directory uploaded, no automatic Golden approval, test skip, main merge or force push. Native iPhone acceptance is still NOT RUN.
