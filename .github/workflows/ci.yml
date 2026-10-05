@@ -144,6 +144,19 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed lib test tool
       - run: flutter analyze
       - run: flutter test
+      # Explicit synthetic fixtures only; never upload arbitrary failure files.
+      - name: Preserve synthetic golden rendering evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-golden-rendering-evidence
+          path: |
+            mobile/test/failures/dashboard-light_testImage.png
+            mobile/test/failures/dashboard-light_isolatedDiff.png
+            mobile/test/failures/health-overview-light_testImage.png
+            mobile/test/failures/health-overview-light_isolatedDiff.png
+          if-no-files-found: warn
+          retention-days: 7
       - run: >-
           flutter build ios --release --no-codesign
           --dart-define=APP_ENV=staging
