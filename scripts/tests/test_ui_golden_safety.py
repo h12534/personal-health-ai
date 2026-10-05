@@ -48,6 +48,18 @@ class UiGoldenSafetyTests(unittest.TestCase):
             with self.subTest(kind=kind), self.assertRaises(SafetyFailure):
                 sanitize_png(png(chunk(kind, b"private")), (1, 1))
 
+    def test_macos_full_precision_chunk_is_validated_and_stripped(self):
+        self.assertEqual(sanitize_png(png(chunk(b"sBIT", b"\x08" * 4)), (1, 1)), png())
+        for payload in (b"", b"\x08" * 3, b"\x07" * 4, b"private"):
+            with self.subTest(payload=payload), self.assertRaises(SafetyFailure):
+                sanitize_png(png(chunk(b"sBIT", payload)), (1, 1))
+        with self.assertRaises(SafetyFailure):
+            sanitize_png(png(chunk(b"sBIT", b"\x08" * 4) * 2), (1, 1))
+
+    def test_unrecognized_chunk_still_blocks(self):
+        with self.assertRaisesRegex(SafetyFailure, "UNAPPROVED_PNG_CHUNK"):
+            sanitize_png(png(chunk(b"iCCP", b"unreviewed profile")), (1, 1))
+
     def test_corruption_trailer_and_wrong_dimensions_block(self):
         for data, size in (
             (png()[:-2], (1, 1)),

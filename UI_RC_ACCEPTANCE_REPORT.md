@@ -106,6 +106,8 @@ Before publishing: verify 67 sealed source/font/fixture files and exact owner re
 
 Safety checks are defense-in-depth over frozen synthetic provenance, not a claim that OCR alone can prove privacy. Any source drift requires another review and blocks the sealed capture until reviewed. Capture jobs do not turn a missing-baseline test failure green; each normal full suite is still required. Actual new run IDs and completed image review will be appended only after execution.
 
+First authorized capture run [37281939646](https://github.com/h12534/personal-health-ai/actions/runs/37281939646), SHA `8a587e61056ab68d583628dd8eb923a496382c71`: both source attestations and both Swift OCR builds succeeded, but both privacy/export steps blocked `UNAPPROVED_PNG_CHUNK`; screenshot uploads were skipped. Existing cloud PNG evidence confirms Flutter's `sBIT` chunk. The repair validates exactly full 8-bit precision for each channel, forbids duplicate/out-of-order/malformed structures, and strips the chunk without changing compressed pixels, per the [PNG specification](https://www.w3.org/TR/png/#11sBIT). Unknown chunks and all EXIF/text rejection remain. Two regression tests added; latest script suite **36 pass**, Python Ruff check/format pass. This is an encoder compatibility correction, not a privacy bypass or Golden threshold change.
+
 Required: release audit; backend Ruff/mypy/tests; PostgreSQL16+real pgvector/Redis/migration/RAG; Flutter format/analyze/tests; macOS iOS no-codesign; Android secondary. Existing personal-sideload cloud job is also reviewed. Paid App Store signing is conditionally disabled for this branch by the existing project route, not by an RC test workaround.
 
 ## 14. Final Screenshot Pack

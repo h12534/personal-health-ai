@@ -100,6 +100,17 @@ def sanitize_png(data: bytes, size: tuple[int, int]) -> bytes:
         elif kind == b"IEND":
             if payload or end != len(data) or b"IDAT" not in types:
                 raise SafetyFailure("INVALID_PNG_END")
+        elif kind == b"sBIT":
+            # macOS Flutter encodes full 8-bit channel precision. Accept only
+            # that exact non-private structure, then strip it from the export.
+            # https://www.w3.org/TR/png/#11sBIT
+            if (
+                not channels
+                or b"IDAT" in types
+                or b"sBIT" in types
+                or payload != bytes([8]) * channels
+            ):
+                raise SafetyFailure("INVALID_SIGNIFICANT_BITS")
         elif kind not in SAFE_ANCILLARY:
             raise SafetyFailure("UNAPPROVED_PNG_CHUNK")
         if kind in {b"IHDR", b"IDAT", b"IEND"}:

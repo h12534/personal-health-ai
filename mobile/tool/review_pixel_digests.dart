@@ -9,6 +9,7 @@ void main() {
   test('read reviewed local PNG pixel digests without committing images',
       () async {
     const directory = String.fromEnvironment('UI_REVIEW_DIRECTORY');
+    const free = bool.fromEnvironment('UI_REVIEW_FREE', defaultValue: true);
     if (directory.isEmpty) {
       throw StateError('Explicit review directory required');
     }
@@ -26,7 +27,7 @@ void main() {
       final digest =
           await ReviewedPixelComparator.pixelDigest(await file.readAsBytes());
       stdout.writeln('GOLDEN_REVIEW_DIGEST ${jsonEncode({
-            'key': 'goldens/personal-free/$name',
+            'key': 'goldens/${free ? 'personal-free/' : ''}$name',
             ...digest
           })}');
     }
