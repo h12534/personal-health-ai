@@ -1,0 +1,556 @@
+{
+  "schema": 1,
+  "pixel_format": "rawRgba8",
+  "host": {
+    "runner": "macos-26",
+    "flutter": "3.47.5",
+    "comparison": "Decoded RGBA SHA-256 plus exact dimensions; zero pixel tolerance."
+  },
+  "review": {
+    "date_utc": "2026-10-05",
+    "method": "Main individually viewed every actual artifact PNG, recorded the per-image disposition, and independently decoded every downloaded PNG to verify its cloud candidate digest. No --update-goldens or automatic approval.",
+    "synthetic_only": true,
+    "artifact_only": true,
+    "retention_days": 1,
+    "sources": [
+      {
+        "flavor": "standard",
+        "images": 74,
+        "run": 37288364174,
+        "commit": "83726595b0d425edd90c41b8a171915c65443c20",
+        "job": 111692627699,
+        "artifact": 11335398755,
+        "zip_sha256": "1221e6164809fc7f6f0ad2d8ac55b35759ed359350704fb4241c85dff42840c8",
+        "expires_utc": "2026-10-06T09:16:21Z"
+      },
+      {
+        "flavor": "free",
+        "images": 12,
+        "run": 37289471831,
+        "commit": "87eaf8d12f20f74d84aa8a6c7c881788281ba8bd",
+        "job": 111696356883,
+        "artifact": 11335169497,
+        "zip_sha256": "a2747b2e7d39d37d038421614c4c5f4b716f70d87ae1047f982e8318251adfd7",
+        "expires_utc": "2026-10-06T09:25:10Z"
+      }
+    ]
+  },
+  "images": {
+    "goldens/add-food-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "6dbe5c26fffa3a62aafb853d277d15bf8e0e681dba3861510e38cdb9ee942f5c",
+      "review_note": "Quantity/unit and 137 kcal hierarchy, onPrimary CTA and rows clear in dark."
+    },
+    "goldens/add-food-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "3e1a6e80d7d60784eafa20e16569eadb1e4f79931b85f6df436160b974d11b46",
+      "review_note": "Same synthetic portion values and aligned units; light CTA/readability verified."
+    },
+    "goldens/canteen-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "23a3c8f5a977200fc9b2067871374129f9797a51dafa66747db6952121f73fdc",
+      "review_note": "Three empty-state groups and retry/add actions legible; synthetic, no food photos."
+    },
+    "goldens/canteen-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "3d837e25324abd82c6615593c95dab36dd9a6267d0ae950e781f3cf36adf4cfc",
+      "review_note": "Empty/recovery hierarchy matches frozen C reference without crowded cards."
+    },
+    "goldens/coach-conversation-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "275f39bbaf56e70f5140f4ee7042f5ea70ff895ff2442cd675eb1c677fae2189",
+      "review_note": "Intentional scrolled conversation; reply/disclaimer/composer and fixed bottom navigation clear."
+    },
+    "goldens/coach-conversation-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "1110567f191ecf03d58427e7a18408fd4f923724b3c4b1298ed411da3ddeb420",
+      "review_note": "Scrolled viewport and send contrast verified; no account/contact values."
+    },
+    "goldens/coach-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "bbe6a9c2be5b87cc682b2728017219466862854a4218277bb73167ed0c1f8c6e",
+      "review_note": "Empty trend/chat state and composer readable; evidence folded, no invented metrics."
+    },
+    "goldens/coach-keyboard-small-dark.png": {
+      "width": 320,
+      "height": 268,
+      "rgba_sha256": "16d6c1a82be5bb43220b253b88b6e3ff8bfb025ddff974742dca89ca270632b6",
+      "review_note": "320px inset capture; large multiline synthetic draft and contrasting send button stay reachable."
+    },
+    "goldens/coach-keyboard-small-light.png": {
+      "width": 320,
+      "height": 268,
+      "rgba_sha256": "2cdd35b12bda1eaa645cde65995f5a9907bd96b4911e0159ab17f95422bdf8dc",
+      "review_note": "Keyboard-short viewport wraps rather than hiding draft; onPrimary send icon visible."
+    },
+    "goldens/coach-large-text-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "d3cc87da30ca81e4f85de911b372777e891b8a9fc051d72a374b44c2bcb7f86d",
+      "review_note": "200% explanatory copy wraps and scrolls; composer/nav remain anchored."
+    },
+    "goldens/coach-large-text-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "038141443feeea100b878e43c42fd93ea05370e3163641f395c8f67f84406253",
+      "review_note": "Same large-type hierarchy without scaled-down type or overlap; scroll cut is intentional."
+    },
+    "goldens/coach-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "2844cf599912e543065c8edea2a63d242f9625eaf989bd6e5b2b6051f3ac0fe5",
+      "review_note": "Frozen C coach hierarchy, evidence disclosure and recovery copy visually verified."
+    },
+    "goldens/dashboard-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "d08cdf2d3fc1a794c3e218861ab813d659533f2d87ea509a552cf42b4bd2a152",
+      "review_note": "100.0 kg and nutrient/steps units clear; semantic hierarchy and selected fixed nav preserved."
+    },
+    "goldens/dashboard-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "cc7ad19dc7638cffd31c93956149911d37afe7baf85f0d85021f13211469fb52",
+      "review_note": "Source fixture metrics unchanged; uncluttered layout and muted unit contrast checked."
+    },
+    "goldens/dashboard-small-dark.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "5b29053da1c4cc38813376809a18e3909f271eccfaff1a1cdb0055a400dcf73b",
+      "review_note": "320×568 wraps hero/caption naturally; remaining metrics scroll below fixed navigation."
+    },
+    "goldens/dashboard-small-light.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "edeb656c6944f545fe80734cf56c8567bbd25a83a38fbc17220775abe568a124",
+      "review_note": "Small-phone nav labels stay visible; no squeezed metric or horizontal overflow."
+    },
+    "goldens/food-search-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "ad6b45a19f18334f3f2d66f9e38a741ff46c16b73ad58f4aa822125ae9c7198b",
+      "review_note": "Semantic SearchBar, selected Recent filter, sample rice row and favorite affordance clear."
+    },
+    "goldens/food-search-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "3e7b498681cd18bf3daaf6f052fb38418f1cf9867dea01faeb524f1211300cb6",
+      "review_note": "Same input/filter hierarchy and portion text; no extra photos/private identity."
+    },
+    "goldens/health-chat-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "e2d1e834dc689ee2bb1496e1ca751948706aab782567076006e86dd162b97276",
+      "review_note": "Warning and medical-boundary text remain prominent; evidence folded and composer/nav readable."
+    },
+    "goldens/health-chat-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "2d2c29bafcda0ba119d62f8b922996e5cb2d5f483a28f33c3abf2e9afff76a9a",
+      "review_note": "Urgent/medical labels retain text plus color, no synthesized diagnosis or real identity."
+    },
+    "goldens/health-data-detail-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "0dc7a8daf76c5e051f880b6fafb5c9edfbb9e30083fc357d55669c7769882ebb",
+      "review_note": "Modal sheet focus, 5.8%, exact report range and synthetic date chart verified."
+    },
+    "goldens/health-data-detail-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "0c476e36c87365db346256fc00aa1d2d71da6e536f5b00ff35e445710e125e97",
+      "review_note": "Sheet/underlay separation, ranges and non-causation caption are clear."
+    },
+    "goldens/health-keyboard-small-dark.png": {
+      "width": 320,
+      "height": 268,
+      "rgba_sha256": "486b0655c4c272471eabe723a2a29cc8f3ee0d05867f266584f06dd69ef5055f",
+      "review_note": "Matches reviewed 320×268 pressure fixture; scrolled tab/input ends visible, full draft asserted separately; native focus pending."
+    },
+    "goldens/health-keyboard-small-light.png": {
+      "width": 320,
+      "height": 268,
+      "rgba_sha256": "6345ffcf79e7a229266adc3590c0c112bba067d857646801fe7052781b92c53c",
+      "review_note": "Same short keyboard viewport and horizontal field scroll; no source change or lost stored text; native focus pending."
+    },
+    "goldens/health-knowledge-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "13ac6347c7cc35a932a2502ae9689e83a5bce1abf13e70f0b75b0c62ccbdc713",
+      "review_note": "Expanded synthetic citation explicitly labeled; safe .invalid URL and folded evidence structure verified."
+    },
+    "goldens/health-knowledge-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "68eed82743a896d1ec7c0c6d43fef9e1e0ee2e5d912c44830edbe5120c927ecf",
+      "review_note": "Clear source title/excerpt/publisher hierarchy; no actual report or account fields."
+    },
+    "goldens/health-overview-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "ad92d592ef5648d6e71c3afc1722fc5298bada767a54c6a17a8a37d5823f394b",
+      "review_note": "Report-based flag/range, percent unit and two synthetic dates are unchanged; C focus hierarchy."
+    },
+    "goldens/health-overview-large-text-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "fcca9d5463facd523a4ef0fc52312d6cbb0fb8a42cf37d74f4d54b858b3d5fc3",
+      "review_note": "200% metric/range stays readable; horizontal tab scrolling and below-fold trend are intentional."
+    },
+    "goldens/health-overview-large-text-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "a9f4674485702ec65a06beb7002cf82006f7943628418deb85b960670932c36e",
+      "review_note": "Large text not reduced; title/date and attention flag clear, bottom nav fixed."
+    },
+    "goldens/health-overview-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "e5ac1b74774378a819aaa4ee2925d57394a3b302a1df743a42473ec7ef1bc75a",
+      "review_note": "Clinical range and trend caption preserve non-diagnosis semantics, light hierarchy verified."
+    },
+    "goldens/health-overview-small-dark.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "1e3a2417b5f9d3eb957a61cf680705d4bff79c599cdea9442d7418ae77b0ec76",
+      "review_note": "Compact metric fits 320px; horizontally scrollable tabs and below-fold trend preserved."
+    },
+    "goldens/health-overview-small-light.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "8fcd656801c5c5d97e33d0a4793a7b6082d538a821c3191a610cfacf024034b4",
+      "review_note": "Flag/range/unit and selected nav remain legible at small width."
+    },
+    "goldens/health-sync-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "b4e1d96009f28516121d9cf9aee24c468749d4995af9295371f3ef6ef0decf74",
+      "review_note": "Simulator fixture explicitly labeled; App sync toggles are not misrepresented as OS authorization."
+    },
+    "goldens/health-sync-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "0412cb5641ac4318fb9e5418b1e6972ffefe22bbb00463644cc8e74933e84fb1",
+      "review_note": "Permission explanation and switches clear; synthetic fixture has no raw HealthKit data."
+    },
+    "goldens/health-variant-clinical.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "070c8f797d40b28fc9855079329f0915ff0a8443485db3769aff3712c648476e",
+      "review_note": "Retained reference-only composition; dates/axis/range read correctly, not a new production direction."
+    },
+    "goldens/health-variant-warm.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "42f755f2a9b91e51e804a59903d8e3be362bc3d706a8b772a8d021ea8ae245b0",
+      "review_note": "Retained warm reference fixture; two labeled source dates and medical boundary visible."
+    },
+    "goldens/lab-draft-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "384fcb95a8e7642ef53a75622488a85839f96ac3a8791e6b6c4dd903d47d18ea",
+      "review_note": "Explicit synthetic indicator, displayed rounded value and full reference range; pending status and confirm clear."
+    },
+    "goldens/lab-draft-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "2cb2f450765de8377d9b0a18d3fe24754c253fcd31f46e6efe0f987be7ceb7a6",
+      "review_note": "Synthetic draft remains unconfirmed; edit/confirm roles unchanged, no real report filename."
+    },
+    "goldens/login-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "4d378d7ccf13b6e8364b649f557aea13dc3b39caa75fe4d5b43e7810e8dbbe02",
+      "review_note": "Empty email/password fields, no account values; quiet existing leaf and CTA contrast verified."
+    },
+    "goldens/login-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "7446fa27aaecc5dfbe200a6b16228a5610ec3e4a9027f911128f01fe78d63d5d",
+      "review_note": "Clean login hierarchy and empty fields; no private identifiers/secrets."
+    },
+    "goldens/meal-draft-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "7261482a48acfe74f90edc68e2b0ca1d68833549d887f3eb545c1a736d10f4a3",
+      "review_note": "Synthetic estimate/range, hidden-oil caution, editable grams and confirm action remain visible."
+    },
+    "goldens/meal-draft-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "a0100ba222435c14e1986c0204d99aebced76bb4a15a584483cef9c78210e2b3",
+      "review_note": "Precise portion controls and estimate disclaimer match source; no real meal photo."
+    },
+    "goldens/notifications-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "e4f90d61a1491a1f026ef30d93609a20f4a3fa15fb8e79f33d003da8a4fe0009",
+      "review_note": "Pre-permission explanation, selected supervision level and local schedule legible; App flags not OS grants."
+    },
+    "goldens/notifications-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "7922258fb5e07e0f67aea22ddc0da04a479f3ec4297253a33b043408398b4659",
+      "review_note": "Switch hierarchy, consent CTA and 08:00 synthetic time clear; no push device identifiers."
+    },
+    "goldens/nutrition-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "abfd0c6fb538c2498496d309d6289250165ef0bd8e8f91e8bff3cfabde5ae54c",
+      "review_note": "Offline state and unavailable meal details are explicit; camera disabled, fixed nav preserved."
+    },
+    "goldens/nutrition-flow-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "1f4c4e65b00838cea6cbbd0fc63711956b8f3c7744b88f096bf8f5c754b108e8",
+      "review_note": "Synthetic next-meal range and editable-draft camera intent clear; no actual image/data."
+    },
+    "goldens/nutrition-flow-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "30115127e4e8384791eb256ce6aad6ffd8061ce2599e0decc4bdedb048c00003",
+      "review_note": "Light nutrient/range hierarchy and camera CTA contrast reviewed; no extra cards."
+    },
+    "goldens/nutrition-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "802509b5e206803b89c168cd9e61754c784517717445a664ceba267cc70d711c",
+      "review_note": "Unavailable-detail recovery text retained; metrics and zero-private camera icon verified."
+    },
+    "goldens/nutrition-small-dark.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "4fe5d1c7ccb26774928ed505d8389ef445a3638a113485fafaf5ea8cedf76948",
+      "review_note": "320px nutrient goals and offline caption fit; remaining camera content scrolls above fixed nav."
+    },
+    "goldens/nutrition-small-light.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "fb96de4439dfe6e5f83dfc3ae9e3c7485b3860463d9b46681215efcc34d6f323",
+      "review_note": "Same compact hierarchy and visible targets; no artificial type shrinking."
+    },
+    "goldens/personal-free/health-data-detail-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "8c28307bc00c03b64842ea6160a795aa30c53ee69800852777c4589c7396390a",
+      "review_note": "Free capability notice visible behind modal; sheet's synthetic value/range/chart remains legible."
+    },
+    "goldens/personal-free/health-data-detail-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "6f97d9c50f18dc98e6555d3f62a8316fc8b93b524993a45b9ab3c8538a106155",
+      "review_note": "Manual-only notice and unchanged source sheet semantics, no HealthKit grant claim."
+    },
+    "goldens/personal-free/health-overview-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "4e090b8796d0a7fc47668fbc59fa8c85cb813b2b10b45ab64e7e653bb4c7b3a2",
+      "review_note": "Full manual-recording notice scrolls with overview; fixed nav, ranges and synthetic trend preserved."
+    },
+    "goldens/personal-free/health-overview-large-text-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "9a76096bf1534ca5168858bff79f9a7ae7f130f12d8b337255c82c697d6d4ea8",
+      "review_note": "200% free notice is complete and scrollable; source metric continues below fold without shrinking."
+    },
+    "goldens/personal-free/health-overview-large-text-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "69e5532f7c661392a63b50ad252a1f29a4deedec5fb21933f7aff19a7d0eb707",
+      "review_note": "Same full notice/date header and natural scroll; no fabricated Apple Health automatic sync."
+    },
+    "goldens/personal-free/health-overview-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "e6f1e522b07b9c366d44d49d738629ab84b1ae86a90d4051c6b20051c8628047",
+      "review_note": "Free mode retains C hierarchy and truthful capability text; no actual health/account data."
+    },
+    "goldens/personal-free/health-overview-small-dark.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "e4b608f5160973effc42d64b3efcb14c79d58c2ddc861cf4f2e8d5e5a9cef828",
+      "review_note": "320px complete manual capability notice and report metric visible; remaining content scrolls normally."
+    },
+    "goldens/personal-free/health-overview-small-light.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "8413a08c2fa9abd2be2f8113fe17c9bafc039c17d9fcac80ad05070d1ad12dc5",
+      "review_note": "Small free-mode notice wraps without fixed-header overflow; nav remains anchored."
+    },
+    "goldens/personal-free/health-sync-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "340ffd2da1db6c981ff9c2ec699748d1c885d66690806cd1648568769ed57f52",
+      "review_note": "Manual fallback only, no HealthKit toggles or false grants/zero readings; full explanation visible."
+    },
+    "goldens/personal-free/health-sync-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "f35cdcc5b06ac95254c33cc9093881d96908888d81ed7edca35a4db678563962",
+      "review_note": "Free capability boundary explicit with readable manual/local-notification explanation."
+    },
+    "goldens/personal-free/health-variant-clinical.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "f9bf6448e305b0ba3ed2ace2d20263c8aa5879bc4b3861a325031b3fccfc7051",
+      "review_note": "Archived clinical reference plus truthful free notice; source chart dates/ranges are synthetic."
+    },
+    "goldens/personal-free/health-variant-warm.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "c43e3b36c769435a1124d5be769688b40b4b38983fc86e722a2c4257b81353f1",
+      "review_note": "Archived warm reference respects free capability boundary and same synthetic report facts."
+    },
+    "goldens/privacy-data-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "481239d0ba58f18d5e794e487359e488bd2003c8f568a135c40e823ab070a8fa",
+      "review_note": "Default-off lock, subordinate exports and clearly destructive outlined action; no actual exported data."
+    },
+    "goldens/privacy-data-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "fade29c65cd1b55f726f87a4246dd0d99faf165c3973fd148485d867b83d8979",
+      "review_note": "Deletion/retention explanation readable; safe default and secondary affordances match source."
+    },
+    "goldens/profile-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "e6f3b8ab6cc0f70b723af26d31534fe47167e0b55473b6aded226097ce444556",
+      "review_note": "Grouped settings and semantic labels visible without user name/email/account."
+    },
+    "goldens/profile-large-text-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "df10946e31002a792ab800c4f2452f6cf66fed463e3a8ba68f85bb8c9a09576f",
+      "review_note": "200% rows expand naturally and scroll; fixed nav and disclosure affordances remain clear."
+    },
+    "goldens/profile-large-text-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "bb92c957ae7d6e431f24af5ce53223b0901b70ce027270e41e062f2021354a17",
+      "review_note": "Large-type setting rows wrap without compression; navigation remains anchored and labeled."
+    },
+    "goldens/profile-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "b6da72c241706c1749d35142443b65ec7084c32be38f8bb6f87dd0b8cbec56f2",
+      "review_note": "Six-page style consistency with simple grouped disclosures; no commercial/account identity UI."
+    },
+    "goldens/reports-empty-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "a3a2604538f090725b43f3a171a8214c87d8deae5cea252dd4a2340e371c1caf",
+      "review_note": "Daily/weekly/monthly selection and generate-empty-report recovery readable; no invented score."
+    },
+    "goldens/reports-empty-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "4003cc482b77785c2ceffff852d747a00609cdff521ea7fe1147c2f3b6bda6d1",
+      "review_note": "Explicit no-report state and restrained CTA match the reviewed reference."
+    },
+    "goldens/timeline-empty-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "4df75be8d8752e2b02277084bbcf479b69236a01465bbc81899a327e898dbbbf",
+      "review_note": "Named filters/selected state and safe retry copy preserved; no fabricated health events."
+    },
+    "goldens/timeline-empty-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "407fdd676b33dba08011fec987e40c3f3dff4811efa032bfa770d1f52b51fa6d",
+      "review_note": "Empty timeline/action clear and high-contrast; no real dates or event identifiers."
+    },
+    "goldens/training-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "639cd2e61e7b65733ceccb81ba80ebf686addb743c464acee48c45774e1085f9",
+      "review_note": "Synthetic plan with explicit start-before-recording disabled state; fields and RIR explanation clear."
+    },
+    "goldens/training-keyboard-small-dark.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "0a25433cf72880a2c576940e99d968ac717848900ccead32d5a02312a7a90bc8",
+      "review_note": "Sheet handle/back, focused synthetic draft and contrasting send action match pressure fixture; native keyboard deferred."
+    },
+    "goldens/training-keyboard-small-light.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "317e29b1811e1bedfa58288ad09eadd402175479af772f71d8b7e2048e92fdca",
+      "review_note": "Same focused single-line scroll without stored-text loss; sheet hierarchy preserved."
+    },
+    "goldens/training-library-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "a899187aab0ce7764102b0140f983673e0a4f23b2a44b5dd1481f0f56d81f267",
+      "review_note": "SearchBar and collapsed sample exercise use shared semantic styling; no network photos."
+    },
+    "goldens/training-library-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "ce4082b134c25d56b5be8d01951af1a54627e1cdaed570b8d52d39ecce7e88b2",
+      "review_note": "Search/collapsed action row and selected tab align with frozen design roles."
+    },
+    "goldens/training-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "50e8a4ef37634f1dd5f5aed65b792b1821b58be7e9a0ff0fcc429dc4fbdb446e",
+      "review_note": "Plan, start CTA, disabled pre-session controls and fixed Training navigation verified."
+    },
+    "goldens/training-progress-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "9e49841b0bf3d0738f5c1f99af02ef115dc84f66fa904292d53737f490cbdaf3",
+      "review_note": "Synthetic max-load history, dates and frequency readable; incomplete-history disclaimer retained."
+    },
+    "goldens/training-progress-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "ab9b8882999f035100333a1281f51b6f40b6d4ca3d576e971493df839adfc325",
+      "review_note": "Source values/range and date labels match; no false complete-training claim."
+    },
+    "goldens/training-small-dark.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "a2a063ca0a1a8551b8f037e9b49c8669759c9b5414111c75f705780801e415db",
+      "review_note": "Small plan view scrolls before clipped lower inputs; fixed nav and start action visible."
+    },
+    "goldens/training-small-light.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "59526a067647b83278ba53db4dcb5817de8f9ab0abdc2d52ef2bbaa2501a1601",
+      "review_note": "320px wrapping and scroll boundary preserved; no horizontal overflow introduced."
+    },
+    "goldens/weight-editor-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "a38e57f35a8a9d0a605e3b5ba76446126d85404b68e4471d5d976dffb57a60c6",
+      "review_note": "Focused synthetic 98.6 kg, cancel/save distinction and modal contrast clear."
+    },
+    "goldens/weight-editor-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "d3758378a6157102ccc21306dcf2cd54fe05dbaafd046ef202b76ef5aa3fe549",
+      "review_note": "Unit suffix and precise decimal remain intact; modal hierarchy unchanged."
+    },
+    "goldens/workout-set-large-text-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "84e83422c1e0c598e922dfc96953b33dc8fb7a4724ae068960a0f783f4195d36",
+      "review_note": "200% stacked load/reps/RIR fields retain values and explanation; complete-set action scrollable."
+    },
+    "goldens/workout-set-large-text-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "826e7637cab1b7fcd2674309e041f73a24113a7e12cfaef47243a83ea6e1b947",
+      "review_note": "Same large-type stacked editor and intentional below-fold action, no value rounding or shrinking."
+    }
+  }
+}

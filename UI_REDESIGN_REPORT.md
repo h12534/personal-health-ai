@@ -248,6 +248,8 @@ Phase 2 当时未推送。当前 UI RC 用户已明确授权仅推 feature 分�
 
 ### UI RC cloud gate status (actual results)
 
+最新进度：74标准版＋12免费版云端合成实际截图已通过自动来源／PNG／隐私检查，分别上传到 [37288364174](https://github.com/h12534/personal-health-ai/actions/runs/37288364174) 和 [37289471831](https://github.com/h12534/personal-health-ai/actions/runs/37289471831) 的1天PNG-only artifacts。主代理已逐张查看全部86张，并独立核对下载图片的RGBA摘要／尺寸；[逐图审查记录](docs/ui-redesign/MACOS_GOLDEN_REVIEW.md)。只提交文本摘要及审查记录，不提交任何新截图。严格macOS基线的全量真实CI仍待运行，不降低阈值、不跳过测试、不执行merge、不宣称iPhone通过。下文保留之前失败及本地快照的历史，不代表最新截图上传状态。
+
 后续用户明确授权74标准版＋12免费版合成PNG作为短期Actions artifact，且禁止新增截图进入源码／Git history。当前修复链仅保存逐像素RGBA SHA-256、尺寸及审查来源；此前含新增PNG的未推送本地提交保留为本地快照，不会随feature推送。公开截图包仍是既有32张，新云端图片将经自动安全检查后仅保留1天；原40张本地成果属于授权前历史，不能冒称当前已发布文件。具体真实结果以最新RC报告为准。
 
 当前 [run37272234650](https://github.com/h12534/personal-health-ai/actions/runs/37272234650) 的 release-audit、backend、PostgreSQL、Android 真实成功；macOS 的格式／analyze及188项非Golden测试成功，但74项跨 Windows/macOS 截图比对失败，随后 iOS build 未运行。因此本次 UI RC **不是 CI 全绿，不建议 merge**。
