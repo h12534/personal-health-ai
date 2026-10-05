@@ -86,6 +86,10 @@ class UiGoldenSafetyTests(unittest.TestCase):
             with self.subTest(text=text), self.assertRaises(SafetyFailure):
                 check_ocr_text([text])
 
+    def test_diagnostic_reason_never_echoes_recognized_content(self):
+        with self.assertRaisesRegex(SafetyFailure, "^PRIVATE_CONTENT_EMAIL$"):
+            check_ocr_text(["person@example.invalid"])
+
     def test_legitimate_labels_and_synthetic_values_do_not_claim_identity(self):
         check_ocr_text(
             [

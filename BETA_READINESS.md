@@ -1,5 +1,7 @@
 # Private Personal Sideload Readiness
 
+> 2026-10-05 UI RC follow-up: the historical CI PASS below is not acceptance of the newer UI redesign. The feature-branch UI gate is currently **OPEN**, pending fail-closed macOS screenshot export, individual review and strict reviewed-pixel baselines; current retry [37282718158](https://github.com/h12534/personal-health-ai/actions/runs/37282718158). Latest local full suites: standard / HealthKit-attempt / free each 268 tests pass; safety script suite 36 pass. No new screenshots are committed. Cloud code compilation, unsigned IPA generation and physical iPhone installation remain separate gates; no local Mac is required. Current evidence: `UI_RC_ACCEPTANCE_REPORT.md` and `CI_AUDIT.md`.
+
 > 2026-10-04 发布目标调整：**Private Personal Sideload**。不要求付费 Apple Developer、本地 Mac、App Store Connect 或 TestFlight；下一门禁是 **Windows 免费重签名 → 本人 iPhone 安装/启动**。云端双 unsigned IPA 已真实生成、下载并核验；安装与首次启动仍 NOT RUN。
 
 本轮代码实际 CI 全绿：[workflow 37183670494](https://github.com/h12534/personal-health-ai/actions/runs/37183670494)，commit `d029f4956cf854015d52b751a92abf2a268b146e`。五个原有 Job 与 personal sideload Job SUCCESS，付费签名 Job SKIPPED / SUSPENDED。Ruff、strict mypy 165 files、89 backend tests、7 PostgreSQL integration tests、Redis、迁移/恢复、Flutter analyze、三种模式各 47 tests、24 guardrail tests、iOS no-codesign / Android 均有真实证据。运行产出 `0.1.0` / build `8.1` 双 IPA，已下载核对完整 SHA256/版本/commit/arm64 unsigned/Payload；详细 Job/hash 在 `CI_AUDIT.md`，未降低门禁。

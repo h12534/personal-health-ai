@@ -24,14 +24,14 @@ PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 PRIVATE_CHUNKS = {b"eXIf", b"tEXt", b"zTXt", b"iTXt"}
 SAFE_ANCILLARY = {b"sRGB", b"gAMA", b"cHRM", b"pHYs"}
 PRIVATE_PATTERNS = (
-    r"@",
-    r"(?i)(?:sk[-_]|ghp_|github_pat_|AKIA)[a-z0-9_\-]{8,}",
-    r"(?i)bearer\s+\S+|-----BEGIN|eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+",
-    r"(?i)(?:token|api\s*key|password|密码|令牌)\s*[:=]\s*\S+",
-    r"(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-    r"(?i)/Users/|/home/|[a-z]:[\\/]|file://|127\.0\.0\.1",
-    r"(?<!\d)(?:\+?\d[ -]?){11,}(?!\d)",
-    r"[A-Za-z0-9_+/=-]{40,}",
+    ("EMAIL", r"@"),
+    ("KEY", r"(?i)(?:sk[-_]|ghp_|github_pat_|AKIA)[a-z0-9_\-]{8,}"),
+    ("AUTH", r"(?i)bearer\s+\S+|-----BEGIN|eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+"),
+    ("SECRET", r"(?i)(?:token|api\s*key|password|密码|令牌)\s*[:=]\s*\S+"),
+    ("DEVICE", r"(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"),
+    ("PATH", r"(?i)/Users/|/home/|[a-z]:[\\/]|file://|127\.0\.0\.1"),
+    ("PHONE", r"(?<!\d)(?:\+?\d[ -]?){11,}(?!\d)"),
+    ("OPAQUE", r"[A-Za-z0-9_+/=-]{40,}"),
 )
 
 
@@ -141,8 +141,9 @@ def check_ocr_text(texts: list[str]) -> None:
     if not texts or not all(isinstance(text, str) and text.strip() for text in texts):
         raise SafetyFailure("OCR_INCOMPLETE")
     normalized = unicodedata.normalize("NFKC", "\n".join(texts))
-    if any(re.search(pattern, normalized) for pattern in PRIVATE_PATTERNS):
-        raise SafetyFailure("PRIVATE_CONTENT_DETECTED")
+    for category, pattern in PRIVATE_PATTERNS:
+        if re.search(pattern, normalized):
+            raise SafetyFailure(f"PRIVATE_CONTENT_{category}")
     for url in re.findall(r"https?://[^\s]+", normalized):
         if not url.startswith("https://docs.example.invalid/"):
             raise SafetyFailure("NON_SYNTHETIC_URL")
@@ -181,7 +182,12 @@ def prepare_export(
             destination.write_bytes(
                 sanitize_png(file.read_bytes(), tuple(captures[file.name]))
             )
-            check_ocr_text(local_ocr(ocr_executable, destination))
+            try:
+                check_ocr_text(local_ocr(ocr_executable, destination))
+            except SafetyFailure as error:
+                # The name is already in the sealed exact allowlist. Never log
+                # recognized text, a path, payload or external error details.
+                raise SafetyFailure(f"{error} capture={file.name}") from error
         staging.rename(output)
     return len(files)
 

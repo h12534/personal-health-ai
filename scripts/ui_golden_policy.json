@@ -70,7 +70,7 @@
     "mobile/test/ui_rollout_profile_test.dart": "09e118c4119daf032059608b64c42e1ef58a58db375ca33856745dadefdbe890",
     "mobile/test/support/reviewed_pixel_comparator.dart": "4f442c6e53683563d9a4fff875eb42cf88723d0d470c3ed7598d860a0dd31d0c",
     "mobile/test/assets/NotoSansSC.ttf": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
-    "scripts/ui_golden_safety.py": "38c7b3053545599eff15a6372ff1e5e6d74b31b6fba5aa15935db358b352c245",
+    "scripts/ui_golden_safety.py": "da93b96e16d9aedc55abe8cd1176b7b0eb452c8d2b3b0936172de7098a6e6f20",
     "scripts/ui_golden_ocr.swift": "234e5d61f432ba253bbce7d7c8a4c1003c814c590ea53e6f91110bba4e953db9"
   },
   "captures": {
