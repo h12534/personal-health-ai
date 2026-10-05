@@ -1,0 +1,426 @@
+{
+  "schema": 1,
+  "repository": "h12534/personal-health-ai",
+  "ref": "refs/heads/feature/ui-redesign-impeccable",
+  "retention_days": 1,
+  "provenance": "Frozen, manually inspected synthetic fixture sources. Rendering denies network. No real accounts, HealthKit reads, camera photos or keychain values are used.",
+  "sources": {
+    "mobile/lib/app.dart": "90d2d5b7f615bf74f5e6e9f9062ef763ba3fa4c8f008a6bd3ade44916a8efc50",
+    "mobile/lib/core/config/app_config.dart": "681cfc815bd4756777a7291b542541d2a0809c8a70ed2067fea60f0a6a0138d4",
+    "mobile/lib/core/database/local_database.dart": "79e327ed011ec8a5f8872a770f9fa3dcea5291b768b96b2b2908df9675db7fc8",
+    "mobile/lib/core/diagnostics/local_diagnostics.dart": "e12033f079bc2cc4320d9590abde55f8f364d0b2d72ba84d2683127459f5d92c",
+    "mobile/lib/core/files/ios_document_picker.dart": "175dba9fcfee0b377fc25aa2643375f4ef43c70c061193e86b13303b385679c4",
+    "mobile/lib/core/health/health_data_provider.dart": "8f0b24dcfc8f43195d2b56071b747282e9870a056109753a6ea158a52ab5f7ec",
+    "mobile/lib/core/network/api_client.dart": "98aeb93ceeb768ee15e87bd81d7131d5fe6c8462f88abe4f2ddbffe1eeea086f",
+    "mobile/lib/core/network/api_exception.dart": "1392de611cd401a1b5ad6fd80e561ad86acbe6c788501c66f382cd5cc8c9c626",
+    "mobile/lib/core/notifications/local_notification_service.dart": "f278ff1f8550c98e22bdc001abcaf9c2237385614cc196b7e3549a3e79ad1aa7",
+    "mobile/lib/core/privacy/privacy_lock.dart": "38f5b122d18c110dd9674ef416c3cfdd401595617bc920ec685c67549584a7aa",
+    "mobile/lib/core/theme/app_navigation_bar.dart": "b4ea64de38232b2005d1665b5b921c12db79eebe44b84ceb128620cbc1029de0",
+    "mobile/lib/core/theme/app_theme.dart": "b0f97865bdae0a553bc4d14dad7b902c9e3fbd9a753d8fff91a50e883c849f20",
+    "mobile/lib/core/theme/app_tokens.dart": "ed313b723b87424d5e019f283215716661e3bc427e48452144c75552f05aca9e",
+    "mobile/lib/core/widgets/app_components.dart": "377f016816013194383acb70ed9cc21a7ceaf338718b7b724cac045d08ebfa37",
+    "mobile/lib/core/widgets/app_trend_chart.dart": "41dc00e9f6701b8990e4ee82f57204c969960186967b05d626b905b93d3dfb3d",
+    "mobile/lib/core/widgets/chat_arrival.dart": "0b3d13f0a5dbe21d83c12ff51ad036db2117988c5d9e0a5359c35efef147969b",
+    "mobile/lib/features/auth/presentation/auth_controller.dart": "e0f241dac7951f745e648a012450f14965708972a7088cb0df41d28255efb3e9",
+    "mobile/lib/features/auth/presentation/login_screen.dart": "08318a1e50692c77a7542a7b4d37adcc91b97f4eb237802c00eb3d1ff4c8dc74",
+    "mobile/lib/features/coach/data/coach_models.dart": "369a3ea0f6542afdff63b8078c9c20872cb65920c5c2950445935342655ea2bb",
+    "mobile/lib/features/coach/presentation/canteen_screen.dart": "93727366e5fec85c5f2d9340a83e79b8b81ed2b67d6da15b7aaa272e8f6f676d",
+    "mobile/lib/features/coach/presentation/coach_controller.dart": "c645e313c3b55eeff736231e8a46e040999e64f14196f27e0d6418be70e25a00",
+    "mobile/lib/features/coach/presentation/coach_screen.dart": "483dce60276abf1b8b13bb773b91756741895c7c0da97a07e84b32256029bb8c",
+    "mobile/lib/features/coach/presentation/hunger_entry_dialog.dart": "5c890d3366a4e59345eedeeee9e36d45cf7c772b3fdee5e556fd67cee1320ba9",
+    "mobile/lib/features/dashboard/data/dashboard_model.dart": "57b660dffa941f50f3681b4c8db4e8bb29448f311320fd0ca680762287703860",
+    "mobile/lib/features/dashboard/presentation/dashboard_controller.dart": "4cf79e9b5137ffb853568ac535eaf9adb34928c2f686cb27d7ad8441044e31ac",
+    "mobile/lib/features/dashboard/presentation/dashboard_screen.dart": "032c0d36dea6d0291411be89fd7a0c91b3474c4326acde8538a9eaaadf672e42",
+    "mobile/lib/features/health/data/health_models.dart": "c69aa484bbe6e9021891c7a7a7544f6760a5ffd77b123d518ce398d966aa43ac",
+    "mobile/lib/features/health/data/lab_offline_cache.dart": "d60f066d0c785f853eec62b74f0f18f4c076cf4fa5ae37d0a59eeb223a6552f7",
+    "mobile/lib/features/health/presentation/health_controller.dart": "1a51c44163f7f12ba61deee0ba10113eb57a9d3a0a3dd8b8559135ca3407cee2",
+    "mobile/lib/features/health/presentation/health_overview_content.dart": "7d7719fa259d9d06690b72c8793e177f62b224bec44bd8ba5b74cbba448cc243",
+    "mobile/lib/features/health/presentation/health_screen.dart": "c7e8fcf4055b666d4e95849f4406007648fb359af9172723ba40487e9f29f793",
+    "mobile/lib/features/health/presentation/health_trend_chart.dart": "944e3f4d83fba77f5b72ee8c33b1a7fc233d9624de164794de81c914545a42fd",
+    "mobile/lib/features/nutrition/data/meal_analysis_models.dart": "de741a815264435baa6cb24aeec6a372c4cd28a9051557b2e0b491dfbb59b91e",
+    "mobile/lib/features/nutrition/data/meal_photo_service.dart": "0b4cdd9eae1247dcfb43936d6a73e7415baf0c41b89c86759793e11862625545",
+    "mobile/lib/features/nutrition/data/nutrition_models.dart": "4ecc23e51fc1b32cb09bf1b4827028b46e58020ef58e63e0833b1211f9899085",
+    "mobile/lib/features/nutrition/data/offline_meal_repository.dart": "9e724346ab314bb1f67e41ae65aaf46fa174074220a65151d8d6db0c7643f9bc",
+    "mobile/lib/features/nutrition/data/sync_service.dart": "94f4979778c2ce93e1f5f3b9f2c6131e85c18cac36ffd456ac9c5a901222989a",
+    "mobile/lib/features/nutrition/presentation/add_food_screen.dart": "f2a9df7d260ae9aa290b598cab54e221bca12cff5969474d4fb2bc8fae5f71e8",
+    "mobile/lib/features/nutrition/presentation/food_search_screen.dart": "87d36ffb6ad275e499be1615aa438ba00c5eb6ae0f3bc167f6a72fa4ed5c5bcb",
+    "mobile/lib/features/nutrition/presentation/meal_analysis_screen.dart": "537a0ac2f1a5cec813c0c930e10e5686a2446c06d2aa88246bf5a403980a3a9e",
+    "mobile/lib/features/nutrition/presentation/nutrition_controller.dart": "c368059323a7d2eeaa18c0e9d344edb28065c51f0c922aaa34de7731b49a1116",
+    "mobile/lib/features/nutrition/presentation/nutrition_screen.dart": "a6af0c23e0d1816f3ce1d5b1074a7f3fdf5ad6bf2eab82e81f55a291369d0c9c",
+    "mobile/lib/features/profile/presentation/beta_debug_screen.dart": "c3888a6deb5d6304b5856d1dd42f5bf05875fa0a8573c29bd5392c2cf216311f",
+    "mobile/lib/features/profile/presentation/health_sync_screen.dart": "5b3ef6d086cfa5857a2f3404b1f2d17415fba95060dedf7799520f53175b3e02",
+    "mobile/lib/features/profile/presentation/profile_screen.dart": "e3cc8201e5932b9a3ba500757a1bddca4b7808e33d3051a60a93bb1d19b173e4",
+    "mobile/lib/features/profile/presentation/report_issue_screen.dart": "d5745a2f3510a4d5382f3572985ba2bd2c0152e696fa5679f354116ebe3e4971",
+    "mobile/lib/features/supervision/data/supervision_models.dart": "df8416eabba0b0212335be7464d8714082b063b1196484ecd5866ff0cd609eb7",
+    "mobile/lib/features/supervision/presentation/supervision_controller.dart": "22be3fb7bc434f6516ef8d4b9dbc3a70e52e1252a490c04f115bcff8959496b2",
+    "mobile/lib/features/supervision/presentation/supervision_screens.dart": "2c1c12fd46057791298554af060d53e304d64726c40d4b2426c93a519d0649f9",
+    "mobile/lib/features/training/data/offline_workout_repository.dart": "663c811ad41646db75c63496b5cfe05ef58d92e527497cf3099ce3e44cc10fd1",
+    "mobile/lib/features/training/data/training_models.dart": "45c1abe61c6ad186804a49e1235d585a0ea84488e868324592a12e4ffc43305d",
+    "mobile/lib/features/training/presentation/training_controller.dart": "f1b9cd11521f888a275bd6be0ea9b90b237f8f16b9cf75872aecff3f57ab7c8d",
+    "mobile/lib/features/training/presentation/training_screen.dart": "fccd265c35b68cdf67254faa661018fa6332317d225b3069d47ef284e8e80616",
+    "mobile/lib/main.dart": "b8f743574a49e1542cbd906614afc394982e330451e7b642184bec681d48c333",
+    "mobile/pubspec.yaml": "ab6b1030b38d28052bd31fdb896ed138c4bb0188d12b0564e69f8fa53cb9a97e",
+    "mobile/pubspec.lock": "3f024684f92a07fbc2a20be4ee67d08d52ef73e9056cd8aa7187c6cf0ace2e7c",
+    "mobile/test/ui_redesign_golden_test.dart": "82705a88c1f9368e29b0ae7ec7be2baaac4bc124f7e5809f274c8ef3fed26388",
+    "mobile/test/ui_rollout_fixtures.dart": "ce6b616eb5c7938f3fe84b4b354484d0b48bb93a83fb402c2dfeddb6bfde8cbe",
+    "mobile/test/ui_shared_fixtures.dart": "c3bce517015a728b559a0e59dcbeecd9dae8d3cb794ab4b27799973858526c08",
+    "mobile/test/ui_polish_fixtures.dart": "ee62db228d33a38086c168c22ffb803dc1387b3dba339edf3a9c13dc8da12a06",
+    "mobile/test/ui_rollout_training_test.dart": "91f795e5a239292ee1880fb7963fca268e50d4e8c659fa7976bd4447f5b63424",
+    "mobile/test/ui_rollout_coach_test.dart": "ec53d166bb0ee2fef6163bba914b1afbc0aff0cdaf7b2fdb80b48f4bbf9d2945",
+    "mobile/test/ui_rollout_profile_test.dart": "09e118c4119daf032059608b64c42e1ef58a58db375ca33856745dadefdbe890",
+    "mobile/test/support/reviewed_pixel_comparator.dart": "4f442c6e53683563d9a4fff875eb42cf88723d0d470c3ed7598d860a0dd31d0c",
+    "mobile/test/assets/NotoSansSC.ttf": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+    "scripts/ui_golden_safety.py": "f338f226cd5557c65338fa853bb036c9cabab9edbc381575b8ad88ee2668ad5e",
+    "scripts/ui_golden_ocr.swift": "234e5d61f432ba253bbce7d7c8a4c1003c814c590ea53e6f91110bba4e953db9"
+  },
+  "captures": {
+    "standard": {
+      "add-food-dark.png": [
+        393,
+        852
+      ],
+      "add-food-light.png": [
+        393,
+        852
+      ],
+      "canteen-dark.png": [
+        393,
+        852
+      ],
+      "canteen-light.png": [
+        393,
+        852
+      ],
+      "coach-conversation-dark.png": [
+        393,
+        852
+      ],
+      "coach-conversation-light.png": [
+        393,
+        852
+      ],
+      "coach-dark.png": [
+        393,
+        852
+      ],
+      "coach-keyboard-small-dark.png": [
+        320,
+        268
+      ],
+      "coach-keyboard-small-light.png": [
+        320,
+        268
+      ],
+      "coach-large-text-dark.png": [
+        393,
+        852
+      ],
+      "coach-large-text-light.png": [
+        393,
+        852
+      ],
+      "coach-light.png": [
+        393,
+        852
+      ],
+      "dashboard-dark.png": [
+        393,
+        852
+      ],
+      "dashboard-light.png": [
+        393,
+        852
+      ],
+      "dashboard-small-dark.png": [
+        320,
+        568
+      ],
+      "dashboard-small-light.png": [
+        320,
+        568
+      ],
+      "food-search-dark.png": [
+        393,
+        852
+      ],
+      "food-search-light.png": [
+        393,
+        852
+      ],
+      "health-chat-dark.png": [
+        393,
+        852
+      ],
+      "health-chat-light.png": [
+        393,
+        852
+      ],
+      "health-data-detail-dark.png": [
+        393,
+        852
+      ],
+      "health-data-detail-light.png": [
+        393,
+        852
+      ],
+      "health-keyboard-small-dark.png": [
+        320,
+        268
+      ],
+      "health-keyboard-small-light.png": [
+        320,
+        268
+      ],
+      "health-knowledge-dark.png": [
+        393,
+        852
+      ],
+      "health-knowledge-light.png": [
+        393,
+        852
+      ],
+      "health-overview-dark.png": [
+        393,
+        852
+      ],
+      "health-overview-large-text-dark.png": [
+        393,
+        852
+      ],
+      "health-overview-large-text-light.png": [
+        393,
+        852
+      ],
+      "health-overview-light.png": [
+        393,
+        852
+      ],
+      "health-overview-small-dark.png": [
+        320,
+        568
+      ],
+      "health-overview-small-light.png": [
+        320,
+        568
+      ],
+      "health-sync-dark.png": [
+        393,
+        852
+      ],
+      "health-sync-light.png": [
+        393,
+        852
+      ],
+      "health-variant-clinical.png": [
+        393,
+        852
+      ],
+      "health-variant-warm.png": [
+        393,
+        852
+      ],
+      "lab-draft-dark.png": [
+        393,
+        852
+      ],
+      "lab-draft-light.png": [
+        393,
+        852
+      ],
+      "login-dark.png": [
+        393,
+        852
+      ],
+      "login-light.png": [
+        393,
+        852
+      ],
+      "meal-draft-dark.png": [
+        393,
+        852
+      ],
+      "meal-draft-light.png": [
+        393,
+        852
+      ],
+      "notifications-dark.png": [
+        393,
+        852
+      ],
+      "notifications-light.png": [
+        393,
+        852
+      ],
+      "nutrition-dark.png": [
+        393,
+        852
+      ],
+      "nutrition-flow-dark.png": [
+        393,
+        852
+      ],
+      "nutrition-flow-light.png": [
+        393,
+        852
+      ],
+      "nutrition-light.png": [
+        393,
+        852
+      ],
+      "nutrition-small-dark.png": [
+        320,
+        568
+      ],
+      "nutrition-small-light.png": [
+        320,
+        568
+      ],
+      "privacy-data-dark.png": [
+        393,
+        852
+      ],
+      "privacy-data-light.png": [
+        393,
+        852
+      ],
+      "profile-dark.png": [
+        393,
+        852
+      ],
+      "profile-large-text-dark.png": [
+        393,
+        852
+      ],
+      "profile-large-text-light.png": [
+        393,
+        852
+      ],
+      "profile-light.png": [
+        393,
+        852
+      ],
+      "reports-empty-dark.png": [
+        393,
+        852
+      ],
+      "reports-empty-light.png": [
+        393,
+        852
+      ],
+      "timeline-empty-dark.png": [
+        393,
+        852
+      ],
+      "timeline-empty-light.png": [
+        393,
+        852
+      ],
+      "training-dark.png": [
+        393,
+        852
+      ],
+      "training-keyboard-small-dark.png": [
+        320,
+        568
+      ],
+      "training-keyboard-small-light.png": [
+        320,
+        568
+      ],
+      "training-library-dark.png": [
+        393,
+        852
+      ],
+      "training-library-light.png": [
+        393,
+        852
+      ],
+      "training-light.png": [
+        393,
+        852
+      ],
+      "training-progress-dark.png": [
+        393,
+        852
+      ],
+      "training-progress-light.png": [
+        393,
+        852
+      ],
+      "training-small-dark.png": [
+        320,
+        568
+      ],
+      "training-small-light.png": [
+        320,
+        568
+      ],
+      "weight-editor-dark.png": [
+        393,
+        852
+      ],
+      "weight-editor-light.png": [
+        393,
+        852
+      ],
+      "workout-set-large-text-dark.png": [
+        393,
+        852
+      ],
+      "workout-set-large-text-light.png": [
+        393,
+        852
+      ]
+    },
+    "free": {
+      "health-data-detail-dark.png": [
+        393,
+        852
+      ],
+      "health-data-detail-light.png": [
+        393,
+        852
+      ],
+      "health-overview-dark.png": [
+        393,
+        852
+      ],
+      "health-overview-large-text-dark.png": [
+        393,
+        852
+      ],
+      "health-overview-large-text-light.png": [
+        393,
+        852
+      ],
+      "health-overview-light.png": [
+        393,
+        852
+      ],
+      "health-overview-small-dark.png": [
+        320,
+        568
+      ],
+      "health-overview-small-light.png": [
+        320,
+        568
+      ],
+      "health-sync-dark.png": [
+        393,
+        852
+      ],
+      "health-sync-light.png": [
+        393,
+        852
+      ],
+      "health-variant-clinical.png": [
+        393,
+        852
+      ],
+      "health-variant-warm.png": [
+        393,
+        852
+      ]
+    }
+  }
+}

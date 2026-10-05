@@ -10,6 +10,8 @@ Baseline RC findings: 2 P1 and 4 P2; testing and focused review confirmed three 
 
 Applied critique/distill/polish/harden/audit and targeted optimize; no decorative redesign. Detector exit 0 / `[]` has no proven Dart coverage and is not a clean bill. Final critique archive is local and fingerprinted to the gateway dashboard file, not a whole-app fingerprint.
 
+Post-push flavor verification found a tenth defect: the free-personal manual HealthKit notice occupied fixed header height and overflowed at accessibility text sizes. Main moved the unchanged notice into the scrollable overview, preserved the existing disabled-capability gate, manually reviewed all 12 free-flavor screenshots, and re-ran all three full configurations. The independent A/B scores above belong to their original full-app review; they are not newly invented scores for this follow-up.
+
 Codex native hook approval entry unavailable in current environment.
 
 ## 2. Root-page consistency
@@ -27,6 +29,8 @@ Retained semantic background/surface/elevated-surface hierarchy, readable second
 ## 5. Small-screen results
 
 Portrait root and support checks cover 320×568, 393×852 and 430×932. Training coach at 320×568 + 200% + 300pt inset originally overflowed by 42px; actual available-height input lines and compact decoration fixed it without clipping stored text or shrinking accessibility text. Six training keyboard scenarios pass. Sheets, dialogs, failed composers and food-search filters retain scroll/recovery paths.
+
+Free personal mode additionally reproduced 178px overflow at 320×568/200% and 20px with the ordinary-phone keyboard. Moving the full notice into the overview list fixes both; 43 focused layout/permission/accessibility checks pass. Its large-text first viewport remains naturally scrollable, not artificially clipped to reveal more metrics.
 
 ## 6. Dynamic Type
 
@@ -61,42 +65,77 @@ Debug timings are not release-frame or physical-memory evidence. No 60/120fps cl
 
 74 comparisons: original 54 retained plus 20 pressure/support captures. Six existing Coach images were manually inspected (only intended send-icon pixels), then explicitly refreshed. No blanket acceptance, comparator tolerance increase, deletion or skip. All 20 new images were individually viewed by main and both reviewers. The twelve frozen Phase 2 final images are separately preserved.
 
+Each of the three configurations still executes all 74 comparisons. Twelve free-mode images were individually inspected locally. Under the owner's subsequent artifact-only constraint, their decoded RGBA hashes and dimensions replace new committed PNGs; the other 62 captures share standard references. The earlier image-bearing local commits are preserved in an unpushed local snapshot, not ancestors of the new public repair chain. Existing 74 Windows PNGs predate this authorization and remain unchanged. Enabled-permission assertions remain for standard/HealthKit-attempt builds; free-mode assertions verify no toggles, no false authorization and zero permission reads/writes/uploads.
+
+macOS cross-host mismatch is unresolved. Both real runs failed all 74 Windows-generated comparisons. Two actual cloud captures and differences were viewed; they support the rendering diagnosis but are not review of the remaining 72. Flutter documents host differences: [LocalFileComparator](https://api.flutter.dev/flutter/flutter_test/LocalFileComparator-class.html). New macOS baselines will be individually reviewed decoded-RGBA SHA-256 + dimensions, with zero allowable pixel difference. Missing entries fail; automatic update throws. This preserves strictness while keeping newly captured PNGs out of Git and avoids dependence on expired artifacts for future comparisons.
+
 ## 11. Flutter analyze
 
 Flutter 3.47.5. Strict `dart format --output=none --set-exit-if-changed lib test tool` and `flutter analyze --no-pub` are required. Latest completed analyzer: no issues, exit 0. Two multiline callback brace lint findings were corrected, not downgraded.
 
 ## 12. Flutter tests
 
-Final full suite: **262 tests, exit 0**, including all 74 Goldens. `dart format` checked 94 files with no pending changes; analyzer returned no issues. Production draft flow passed: original 125.5g editing, removing mistaken item and one confirmation with original idempotency key; camera/AI responses are synthetic. Original tests and strict comparisons remain enabled.
+Latest artifact-only repair full suites: **268 tests each, exit 0** in standard, `APP_DISTRIBUTION=personal_sideload`, and personal mode with `PERSONAL_SIDELOAD_FREE=true`. Each includes all 74 Goldens. Six new comparator tests prove exact-pixel matching, single-channel one-pixel rejection, dimension/missing-entry rejection, disabled automatic update, preserved legacy comparison and forbidden fixture network. `dart format` checked 97 files with no pending changes; analyzer returned no issues. Python 3.12 script tests: **34 pass**, including ten fail-closed privacy/export checks; new Python Ruff check/format pass. Production draft flow passed: original 125.5g editing, removing mistaken item and one confirmation with original idempotency key; camera/AI responses are synthetic. Original tests and strict comparisons remain enabled.
 
 Real in-memory SQLite and unchanged OfflineWorkoutRepository exercise start → weight/reps/RIR → two sets → rest → completion, verify exact decimals, set numbers, pending outbox operations and final status. Actual meal delete UI tests cancel, one awaited deletion and safe failure retention. All three chat entries exercise follow versus reading-position preservation.
 
 ## 13. Remote CI
 
-Not yet run for this UI RC commit. Do not interpret old RC runs or configured workflows as current success. After local verification, push only `feature/ui-redesign-impeccable` to the explicitly authorized existing repository, then read each actual job. Main must not be merged.
+**Open / not green.** Actual feature-branch runs, all jobs and completed job logs were read. Do not interpret old release runs or configured workflows as this UI RC's success. Main has not been merged.
+
+| Run | Pushed commit | Result |
+|---|---|---|
+| [37271096988](https://github.com/h12534/personal-health-ai/actions/runs/37271096988) | `6b5a94bc61d4566631814b184802f88c0269f567` | Four jobs pass; primary macOS tests fail 74 Goldens; dependent personal build and paid signing skipped |
+| [37272234650](https://github.com/h12534/personal-health-ai/actions/runs/37272234650) | `b4615e684e9afc404ed2398ab72a9081198bb697` | Same strict failure; four explicitly synthetic rendering evidence files retained |
+
+Latest completed run 37272234650:
+
+| Actual job | Result / evidence |
+|---|---|
+| release-audit, 111641493440 | SUCCESS, errors=0, existing warnings=3 |
+| backend, 111641492646 | SUCCESS, Ruff check/format, mypy 165 files, 89 tests |
+| backend-postgres, 111641492731 | SUCCESS, PostgreSQL16 + pgvector / Redis; upgrade 0001→0007→0008, 7 integration tests, restore drill passes |
+| mobile-ios-primary, 111641493123 | FAILURE at full tests: 188 pass, 74 Golden mismatches; format/analyze pass; current UI iOS no-codesign step did not run |
+| mobile-android-compat, 111641492583 | SUCCESS, debug APK build |
+| mobile-ios-personal-sideload, 111642751180 | SKIPPED because its primary dependency failed; neither unsigned IPA flavor built in this run |
+| mobile-ios-signed, 111642751223 | SKIPPED by existing paid-route conditions, not a passed signing gate |
+
+Earlier safety review rejected an arbitrary failure directory, then the full set before explicit authorization. The approved four-file subset was uploaded (artifact 11329585473). The owner has now explicitly authorized exactly 74 standard + 12 free synthetic screenshots as Actions artifacts only, with automatic checks and 1–3 day retention. No screenshot may enter the new Git repair chain. That authorization is fulfilled through the opt-in manual `ui_golden_review` matrix, not unguarded failure uploads.
+
+Before publishing: verify 67 sealed source/font/fixture files and exact owner repository/branch/manual event; forbid fixture network; validate an exact 74/12 file set, PNG dimensions, CRC, bounded decompression and allowed chunk types; reject EXIF/text metadata and strip harmless ancillary chunks; run offline Chinese and English OCR and block email/token/key/device/path/phone/private URL markers. Empty/unavailable OCR blocks. Stage atomically only after every image passes. Artifacts contain only canonical PNGs, no OCR text, logs or manifests, and expire after **1 day**. The earlier unscreened four-file upload step is replaced, not retained as a bypass. Full test/build steps remain enabled.
+
+Safety checks are defense-in-depth over frozen synthetic provenance, not a claim that OCR alone can prove privacy. Any source drift requires another review and blocks the sealed capture until reviewed. Capture jobs do not turn a missing-baseline test failure green; each normal full suite is still required. Actual new run IDs and completed image review will be appended only after execution.
 
 Required: release audit; backend Ruff/mypy/tests; PostgreSQL16+real pgvector/Redis/migration/RAG; Flutter format/analyze/tests; macOS iOS no-codesign; Android secondary. Existing personal-sideload cloud job is also reviewed. Paid App Store signing is conditionally disabled for this branch by the existing project route, not by an RC test workaround.
 
 ## 14. Final Screenshot Pack
 
-[UI_RC_PREVIEW](docs/ui-redesign/UI_RC_PREVIEW/README.md): 32 PNGs, source/copy SHA256 equality, per-image viewport/scale/inset manifest. Twelve six-page L/D roots, eight small-phone, eight large-text, two action-library and two small-keyboard captures. Test font and synthetic fixture limitations are explicit.
+[UI_RC_PREVIEW](docs/ui-redesign/UI_RC_PREVIEW/README.md): the previously committed 32 PNGs and hash manifest remain unchanged. Twelve six-page L/D roots, eight small-phone, eight large-text, two action-library and two small-keyboard captures. The extra 8 free-mode preview images from the earlier 40-image local pack remain only in the unpushed pre-authorization local snapshot. Newly captured 74 standard / 12 free cloud images will be artifact-only, with 1-day retention and individual review. No new screenshot is added to the public source/history. Widget-test images are not physical iPhone evidence.
 
 Original Before / Phase 1 Reference remain [here](docs/ui-redesign/phase2-before/README.md); Phase 2 Final archived [here](docs/ui-redesign/phase2-final/README.md). Standalone Coach is a fixture host, not an added sixth navigation item. Static images cannot execute app actions or permissions.
 
 ## 15. Remaining UI debt
 
-No confirmed remaining P0/P1/required P2 in reviewed scope. Unverified boundaries: actual iPhone VoiceOver/fonts/keyboard/gestures/Safe Area/haptic, hardware performance, landscape/iPad/Split View, very large action library/chat history, and the existing API HTTP-status precision limitation. Do not remove declared device support or change business APIs to conceal these limitations. No further P3 polish planned.
+No confirmed remaining P0/P1/required P2 in the locally verified presentation scope. The macOS Golden host-baseline gate remains a release blocker, so overall RC acceptance is not complete. Unverified boundaries: actual iPhone VoiceOver/fonts/keyboard/gestures/Safe Area/haptic, hardware performance, landscape/iPad/Split View, very large action library/chat history, and the existing API HTTP-status precision limitation. Do not remove declared device support or change business APIs to conceal these limitations. No further P3 polish planned.
 
 ## 16. Git commit
 
-Implementation commit message: `design(rc): finalize app-wide visual acceptance` (SHA recorded after commit below). Branch stays `feature/ui-redesign-impeccable`. Backend, providers/controllers, models, repositories, authentication, DB, offline semantics, RAG/safety, iOS/Android and CI workflow were verified unchanged against 55fea20. Two existing indentation issues were only formatter corrections.
+Published implementation: `6b5a94bc61d4566631814b184802f88c0269f567`; diagnostic CI: `b4615e684e9afc404ed2398ab72a9081198bb697`. The earlier unpushed local `b415a41` / `ba0e557` commits contain new free-mode PNGs; they are preserved at local-only `codex/ui-rc-artifact-local-snapshot-20261005`. Current `feature/ui-redesign-impeccable` continues from the already-pushed b4615e6 with those text fixes reapplied, plus strict digest/security tooling, but no new PNGs. No force push or published-history rewrite is involved.
+
+Backend, providers/controllers, models, repositories, authentication, DB, offline semantics, RAG/safety and iOS/Android remain unchanged against 55fea20. Workflow adds gated artifact-only review with fail-closed safety; no existing full test/build/check is removed or weakened. Crypto 3.0.7 moves from an already locked transitive package to a pinned test-only dependency; no runtime upgrade. Two earlier indentation issues were formatter-only; archive whitespace fixed without rescoring.
 
 User-owned untracked `ui-preview/` and local golden failure evidence are preserved and excluded from staging. Do not claim the entire worktree is clean. No force push, history rewrite, unrelated branch push or merge.
 
 ## 17. 是否建议 merge
 
-Not yet: real CI for this commit remains open. Even after it is green, user explicitly requested no merge; report a recommendation separately from executing a merge.
+Not yet: macOS Goldens and the current UI no-codesign build remain open. Even after CI is green, user explicitly requested no merge; report a recommendation separately from executing a merge.
 
 ## 18. 是否适合进入 iPhone 真机验收
 
 Local UI evidence supports proceeding once cloud CI succeeds. It does not prove daily-use/native acceptance. Use the project's permitted cloud-build + personal iPhone installation route; no requirement to buy or own a Mac, no Apple ID password/2FA request. Verify native permissions, offline/lifecycle/HTTPS sync and system accessibility on the iPhone. Pause new business features and additional visual exploration.
+
+## Run Notes
+
+Impeccable context reused once for this logical session; applicable references and craft floor read directly by main. Critique snapshot saved and closed; trend returned snapshots with different surface scopes, so no score-improvement claim was made. Detector returned `[]` / exit 0 with unsupported Dart coverage; no ignore rule, value suppression or security-hook workaround was added. Two reviewers were read-only, with focused closure checks; free-flavor follow-up was main's actual screenshot/test verification, not an invented independent score. No RC browser server/overlay was started. Temporary critique body was removed after validating its exact workspace path. User-owned local gallery and failure images remain untouched.
+
+Owner authorization is now explicit; automatic pre-upload scan and individual cloud-image review remain executable gates. No public repository was created, no arbitrary failure directory uploaded, no automatic Golden approval, test skip, main merge, force push or newly committed PNG is allowed. OCR code cannot be executed on Windows; its real macOS result must be read before claiming upload safety.

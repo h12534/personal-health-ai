@@ -70,6 +70,11 @@ void main() {
       } finally {
         FlutterError.onError = originalHandler;
       }
+      await tester.scrollUntilVisible(find.text('高于本报告范围'), 180,
+          scrollable: find.descendant(
+              of: find.byKey(const Key('health-overview-list')),
+              matching: find.byType(Scrollable)));
+      await tester.pumpAndSettle();
       expect(find.text('高于本报告范围'), findsOneWidget);
       final exception = tester.takeException();
       expect(exception, isNull,

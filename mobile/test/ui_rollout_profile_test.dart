@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:personal_health_os/core/config/app_config.dart';
 import 'package:personal_health_os/core/network/api_client.dart';
 import 'package:personal_health_os/core/health/health_data_provider.dart';
 import 'package:personal_health_os/core/privacy/privacy_lock.dart';
@@ -73,6 +74,8 @@ class _SlowPreferencesApi implements ApiClient {
 class _PartialHealthApi implements ApiClient {
   bool enabled = false;
   int reads = 0;
+  int updates = 0;
+  int uploads = 0;
   @override
   Future<List<HealthPermissionModel>> fetchHealthPermissions() async {
     reads++;
@@ -89,6 +92,7 @@ class _PartialHealthApi implements ApiClient {
       {required String dataType,
       required bool enabled,
       required String authorizationStatus}) async {
+    updates++;
     this.enabled = enabled;
     return HealthPermissionModel(
         dataType: dataType,
@@ -97,8 +101,11 @@ class _PartialHealthApi implements ApiClient {
   }
 
   @override
-  Future<void> uploadHealthSummary(Map<String, dynamic> summary) async =>
-      throw StateError('secret sync error');
+  Future<void> uploadHealthSummary(Map<String, dynamic> summary) async {
+    uploads++;
+    throw StateError('secret sync error');
+  }
+
   @override
   Future<List<Map<String, dynamic>>> fetchHealthSyncStatus() async => [];
   @override
@@ -117,20 +124,32 @@ void main() {
           .overrideWithValue(const MockHealthDataProvider())
     ], child: const MaterialApp(home: HealthSyncScreen())));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('步数'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('继续'));
-    await tester.pumpAndSettle();
-    expect(api.enabled, isTrue);
-    expect(api.reads, 2);
-    expect(
-        tester
-            .widgetList<SwitchListTile>(find.byType(SwitchListTile))
-            .first
-            .value,
-        isTrue);
-    expect(find.textContaining('系统读取权限需另行确认'), findsOneWidget);
-    expect(find.textContaining('健康同步未全部完成'), findsOneWidget);
+    if (AppConfig.appleHealthDisabled) {
+      expect(find.text(AppConfig.manualHealthNotice), findsOneWidget);
+      expect(find.textContaining('晨重与训练仍可在原页面手动记录'), findsOneWidget);
+      expect(find.byType(SwitchListTile), findsNothing);
+      expect(api.enabled, isFalse);
+      expect(api.reads, 0);
+      expect(api.updates, 0);
+      expect(api.uploads, 0);
+    } else {
+      await tester.tap(find.text('步数'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('继续'));
+      await tester.pumpAndSettle();
+      expect(api.enabled, isTrue);
+      expect(api.reads, 2);
+      expect(api.updates, 1);
+      expect(api.uploads, 1);
+      expect(
+          tester
+              .widgetList<SwitchListTile>(find.byType(SwitchListTile))
+              .first
+              .value,
+          isTrue);
+      expect(find.textContaining('系统读取权限需另行确认'), findsOneWidget);
+      expect(find.textContaining('健康同步未全部完成'), findsOneWidget);
+    }
     expect(find.textContaining('secret sync error'), findsNothing);
   });
   testWidgets('reminder UI awaits refreshed settings before allowing next save',
@@ -232,13 +251,20 @@ void main() {
       healthSyncStatusProvider.overrideWith((ref) async => [])
     ], child: const MaterialApp(home: HealthSyncScreen())));
     await tester.pumpAndSettle();
-    expect(find.textContaining('系统读取权限需另行确认'), findsOneWidget);
-    expect(find.textContaining('请在系统健康设置中检查读取权限'), findsOneWidget);
-    expect(find.textContaining('尚未申请读取'), findsOneWidget);
-    expect(find.textContaining('当前设备不可用'), findsOneWidget);
-    final switches =
-        tester.widgetList<SwitchListTile>(find.byType(SwitchListTile)).toList();
-    expect(switches.map((item) => item.value), [true, false, false, false]);
+    if (AppConfig.appleHealthDisabled) {
+      expect(find.text(AppConfig.manualHealthNotice), findsOneWidget);
+      expect(find.byType(SwitchListTile), findsNothing);
+      expect(find.textContaining('已开启同步'), findsNothing);
+    } else {
+      expect(find.textContaining('系统读取权限需另行确认'), findsOneWidget);
+      expect(find.textContaining('请在系统健康设置中检查读取权限'), findsOneWidget);
+      expect(find.textContaining('尚未申请读取'), findsOneWidget);
+      expect(find.textContaining('当前设备不可用'), findsOneWidget);
+      final switches = tester
+          .widgetList<SwitchListTile>(find.byType(SwitchListTile))
+          .toList();
+      expect(switches.map((item) => item.value), [true, false, false, false]);
+    }
     expect(find.textContaining('已授权'), findsNothing);
   });
   testWidgets(

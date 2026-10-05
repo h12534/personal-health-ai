@@ -51,8 +51,6 @@ class _HealthScreenState extends ConsumerState<HealthScreen>
         builder: (context, space) => Column(
               key: const Key('health-screen'),
               children: [
-                if (AppConfig.appleHealthDisabled && space.maxHeight >= 400)
-                  const PersonalManualHealthNotice(),
                 if (space.maxHeight >= 400)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(AppSpacing.page,
@@ -365,6 +363,9 @@ class _OverviewTab extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: AppSpacing.pageInsets,
         children: [
+          if (AppConfig.appleHealthDisabled)
+            const PersonalManualHealthNotice(
+                padding: EdgeInsets.only(bottom: AppSpacing.lg)),
           ...switch (reports) {
             AsyncData(:final value) when value.isEmpty => [
                 _EmptyReports(onPressed: onOpenReports),

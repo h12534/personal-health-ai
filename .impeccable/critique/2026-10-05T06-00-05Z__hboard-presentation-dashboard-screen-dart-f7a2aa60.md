@@ -2,7 +2,7 @@
 target: App-wide UI RC final acceptance
 total_score: 31
 max_score: 40
-na_heuristics: 
+na_heuristics:
 p0_count: 0
 p1_count: 0
 target_identity: "file:E:\\codex项目\\个人身体健康管理\\mobile\\lib\\features\\dashboard\\presentation\\dashboard_screen.dart"

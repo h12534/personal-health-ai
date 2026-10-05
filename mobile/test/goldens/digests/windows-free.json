@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "pixel_format": "rawRgba8",
+  "renderer": "Flutter 3.47.5 Windows widget-test, TargetPlatform.iOS",
+  "review": "12 individually inspected local synthetic free-flavor images, 2026-10-05; pre-authorization local snapshot b415a41 is not pushed; no images included here",
+  "images": {
+    "goldens/personal-free/health-data-detail-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "d14fdfcc29e8955e2fd55fde1535fa6463a92da135fb2b42a99f30deb3ce5e5e"
+    },
+    "goldens/personal-free/health-data-detail-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "afc16ca0b87dfc032b108364d937bfc50c7fe283627d601a7fa7f056c6654749"
+    },
+    "goldens/personal-free/health-overview-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "b98f2326867b4a1293ede0baedea307e247e06c8f8f9f1f12a13d88b771137aa"
+    },
+    "goldens/personal-free/health-overview-large-text-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "91ce61734bb9dd48fc20ba1501416039c48425ecc18331d8a8bdbb7f11ce6419"
+    },
+    "goldens/personal-free/health-overview-large-text-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "f35a888f880b0e0cf61c04ddc7274c105ec787587a5d6b84386eaf6b4eb6c0e2"
+    },
+    "goldens/personal-free/health-overview-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "e1a8726a457550472e30c954d6ba4dc7c128776840cc87a842e468ee5bbac1b2"
+    },
+    "goldens/personal-free/health-overview-small-dark.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "b9061b9c12bc2df8da9fcef650a8b3fff17a45be2e55767bba6279e3b53cefb0"
+    },
+    "goldens/personal-free/health-overview-small-light.png": {
+      "width": 320,
+      "height": 568,
+      "rgba_sha256": "4794cb3c08cc9cb5709f883f9f01b4eda964e81bcf7656b42d7a3910a16ec770"
+    },
+    "goldens/personal-free/health-sync-dark.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "b67abe604861791519fa3d5f26f33a29419ff04ec715466223adbf894c222ead"
+    },
+    "goldens/personal-free/health-sync-light.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "87633dc44f651bf1e0b5526735a4742d6a735d53f2423cdd224aabcc15130855"
+    },
+    "goldens/personal-free/health-variant-clinical.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "63dde7c0b8668705daef9c8186e7e829f5784c550d28ef5eb02b2371a5956553"
+    },
+    "goldens/personal-free/health-variant-warm.png": {
+      "width": 393,
+      "height": 852,
+      "rgba_sha256": "9d128b1805ebbb45637c3ea121ca20159e5ab4a59416782521d673ba5b120092"
+    }
+  }
+}

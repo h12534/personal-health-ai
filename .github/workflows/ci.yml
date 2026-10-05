@@ -13,6 +13,10 @@ on:
         description: Upload signed IPA to App Store Connect (internal testing only)
         type: boolean
         default: false
+      ui_golden_review:
+        description: Capture exactly 74 standard and 12 free synthetic UI PNGs after fail-closed safety checks
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -144,23 +148,77 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed lib test tool
       - run: flutter analyze
       - run: flutter test
-      # Explicit synthetic fixtures only; never upload arbitrary failure files.
-      - name: Preserve synthetic golden rendering evidence
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-golden-rendering-evidence
-          path: |
-            mobile/test/failures/dashboard-light_testImage.png
-            mobile/test/failures/dashboard-light_isolatedDiff.png
-            mobile/test/failures/health-overview-light_testImage.png
-            mobile/test/failures/health-overview-light_isolatedDiff.png
-          if-no-files-found: warn
-          retention-days: 7
       - run: >-
           flutter build ios --release --no-codesign
           --dart-define=APP_ENV=staging
           --dart-define=API_BASE_URL=https://staging-api.personal-health.invalid/api/v1
+
+  # Explicit owner-authorized review only; never a substitute for full tests.
+  # A missing/unreviewed digest FAILS the test step. Safety/upload can run after
+  # that failure to collect evidence; neither continue-on-error nor auto-accept.
+  ui-golden-review:
+    if: >-
+      github.repository == 'h12534/personal-health-ai' &&
+      github.ref == 'refs/heads/feature/ui-redesign-impeccable' &&
+      github.event_name == 'workflow_dispatch' && inputs.ui_golden_review
+    runs-on: macos-26
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [standard, free]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - name: Attest reviewed source and synthetic fixture boundary
+        id: attest
+        run: python scripts/ui_golden_safety.py attest
+      - run: flutter pub get
+        working-directory: mobile
+      - name: Execute all strict Golden cases with selected evidence capture
+        id: goldens
+        working-directory: mobile
+        shell: bash
+        env:
+          REVIEW_FLAVOR: ${{ matrix.flavor }}
+        run: |
+          flags=(--dart-define=UI_GOLDEN_REVIEW=true)
+          if [[ "$REVIEW_FLAVOR" == "free" ]]; then
+            flags+=(--dart-define=APP_DISTRIBUTION=personal_sideload --dart-define=PERSONAL_SIDELOAD_FREE=true)
+          fi
+          flutter test --no-pub "${flags[@]}" test/ui_redesign_golden_test.dart
+      - name: Compile offline Chinese and English OCR safety checker
+        id: ocr
+        if: always() && steps.attest.outcome == 'success' && steps.goldens.outcome != 'skipped'
+        run: swiftc scripts/ui_golden_ocr.swift -o "$RUNNER_TEMP/ui-golden-ocr"
+      - name: Fail-closed privacy scan and metadata-free PNG staging
+        id: safety
+        if: always() && steps.ocr.outcome == 'success'
+        env:
+          REVIEW_FLAVOR: ${{ matrix.flavor }}
+        run: >-
+          python scripts/ui_golden_safety.py prepare
+          --flavor "$REVIEW_FLAVOR"
+          --input "mobile/test/failures/ui-review/$REVIEW_FLAVOR"
+          --output "mobile/build/ui-review/$REVIEW_FLAVOR"
+          --ocr "$RUNNER_TEMP/ui-golden-ocr"
+      - name: Upload only approved synthetic PNGs, one-day retention
+        if: always() && steps.safety.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-golden-${{ matrix.flavor }}-${{ github.run_id }}
+          path: mobile/build/ui-review/${{ matrix.flavor }}/*.png
+          if-no-files-found: error
+          retention-days: 1
 
   mobile-android-compat:
     runs-on: ubuntu-latest

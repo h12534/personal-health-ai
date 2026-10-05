@@ -187,6 +187,8 @@ AsyncActionButton and awaited entry dialogs lock duplicate actions while retaini
 
 Programmatic tab changes use the shared short transition and resolve to zero duration for Reduce Motion. Bottom destination changes use selection haptic only when the selected destination actually changes. New hero-expansion or chart animation is not claimed. The sidecar browser snippets illustrate these components; they are not the Flutter implementation.
 
+The free personal-installation HealthKit capability notice remains explicit and readable inside the scrollable Health overview, not a tall fixed header that competes with accessible type or the keyboard. The Health sync screen keeps its disabled/manual explanation and never displays enabled synchronization controls for that flavor.
+
 ## Do's and Don'ts
 
 - Do foreground real numbers, their units, dates, source context, and report ranges.

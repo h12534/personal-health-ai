@@ -366,13 +366,16 @@ class _HealthSyncScreenState extends ConsumerState<HealthSyncScreen> {
 }
 
 class PersonalManualHealthNotice extends StatelessWidget {
-  const PersonalManualHealthNotice({super.key});
+  const PersonalManualHealthNotice(
+      {super.key, this.padding = const EdgeInsets.all(16)});
+
+  final EdgeInsetsGeometry padding;
 
   @override
-  Widget build(BuildContext context) => const Padding(
-        key: Key('personal-manual-health-notice'),
-        padding: EdgeInsets.all(16),
-        child: Text(AppConfig.manualHealthNotice),
+  Widget build(BuildContext context) => Padding(
+        key: const Key('personal-manual-health-notice'),
+        padding: padding,
+        child: const Text(AppConfig.manualHealthNotice),
       );
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:personal_health_os/core/config/app_config.dart';
 import 'package:personal_health_os/core/theme/app_theme.dart';
 import 'package:personal_health_os/core/theme/app_navigation_bar.dart';
 import 'package:personal_health_os/features/dashboard/data/dashboard_model.dart';
@@ -44,11 +45,42 @@ import 'package:personal_health_os/features/nutrition/data/offline_meal_reposito
 import 'package:personal_health_os/features/nutrition/presentation/food_search_screen.dart';
 import 'package:personal_health_os/features/nutrition/presentation/add_food_screen.dart';
 import 'ui_polish_fixtures.dart';
+import 'support/reviewed_pixel_comparator.dart';
 
 const _frameKey = Key('golden-frame');
 
+// Free personal signing disables HealthKit; these captures intentionally show
+// the honest manual-recording notice instead of the enabled HealthKit controls.
+const _manualHealthCaptures = {
+  'health-overview-light',
+  'health-overview-dark',
+  'health-variant-clinical',
+  'health-variant-warm',
+  'health-sync-light',
+  'health-sync-dark',
+  'health-data-detail-light',
+  'health-data-detail-dark',
+  'health-overview-small-light',
+  'health-overview-small-dark',
+  'health-overview-large-text-light',
+  'health-overview-large-text-dark',
+};
+
+String _goldenPath(String name) =>
+    'goldens/${AppConfig.appleHealthDisabled && _manualHealthCaptures.contains(name) ? 'personal-free/' : ''}$name.png';
+
 void main() {
+  final previousComparator = goldenFileComparator;
+  final previousNetwork = HttpOverrides.current;
   setUpAll(() async {
+    HttpOverrides.global = SyntheticGoldenNetwork();
+    goldenFileComparator = ReviewedPixelComparator(
+        legacy: previousComparator,
+        digests: await ReviewedPixelComparator.loadDigests(
+            Platform.isMacOS ? 'macos' : 'windows-free'),
+        useDigestsForAll: Platform.isMacOS,
+        free: AppConfig.appleHealthDisabled,
+        captureReview: const bool.fromEnvironment('UI_GOLDEN_REVIEW'));
     final font = FontLoader('GoldenTestChinese')
       ..addFont(Future.value(ByteData.sublistView(
         await File('test/assets/NotoSansSC.ttf').readAsBytes(),
@@ -61,6 +93,10 @@ void main() {
           ..addFont(rootBundle
               .load('packages/cupertino_icons/assets/CupertinoIcons.ttf')))
         .load();
+  });
+  tearDownAll(() {
+    goldenFileComparator = previousComparator;
+    HttpOverrides.global = previousNetwork;
   });
 
   for (final entry in [
@@ -99,10 +135,9 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      final filename = '$name.png';
       await expectLater(
         find.byKey(_frameKey),
-        matchesGoldenFile('goldens/$filename'),
+        matchesGoldenFile(_goldenPath(name)),
       );
     });
   }
@@ -414,7 +449,7 @@ void main() {
       }
       expect(tester.takeException(), isNull);
       await expectLater(find.byKey(_frameKey),
-          matchesGoldenFile('goldens/$name-${dark ? 'dark' : 'light'}.png'));
+          matchesGoldenFile(_goldenPath('$name-${dark ? 'dark' : 'light'}')));
     });
   }
 }

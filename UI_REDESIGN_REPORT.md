@@ -245,3 +245,13 @@ Phase 2 当时未推送。当前 UI RC 用户已明确授权仅推 feature 分�
 原始 Before 与 Phase 1 Reference 保留 [phase2-before](docs/ui-redesign/phase2-before/README.md)。提交 55fea20 的十二张 Phase 2 Final 已在任何 RC Golden 刷新前无损保存到 [phase2-final](docs/ui-redesign/phase2-final/README.md)，原 After 链接可继续指向当前回归基线但不再被误当作不可变历史。最新 RC 的 32 张实际截图见 [UI_RC_PREVIEW](docs/ui-redesign/UI_RC_PREVIEW/README.md) 及哈希 manifest。
 
 本轮解决已证实的性能、对比度、回复到达、编辑精度、删除确认、搜索样式、键盘溢出与折叠期间 busy state 问题；未换 C 方向，未修改业务层。剩余设备边界与最终 CI 结果单独记录在 RC 报告。
+
+### UI RC cloud gate status (actual results)
+
+后续用户明确授权74标准版＋12免费版合成PNG作为短期Actions artifact，且禁止新增截图进入源码／Git history。当前修复链仅保存逐像素RGBA SHA-256、尺寸及审查来源；此前含新增PNG的未推送本地提交保留为本地快照，不会随feature推送。公开截图包仍是既有32张，新云端图片将经自动安全检查后仅保留1天；原40张本地成果属于授权前历史，不能冒称当前已发布文件。具体真实结果以最新RC报告为准。
+
+当前 [run37272234650](https://github.com/h12534/personal-health-ai/actions/runs/37272234650) 的 release-audit、backend、PostgreSQL、Android 真实成功；macOS 的格式／analyze及188项非Golden测试成功，但74项跨 Windows/macOS 截图比对失败，随后 iOS build 未运行。因此本次 UI RC **不是 CI 全绿，不建议 merge**。
+
+免费个人安装配置另发现固定 HealthKit 手动记录说明挤压大字／键盘布局，已在本地修复并保留完整能力边界。标准／个人HealthKit尝试／免费手动版各262tests及74Golden全通过；12张新免费版基线人工查看，额外8张纳入当前40PNG截图包。原始Before、Phase1、Phase2Final均未改写。
+
+仅两张获准的合成云端界面及其差异图已查看；全量 macOS 独立基线的人工验收仍需完整截图。扩大 GitHub artifact 上传被安全审核拒绝，已经向用户请求74标准版＋12免费版的明确合成PNG上传授权，未绕过拒绝。当前完整状态、提交SHA、JobID及下一步在 [UI_RC_ACCEPTANCE_REPORT](UI_RC_ACCEPTANCE_REPORT.md)，不把历史阶段成功冒称本轮门禁通过。
